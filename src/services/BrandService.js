@@ -8,7 +8,7 @@ const BrandService = {
             params: { search, page, size, sortBy, sortDir },
         }).then(response => {
             // Trả về dữ liệu theo cấu trúc API
-            return response.data.data.content;
+            return response.data.data;
         });
     },
 

@@ -49,7 +49,7 @@ function Sidebar() {
     <div className={`bg-white text-dark min-h-screen transition-all ${collapsed ? "w-16" : "w-60"} flex flex-col shadow-lg px-3 py-2 overflow-y-auto`}>
       {/* Logo */}
       <div className="flex items-center justify-center py-4 cursor-pointer border-b border-gray-700" onClick={() => setCollapsed(!collapsed)}>
-        <img src="/public/logo.png" className={`transition-all ${collapsed ? "w-8" : "w-24"}`} />
+        <img src="" className={`transition-all ${collapsed ? "w-8" : "w-24"}`} />
       </div>
 
       {/* Menu */}

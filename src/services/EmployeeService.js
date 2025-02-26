@@ -62,7 +62,7 @@ const EmployeeService = {
 
     async toggleStatus(id) {
         try {
-            const response = await axios.patch(`${API_URL}/toggle-status/${id}`);
+            const response = await axios.patch(`${API_URL}/${id}/toggle-status`);
             return response.data;
         } catch (error) {
             console.error("Error toggling employee status:", error);
