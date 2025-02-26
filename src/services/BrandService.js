@@ -6,6 +6,9 @@ const BrandService = {
     getAllBrands: (search = "", page = 0, size = 10, sortBy = "id", sortDir = "asc") => {
         return axios.get(API_URL, {
             params: { search, page, size, sortBy, sortDir },
+        }).then(response => {
+            // Trả về dữ liệu theo cấu trúc API
+            return response.data.data.content;
         });
     },
 

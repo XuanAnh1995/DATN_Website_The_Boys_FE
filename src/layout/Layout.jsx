@@ -2,7 +2,7 @@ import { Outlet } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 
-function AdminLayout({ children }) {
+function AdminLayout() {
   return (
     <div className="flex h-screen">
       {/* Sidebar - Menu bên trái */}
@@ -14,8 +14,8 @@ function AdminLayout({ children }) {
         <Header />
 
         {/* Content - Khu vực chính của trang */}
-        <div className="flex-1 bg-gray-100 p-6 overflow-auto">
-          {children}
+        <div className="flex-1 bg-gray-100 overflow-auto">
+        <Outlet />
         </div>
       </div>
     </div>
