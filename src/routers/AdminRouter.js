@@ -26,7 +26,7 @@ const Voucher = lazy(() => import("../pages/admin/Voucher"));
 
 // 📌 Quản lý danh mục, thống kê
 const Category = lazy(() => import("../pages/admin/Category"));
-// const Statistic = lazy(() => import("../pages/admin/Statistic"));
+const Statistic = lazy(() => import("../pages/admin/Statistics"));
 
 
 const adminRoutes = [
@@ -45,7 +45,7 @@ const adminRoutes = [
   { path: "attribute/promotion", component: Promotion, role: "admin" },
   { path: "order", component: Order, role: "admin" },
   { path: "voucher", component: Voucher, role: "admin" },
-  // { path: "statistic", component: Statistic, role: "admin" }
+  { path: "statistics", component: Statistic, role: "admin" }
 ];
 
 export default adminRoutes;
