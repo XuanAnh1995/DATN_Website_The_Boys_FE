@@ -64,7 +64,7 @@ export default function Brand() {
     try {
       await BrandService.toggleStatusBrand(id);
       setBrands((prev) => prev.map((item) =>
-        item.id === id ? { ...item, status: !item.status } : item
+       ( item.id === id ? { ...item, status: !item.status } : item)
       ));
       toast.success("Thay đổi trạng thái thương hiệu thành công!");
     } catch (error) {
