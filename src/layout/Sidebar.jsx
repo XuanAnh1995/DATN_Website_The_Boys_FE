@@ -16,6 +16,7 @@ import {
   FaClipboardList,
   FaMoneyBillWave,
   FaChevronDown,
+  FaChartBar,
 } from "react-icons/fa";
 
 function Sidebar() {
@@ -49,7 +50,7 @@ function Sidebar() {
     <div className={`bg-white text-dark min-h-screen transition-all ${collapsed ? "w-16" : "w-60"} flex flex-col shadow-lg px-3 py-2 overflow-y-auto`}>
       {/* Logo */}
       <div className="flex items-center justify-center py-4 cursor-pointer border-b border-gray-700" onClick={() => setCollapsed(!collapsed)}>
-        <img src="" className={`transition-all ${collapsed ? "w-8" : "w-24"}`} />
+        <img src="/src/assets/logo.jpg" className={`transition-all ${collapsed ? "w-8" : "w-24"}`} />
       </div>
 
       {/* Menu */}
@@ -57,9 +58,8 @@ function Sidebar() {
         <li>
           <Link
             to="/admin/dashboard"
-            className={`flex items-center gap-3 p-3 rounded-lg transition ${
-              location.pathname === "/admin/dashboard" ? "bg-blue-500 text-white" : "hover:bg-gray-200"
-            }`}
+            className={`flex items-center gap-3 p-3 rounded-lg transition ${location.pathname === "/admin/dashboard" ? "bg-blue-500 text-white" : "hover:bg-gray-200"
+              }`}
           >
             <FaChartPie /> {!collapsed && <span>Tổng quan</span>}
           </Link>
@@ -68,9 +68,8 @@ function Sidebar() {
         <li>
           <Link
             to="/admin/order"
-            className={`flex items-center gap-3 p-3 rounded-lg transition ${
-              location.pathname === "/admin/order" ? "bg-blue-500 text-white" : "hover:bg-gray-200"
-            }`}
+            className={`flex items-center gap-3 p-3 rounded-lg transition ${location.pathname === "/admin/order" ? "bg-blue-500 text-white" : "hover:bg-gray-200"
+              }`}
           >
             <FaClipboardList /> {!collapsed && <span>Quản lý đơn hàng</span>}
           </Link>
@@ -93,9 +92,8 @@ function Sidebar() {
                 <li key={item.path}>
                   <Link
                     to={item.path}
-                    className={`flex items-center gap-3 p-2 rounded-lg transition ${
-                      location.pathname === item.path ? "bg-blue-500 text-white" : "hover:bg-gray-200"
-                    }`}
+                    className={`flex items-center gap-3 p-2 rounded-lg transition ${location.pathname === item.path ? "bg-blue-500 text-white" : "hover:bg-gray-200"
+                      }`}
                   >
                     {item.icon} {item.label}
                   </Link>
@@ -122,9 +120,8 @@ function Sidebar() {
                 <li key={item.path}>
                   <Link
                     to={item.path}
-                    className={`flex items-center gap-3 p-2 rounded-lg transition ${
-                      location.pathname === item.path ? "bg-blue-500 text-white" : "hover:bg-gray-200"
-                    }`}
+                    className={`flex items-center gap-3 p-2 rounded-lg transition ${location.pathname === item.path ? "bg-blue-500 text-white" : "hover:bg-gray-200"
+                      }`}
                   >
                     {item.icon} {item.label}
                   </Link>
@@ -137,13 +134,22 @@ function Sidebar() {
         <li>
           <Link
             to="/admin/voucher"
-            className={`flex items-center gap-3 p-3 rounded-lg transition ${
-              location.pathname === "/admin/voucher" ? "bg-blue-500 text-white" : "hover:bg-gray-200"
-            }`}
+            className={`flex items-center gap-3 p-3 rounded-lg transition ${location.pathname === "/admin/voucher" ? "bg-blue-500 text-white" : "hover:bg-gray-200"
+              }`}
           >
             <FaMoneyBillWave /> {!collapsed && <span>Quản lý voucher</span>}
           </Link>
         </li>
+        <li>
+          <Link
+            to="/admin/statistics"
+            className={`flex items-center gap-3 p-3 rounded-lg transition ${location.pathname === "/admin/statistics" ? "bg-blue-500 text-white" : "hover:bg-gray-200"
+              }`}
+          >
+            <FaChartBar /> {!collapsed && <span>Thống kê</span>}
+          </Link>
+        </li>
+
       </ul>
     </div>
   );
