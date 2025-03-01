@@ -12,7 +12,10 @@ export default function Brand() {
   const [totalPages, setTotalPages] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [search, setSearch] = useState("");
-  const [sortConfig, setSortConfig] = useState({ key: "id", direction: "desc" });
+  const [sortConfig, setSortConfig] = useState({
+    key: "id",
+    direction: "desc",
+  });
   const [updateModal, setUpdateModal] = useState(false);
   const [createModal, setCreateModal] = useState(false);
   const [currentBrand, setCurrentBrand] = useState(null);
@@ -52,7 +55,9 @@ export default function Brand() {
   };
 
   const handlePageChange = (direction) => {
-    setCurrentPage((prev) => Math.max(0, Math.min(prev + direction, totalPages - 1)));
+    setCurrentPage((prev) =>
+      Math.max(0, Math.min(prev + direction, totalPages - 1))
+    );
   };
 
   const handleUpdateBrand = (brand) => {
@@ -63,13 +68,17 @@ export default function Brand() {
   const handleToggleStatus = async (id) => {
     try {
       await BrandService.toggleStatusBrand(id);
-      setBrands((prev) => prev.map((item) =>
-        item.id === id ? { ...item, status: !item.status } : item
-      ));
+      setBrands((prev) =>
+        prev.map((item) =>
+          item.id === id ? { ...item, status: !item.status } : item
+        )
+      );
       toast.success("Thay đổi trạng thái thương hiệu thành công!");
     } catch (error) {
       console.error("Error toggling brand status:", error);
-      toast.error("Không thể thay đổi trạng thái thương hiệu. Vui lòng thử lại!");
+      toast.error(
+        "Không thể thay đổi trạng thái thương hiệu. Vui lòng thử lại!"
+      );
     }
   };
 
@@ -84,7 +93,10 @@ export default function Brand() {
           value={search}
           onChange={handleSearch}
         />
-        <button className="bg-blue-500 text-white px-4 py-2 rounded-lg" onClick={() => setCreateModal(true)}>
+        <button
+          className="bg-blue-500 text-white px-4 py-2 rounded-lg"
+          onClick={() => setCreateModal(true)}
+        >
           + Thêm mới
         </button>
       </div>
@@ -92,8 +104,18 @@ export default function Brand() {
         <thead>
           <tr className="bg-gray-100">
             <th className="px-4 py-2">STT</th>
-            <th className="px-4 py-2 cursor-pointer" onClick={() => handleSort("brandName")}>Tên thương hiệu</th>
-            <th className="px-4 py-2 cursor-pointer" onClick={() => handleSort("status")}>Trạng thái</th>
+            <th
+              className="px-4 py-2 cursor-pointer"
+              onClick={() => handleSort("brandName")}
+            >
+              Tên thương hiệu
+            </th>
+            <th
+              className="px-4 py-2 cursor-pointer"
+              onClick={() => handleSort("status")}
+            >
+              Trạng thái
+            </th>
             <th className="px-4 py-2">Hành động</th>
           </tr>
         </thead>
@@ -102,14 +124,24 @@ export default function Brand() {
             <tr key={item.id} className="bg-white hover:bg-gray-100">
               <td className="px-4 py-2">{index + 1}</td>
               <td className="px-4 py-2">{item.brandName}</td>
-              <td className={`px-4 py-2 ${item.status ? "text-green-500" : "text-red-500"}`}>
+              <td
+                className={`px-4 py-2 ${item.status ? "text-green-500" : "text-red-500"}`}
+              >
                 {item.status ? "Kích hoạt" : "Không kích hoạt"}
               </td>
               <td className="px-4 py-2 flex justify-center gap-4">
-                <button className="text-blue-500" onClick={() => handleUpdateBrand(item)}>
+                <button
+                  className="text-blue-500"
+                  onClick={() => handleUpdateBrand(item)}
+                >
                   <AiOutlineEdit size={20} />
                 </button>
-                <Switch onChange={() => handleToggleStatus(item.id)} checked={item.status} height={20} width={40} />
+                <Switch
+                  onChange={() => handleToggleStatus(item.id)}
+                  checked={item.status}
+                  height={20}
+                  width={40}
+                />
               </td>
             </tr>
           ))}
@@ -117,7 +149,9 @@ export default function Brand() {
       </table>
       <div className="flex items-center justify-between mt-4">
         <div className="flex items-center gap-2">
-          <label htmlFor="entries" className="text-sm">Xem</label>
+          <label htmlFor="entries" className="text-sm">
+            Xem
+          </label>
           <select
             id="entries"
             className="border rounded-lg px-2 py-1 focus:ring-blue-500"
@@ -125,23 +159,45 @@ export default function Brand() {
             onChange={(e) => setPageSize(Number(e.target.value))}
           >
             {[5, 10, 20].map((size) => (
-              <option key={size} value={size}>{size}</option>
+              <option key={size} value={size}>
+                {size}
+              </option>
             ))}
           </select>
           <span className="text-sm">Thương hiệu</span>
         </div>
         <div className="flex items-center gap-2">
-          <button className="px-3 py-1 border rounded-lg" onClick={() => handlePageChange(-1)} disabled={currentPage === 0}>
+          <button
+            className="px-3 py-1 border rounded-lg"
+            onClick={() => handlePageChange(-1)}
+            disabled={currentPage === 0}
+          >
             {"<"}
           </button>
-          <span className="text-sm">Trang {currentPage + 1} / {totalPages}</span>
-          <button className="px-3 py-1 border rounded-lg" onClick={() => handlePageChange(1)} disabled={currentPage === totalPages - 1}>
+          <span className="text-sm">
+            Trang {currentPage + 1} / {totalPages}
+          </span>
+          <button
+            className="px-3 py-1 border rounded-lg"
+            onClick={() => handlePageChange(1)}
+            disabled={currentPage === totalPages - 1}
+          >
             {">"}
           </button>
         </div>
       </div>
-      <UpdateModal isOpen={updateModal} setUpdateModal={setUpdateModal} brand={currentBrand} fetchBrands={fetchBrands} />
-      <CreateModal isOpen={createModal} onConfirm={() => setCreateModal(false)} onCancel={() => setCreateModal(false)} fetchBrands={fetchBrands} />
+      <UpdateModal
+        isOpen={updateModal}
+        setUpdateModal={setUpdateModal}
+        brand={currentBrand}
+        fetchBrands={fetchBrands}
+      />
+      <CreateModal
+        isOpen={createModal}
+        onConfirm={() => setCreateModal(false)}
+        onCancel={() => setCreateModal(false)}
+        fetchBrands={fetchBrands}
+      />
     </div>
   );
 }
