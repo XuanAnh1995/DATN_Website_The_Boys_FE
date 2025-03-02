@@ -68,11 +68,9 @@ export default function Brand() {
   const handleToggleStatus = async (id) => {
     try {
       await BrandService.toggleStatusBrand(id);
-      setBrands((prev) =>
-        prev.map((item) =>
-          item.id === id ? { ...item, status: !item.status } : item
-        )
-      );
+      setBrands((prev) => prev.map((item) =>
+       ( item.id === id ? { ...item, status: !item.status } : item)
+      ));
       toast.success("Thay đổi trạng thái thương hiệu thành công!");
     } catch (error) {
       console.error("Error toggling brand status:", error);

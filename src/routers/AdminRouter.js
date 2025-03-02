@@ -22,11 +22,12 @@ const Promotion = lazy(() => import("../pages/admin/Attribute/Promotion"));
 
 // 📌 Quản lý hóa đơn, voucher
 const Order = lazy(() => import("../pages/admin/Order"));
+const OrderDetail = lazy(() => import("../pages/admin/Order/OrderDetail"));
 const Voucher = lazy(() => import("../pages/admin/Voucher"));
 
 // 📌 Quản lý danh mục, thống kê
 const Category = lazy(() => import("../pages/admin/Category"));
-// const Statistic = lazy(() => import("../pages/admin/Statistic"));
+const Statistic = lazy(() => import("../pages/admin/Statistics"));
 
 
 const adminRoutes = [
@@ -44,8 +45,9 @@ const adminRoutes = [
   { path: "attribute/sleeve", component: Sleeve, role: "admin" },
   { path: "attribute/promotion", component: Promotion, role: "admin" },
   { path: "order", component: Order, role: "admin" },
+  { path: "order/:id/details", component: OrderDetail, role: "admin" },
   { path: "voucher", component: Voucher, role: "admin" },
-  // { path: "statistic", component: Statistic, role: "admin" }
+  { path: "statistics", component: Statistic, role: "admin" }
 ];
 
 export default adminRoutes;
