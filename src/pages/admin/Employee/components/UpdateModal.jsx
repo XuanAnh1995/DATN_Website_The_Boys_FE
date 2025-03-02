@@ -23,11 +23,11 @@ const UpdateModal = ({ isOpen, setUpdateModal, employee, fetchEmployees }) => {
 
     const handleAvatarUpload = async (file) => {
         if (!file) return;
-
+    
+        const localImageUrl = URL.createObjectURL(file);
+        setAvatar(localImageUrl);
+    
         try {
-            const fileURL = URL.createObjectURL(file);
-            setAvatar(fileURL);
-
             const uploadedImageUrl = await UploadFileService.uploadProductImage(file);
             setUpdatedEmployee(prev => ({ ...prev, photo: uploadedImageUrl }));
         } catch (error) {
@@ -35,6 +35,7 @@ const UpdateModal = ({ isOpen, setUpdateModal, employee, fetchEmployees }) => {
             toast.error("Không thể tải ảnh lên!");
         }
     };
+    
 
     const handleDoubleClick = () => fileInputRef.current.click();
 
@@ -137,11 +138,11 @@ const UpdateModal = ({ isOpen, setUpdateModal, employee, fetchEmployees }) => {
 
                     <div className="modal-action flex justify-end gap-2">
                         <button className="btn bg-blue-500 hover:bg-blue-600 text-white" onClick={handleUpdate}>Xác nhận</button>
-                        <button className="btn bg-gray-500 hover:bg-gray-600 text-white" onClick={() => setIsConfirmOpen(true)}>Đặt lại mật khẩu</button>
+                        {/* <button className="btn bg-gray-500 hover:bg-gray-600 text-white" onClick={() => setIsConfirmOpen(true)}>Đặt lại mật khẩu</button> */}
                     </div>
                 </div>
             </div>
-            <ConfirmModal isOpen={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} onConfirm={handleResetPassword} message="Bạn có chắc muốn đặt lại mật khẩu không?" />
+            {/* <ConfirmModal isOpen={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} onConfirm={handleResetPassword} message="Bạn có chắc muốn đặt lại mật khẩu không?" /> */}
         </>
     );
 };
