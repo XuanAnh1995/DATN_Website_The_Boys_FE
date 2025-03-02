@@ -5,6 +5,7 @@ import { AiOutlineEdit } from "react-icons/ai";
 import Switch from "react-switch";
 import CreateVoucherModal from "./components/CreateModal";
 import UpdateModal from "./components/UpdateModal";
+
 export default function Voucher() {
   const [vouchers, setVouchers] = useState([]);
   const [currentPage, setCurrentPage] = useState(0);
@@ -12,13 +13,20 @@ export default function Voucher() {
   const [pageSize, setPageSize] = useState(10);
   const [search, setSearch] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-
+  const [sortConfig, setSortConfig] = useState({
+    key: "id",
+    direction: "desc",
+  });
+  const [currentVoucher, setCurrentVoucher] = useState(null);
+  const [updateModal, setUpdateModal] = useState(false);
   const fetchVouchers = useCallback(async () => {
     try {
       const { content, totalPages } = await VoucherService.getAllVouchers(
         search,
         currentPage,
-        pageSize
+        pageSize,
+        sortConfig.key,
+        sortConfig.direction
       );
       setVouchers(content);
       setTotalPages(totalPages);
@@ -26,7 +34,7 @@ export default function Voucher() {
       console.error(error);
       toast.error("Failed to fetch vouchers");
     }
-  }, [search, currentPage, pageSize]);
+  }, [search, currentPage, pageSize, sortConfig]);
 
   useEffect(() => {
     fetchVouchers();
@@ -35,6 +43,10 @@ export default function Voucher() {
   const handleSearch = (event) => {
     setSearch(event.target.value);
     setCurrentPage(0);
+  };
+  const handleUpdateVoucher = (voucher) => {
+    setCurrentVoucher(voucher);
+    setUpdateModal(true);
   };
 
   const handlePageChange = (direction) => {
@@ -170,6 +182,12 @@ export default function Voucher() {
         isOpen={isCreateModalOpen}
         onCancel={() => setIsCreateModalOpen(false)}
         fetchVouchers={fetchVouchers}
+      />
+      <UpdateModal
+        isOpen={updateModal}
+        setUpdateModal={setUpdateModal}
+        fetchVouchers={fetchVouchers}
+        selectedVoucher={currentVoucher}
       />
     </div>
   );
