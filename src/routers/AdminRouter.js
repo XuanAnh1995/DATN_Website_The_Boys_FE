@@ -3,6 +3,9 @@ import { lazy } from "react";
 // 📌 Dashboard
 const Dashboard = lazy(() => import("../pages/admin/Dashboard"));
 
+// 📌 Bán hàng tại quầy: POS
+const POS = lazy(() => import("../pages/admin/POS"));
+
 // 📌 Quản lý khách hàng, nhân viên
 const Customer = lazy(() => import("../pages/admin/Customer"));
 const Employee = lazy(() => import("../pages/admin/Employee"));
@@ -32,6 +35,7 @@ const Statistic = lazy(() => import("../pages/admin/Statistics"));
 
 const adminRoutes = [
   { path: "dashboard", component: Dashboard, role: "admin" },
+  {path: "salePOS", component: POS, role: "admin"},
   { path: "customer", component: Customer, role: "admin" },
   { path: "employee", component: Employee, role: "admin" },
   { path: "product", component: Product, role: "admin" },
