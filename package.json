@@ -32,6 +32,7 @@
     "react-switch": "^7.1.0",
     "react-toastify": "^11.0.3",
     "recharts": "^2.15.1",
+    "tshirt": "file:",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
