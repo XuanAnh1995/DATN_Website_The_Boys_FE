@@ -7,11 +7,17 @@ import {
 } from "react-router-dom";
 import Layout from "../layout/Layout";
 import adminRoutes from "./AdminRouter";
+import AppUserRouter from "./AppUserRouter"; // Thêm router cho user
+
 function AppRouter() {
   return (
     <Router>
       <Suspense fallback={<div>Loading...</div>}>
         <Routes>
+          {/* Router dành cho người dùng */}
+          <Route path="/*" element={<AppUserRouter />} />
+
+          {/* Router dành cho admin */}
           <Route path="/admin" element={<Layout />}>
             {adminRoutes.map((route, index) => (
               <Route
@@ -21,6 +27,8 @@ function AppRouter() {
               />
             ))}
           </Route>
+
+          {/* Trang 404 */}
           <Route path="*" element={<div>404 - Page Not Found</div>} />
         </Routes>
       </Suspense>
