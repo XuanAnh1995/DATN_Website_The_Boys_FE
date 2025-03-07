@@ -161,9 +161,9 @@ const UpdateModal = ({
                 Ngày bắt đầu
               </label>
               <input
-                type="date"
+                type="datetime-local"
                 name="startDate"
-                value={voucher.startDate?.split("T")[0]}
+                value={voucher.startDate}
                 onChange={handleChange}
                 className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                 required
@@ -174,9 +174,9 @@ const UpdateModal = ({
                 Ngày kết thúc
               </label>
               <input
-                type="date"
+                type="datetime-local"
                 name="endDate"
-                value={voucher.endDate?.split("T")[0]}
+                value={voucher.endDate}
                 onChange={handleChange}
                 className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                 required
