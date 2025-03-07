@@ -38,6 +38,38 @@ const UserMain = () => {
       photo:
         "https://dynamic.zacdn.com/R-jnOF9eS6maOOWhgwr82SFKZ6s=/filters:quality(70):format(webp)/https://static-id.zacdn.com/p/burberry-8862-0571514-1.jpg",
     },
+    {
+      id: 5,
+      productName: "Áo Polo Nam Cotton",
+      productCode: "POLO-01",
+      salePrice: "199,000",
+      photo:
+        "https://th.bing.com/th/id/OIP.cI0Mh-X9K8oNz84ylitqAgHaHa?rs=1&pid=ImgDetMain",
+    },
+    {
+      id: 6,
+      productName: "Áo Polo Nam Cotton",
+      productCode: "POLO-01",
+      salePrice: "199,000",
+      photo:
+        "https://th.bing.com/th/id/OIP.cI0Mh-X9K8oNz84ylitqAgHaHa?rs=1&pid=ImgDetMain",
+    },
+    {
+      id: 7,
+      productName: "Áo Polo Nam Cotton",
+      productCode: "POLO-01",
+      salePrice: "199,000",
+      photo:
+        "https://th.bing.com/th/id/OIP.cI0Mh-X9K8oNz84ylitqAgHaHa?rs=1&pid=ImgDetMain",
+    },
+    {
+      id: 8,
+      productName: "Áo Polo Nam Cotton",
+      productCode: "POLO-01",
+      salePrice: "199,000",
+      photo:
+        "https://th.bing.com/th/id/OIP.cI0Mh-X9K8oNz84ylitqAgHaHa?rs=1&pid=ImgDetMain",
+    },
   ];
   return (
     <div>

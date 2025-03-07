@@ -21,9 +21,20 @@ const UpdateModal = ({
     status: false,
   });
 
+  // Khi selectedVoucher thay đổi, cập nhật dữ liệu vào state
   useEffect(() => {
     if (selectedVoucher) {
-      setVoucher(selectedVoucher);
+      console.log("Dữ liệu nhận từ API:", selectedVoucher); // Debug dữ liệu
+
+      setVoucher({
+        ...selectedVoucher,
+        startDate: selectedVoucher.startDate
+          ? new Date(selectedVoucher.startDate).toISOString().slice(0, 16)
+          : "",
+        endDate: selectedVoucher.endDate
+          ? new Date(selectedVoucher.endDate).toISOString().slice(0, 16)
+          : "",
+      });
     }
   }, [selectedVoucher]);
 
@@ -34,8 +45,17 @@ const UpdateModal = ({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const formattedVoucher = {
+      ...voucher,
+      startDate: voucher.startDate
+        ? new Date(voucher.startDate).toISOString()
+        : null,
+      endDate: voucher.endDate ? new Date(voucher.endDate).toISOString() : null,
+    };
+
     try {
-      await VoucherService.updateVoucher(voucher.id, voucher);
+      await VoucherService.updateVoucher(voucher.id, formattedVoucher);
       toast.success("Voucher cập nhật thành công!");
       fetchVouchers();
       setUpdateModal(false);
@@ -67,6 +87,7 @@ const UpdateModal = ({
               onChange={handleChange}
               className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
               required
+              disabled
             />
           </div>
           <div>
