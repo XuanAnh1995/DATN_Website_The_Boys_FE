@@ -17,6 +17,7 @@ import {
   FaMoneyBillWave,
   FaChevronDown,
   FaChartBar,
+  FaCashRegister,
 } from "react-icons/fa";
 
 function Sidebar() {
@@ -67,8 +68,17 @@ function Sidebar() {
 
         <li>
           <Link
-            to="/admin/order"
-            className={`flex items-center gap-3 p-3 rounded-lg transition ${location.pathname === "/admin/order" ? "bg-blue-500 text-white" : "hover:bg-gray-200"
+            to="/admin/salePOS"
+            className={`flex items-center gap-3 p-3 rounded-lg transition ${location.pathname === "/admin/salePOS" ? "bg-blue-500 text-white" : "hover:bg-gray-200"
+              }`}
+          >
+            <FaCashRegister /> {!collapsed && <span>Bán hàng POS</span>}
+          </Link>
+        </li>
+
+        <li>
+          <Link
+            to="/admin/order" className={`flex items-center gap-3 p-3 rounded-lg transition ${location.pathname === "/admin/order" ? "bg-blue-500 text-white" : "hover:bg-gray-200"
               }`}
           >
             <FaClipboardList /> {!collapsed && <span>Quản lý đơn hàng</span>}
@@ -142,14 +152,10 @@ function Sidebar() {
         </li>
         <li>
           <Link
-            to="/admin/statistics"
-            className={`flex items-center gap-3 p-3 rounded-lg transition ${location.pathname === "/admin/statistics" ? "bg-blue-500 text-white" : "hover:bg-gray-200"
-              }`}
-          >
+            to="/admin/statistics" className={`flex items-center gap-3 p-3 rounded-lg transition ${location.pathname === "/admin/statistics" ? "bg-blue-500 text-white" : "hover:bg-gray-200"}`}>
             <FaChartBar /> {!collapsed && <span>Thống kê</span>}
           </Link>
         </li>
-
       </ul>
     </div>
   );
