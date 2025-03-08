@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:8080/api/order";
+const API_URL_CHECKOUT = "http://localhost:8080/api/sale-pos/checkout";
 
 const API_URL_PRODUCT_DETAIL = "http://localhost:8080/api/product-details";
 
@@ -33,9 +33,50 @@ const SalePOS = {
                 console.error("Lỗi khi lấy danh sách khách hàng:", error);
                 throw error;
             });
-    }
+    },
+    checkout: (orderData) => {
+        console.log("Gửi yêu cầu thanh toán:", orderData);
+        return axios.post(API_URL_CHECKOUT, orderData)
+            .then(response => {
+                console.log("Thanh toán thành công:", response.data);
+                return response.data;
+            })
+            .catch(error => {
+                console.error("Lỗi khi thực hiện thanh toán:", error);
+                throw error;
+            });
+        },
+        
 
-
+        createOrder: async (orderData) => {
+            try {
+                const response = await axios.post('http://localhost:8080/api/orders', orderData);
+                return response.data;
+            } catch (error) {
+                console.error("Lỗi khi tạo đơn hàng:", error);
+                throw error;
+            }
+        },
+        
+        addProductToCart: async (orderId, productData) => {
+            try {
+                const response = await axios.post(`http://localhost:8080/api/sale-pos/orders/${orderId}/products`, productData);
+                return response.data;
+            } catch (error) {
+                console.error("Lỗi khi thêm sản phẩm vào giỏ hàng:", error);
+                throw error;
+            }
+        },
+        
+        completePayment: async (orderId) => {
+            try {
+                const response = await axios.put(`http://localhost:8080/api/sale-pos/orders/${orderId}/payment`);
+                return response.data;
+            } catch (error) {
+                console.error("Lỗi khi hoàn tất thanh toán:", error);
+                throw error;
+            }
+        }
 };
 
 export default SalePOS;
