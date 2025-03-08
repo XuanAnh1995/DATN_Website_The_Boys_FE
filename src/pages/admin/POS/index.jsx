@@ -111,6 +111,7 @@ const SalePOSPage = () => {
         setShowAddCustomerForm(false);
     };
 
+    // sửa bên back rồi gọi qua đây
     const handleSaveNewCustomer = async () => {
         try {
             // Kiểm tra nếu không có thông tin gì - xem như khách vãng lai
