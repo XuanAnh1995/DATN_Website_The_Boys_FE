@@ -1,6 +1,113 @@
 import axios from "axios";
 
 const ProductDetailService = {
+
+  /**
+   * Tạo chi tiết sản phẩm mới (danh sách)
+   * @param {Array} productDetailData - Danh sách dữ liệu chi tiết sản phẩm cần tạo
+   * @returns {Promise<Array>} - Danh sách chi tiết sản phẩm đã tạo
+   */
+  async createProductDetails(productDetailData) {
+    try {
+      const response = await axios.post(
+        `http://localhost:8080/api/product-details`,
+        productDetailData,
+        { headers: { "Content-Type": "application/json" } }
+      );
+      return response.data.data;
+    } catch (error) {
+      console.error("Error creating product details:", error);
+      throw error;
+    }
+  },
+
+  
+  /**
+   * Lấy danh sách chi tiết sản phẩm có phân trang và bộ lọc
+   * @param {Object} filters - Các bộ lọc tìm kiếm (search, colorIds, collarIds, sizeIds, sleeveIds, minPrice, maxPrice)
+   * @param {number} page - Trang hiện tại (mặc định: 0)
+   * @param {number} size - Số lượng sản phẩm trên mỗi trang (mặc định: 10)
+   * @returns {Promise<Object>} - Danh sách chi tiết sản phẩm
+   */
+  
+  async getAllProductDetails(
+    page = 0,
+    size = 10,
+    keyword = "",
+    status = null,
+    sortBy = "id",
+    sortDirection = "asc"
+  ) {
+    try {
+      const response = await axios.get(`http://localhost:8080/api/product-details`, {
+        params: {
+          page,
+          size,
+          keyword,
+          status,
+          sortBy,
+          sortDirection,
+        },
+      });
+      console.log("API response:", response.data.data);
+      return response.data.data;
+    } catch (error) {
+      console.error("Error fetching products:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy thông tin chi tiết của một sản phẩm theo ID
+   * @param {number} id - ID của chi tiết sản phẩm
+   * @returns {Promise<Object>} - Dữ liệu chi tiết sản phẩm
+   */
+  async getProductDetailById(id) {
+    try {
+      const response = await axios.get(`http://localhost:8080/api/product-details/${id}`);
+      return response.data.data;
+    } catch (error) {
+      console.error("Error fetching product detail by ID:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Cập nhật thông tin chi tiết sản phẩm theo ID
+   * @param {number} id - ID của chi tiết sản phẩm cần cập nhật
+   * @param {Object} updateData - Dữ liệu cập nhật chi tiết sản phẩm
+   * @returns {Promise<Object>} - Dữ liệu chi tiết sản phẩm sau khi cập nhật
+   */
+  async updateProductDetail(id, updateData) {
+    try {
+      const response = await axios.put(
+        `http://localhost:8080/api/product-details/${id}`,
+        updateData,
+        { headers: { "Content-Type": "application/json" } }
+      );
+      return response.data.data;
+    } catch (error) {
+      console.error("Error updating product detail:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Thay đổi trạng thái của một chi tiết sản phẩm (bật/tắt trạng thái)
+   * @param {number} id - ID của chi tiết sản phẩm cần thay đổi trạng thái
+   * @returns {Promise<Object>} - Dữ liệu chi tiết sản phẩm sau khi thay đổi trạng thái
+   */
+  async toggleProductDetailStatus(id) {
+    try {
+      const response = await axios.patch(`http://localhost:8080/api/product-details/${id}/toggle-status`);
+      return response.data.data;
+    } catch (error) {
+      console.error("Error toggling product detail status:", error);
+      throw error;
+    }
+  },
+
+
   async createProductDetail(productDetailData) {
     try {
       const response = await axios.post(
