@@ -1,9 +1,11 @@
 import React from "react";
+import { Link } from "react-router-dom"; // Thêm import này
 import {
   FaSearch,
   FaMapMarkerAlt,
   FaUser,
   FaShoppingCart,
+  FaSignInAlt,
 } from "react-icons/fa";
 
 const Header = () => {
@@ -11,14 +13,18 @@ const Header = () => {
     <header className="bg-gradient-to-r from-blue-800 to-blue-600 text-white p-4 flex items-center justify-between shadow-lg">
       {/* Logo + Tên thương hiệu */}
       <div className="flex items-center gap-4">
-        <a href="/" className="flex items-center gap-3">
+        <Link
+          to="/"
+          onClick={() => window.location.reload()}
+          className="flex items-center gap-3"
+        >
           <img
             src="/src/assets/logo.jpg"
             alt="Logo"
             className="w-14 h-14 object-cover rounded-full shadow-lg border-2 border-white"
           />
           <span className="text-2xl font-bold tracking-wide">The Boys</span>
-        </a>
+        </Link>
       </div>
 
       {/* Thanh tìm kiếm */}
@@ -35,22 +41,29 @@ const Header = () => {
 
       {/* Điều hướng */}
       <nav className="flex items-center gap-6">
-        <a
-          href="/store"
+        <Link
+          to="/store"
           className="flex items-center gap-2 text-gray-200 hover:text-white transition transform hover:scale-110"
         >
-          <FaMapMarkerAlt className="text-xl" />{" "}
+          <FaMapMarkerAlt className="text-xl" />
           <span className="hidden sm:inline">Cửa hàng</span>
-        </a>
-        <a
-          href="/login"
+        </Link>
+        <Link
+          to="/login"
           className="flex items-center gap-2 text-gray-200 hover:text-white transition transform hover:scale-110"
         >
-          <FaUser className="text-xl" />{" "}
+          <FaSignInAlt className="text-xl" />
           <span className="hidden sm:inline">Đăng nhập</span>
-        </a>
-        <a
-          href="/cart"
+        </Link>
+        <Link
+          to="PersonalPage"
+          className="flex items-center gap-2 text-gray-200 hover:text-white transition transform hover:scale-110"
+        >
+          <FaUser className="text-xl" />
+          <span className="hidden sm:inline">Tôi</span>
+        </Link>
+        <Link
+          to="/cart"
           className="relative flex items-center gap-2 text-gray-200 hover:text-white transition transform hover:scale-110"
         >
           <FaShoppingCart className="text-xl" />
@@ -58,7 +71,7 @@ const Header = () => {
           <span className="absolute -top-2 -right-2 bg-red-500 text-xs font-bold rounded-full px-2 shadow-md">
             0
           </span>
-        </a>
+        </Link>
       </nav>
     </header>
   );
