@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import SalePOS from "../../../services/POSService";
+import CustomerService from "../../../services/CustomerService"
 import { FaShoppingCart, FaTrash, FaPlus, FaTimes } from "react-icons/fa";
 
 const SalePOSPage = () => {
@@ -20,6 +21,9 @@ const SalePOSPage = () => {
     const [selectedVoucher, setSelectedVoucher] = useState("");
     const [calculatedDiscount, setCalculatedDiscount] = useState(0);
     const [vouchers, setVouchers] = useState([]);
+
+    const [searchKeyword, setSearchKeyword] = useState("");
+    const [filteredCustomers, setFilteredCustomers] = useState([]);
 
     // State cho form thêm khách hàng mới
     const [showAddCustomerForm, setShowAddCustomerForm] = useState(false);
@@ -47,6 +51,14 @@ const SalePOSPage = () => {
         setChangeAmount(Math.max(customerPaid - totalAmount, 0)); // Đảm bảo không âm
     }, [customerPaid, totalAmount]);
 
+    const handleSelectCustomer = (customer) => {
+        setSelectedCustomer(customer.id);
+        setCustomerName(customer.fullname);
+        setPhone(customer.phone);
+        setEmail(customer.email);
+        setSearchKeyword(customer.fullname); // Hiển thị tên khách hàng trong input
+        setFilteredCustomers([]); // Ẩn danh sách gợi ý
+    };
 
     useEffect(() => {
         if (searchTerm) {
@@ -88,6 +100,23 @@ const SalePOSPage = () => {
         }
     }
 
+    const handleSearchCustomer = (e) => {
+        const keyword = e.target.value.toLowerCase();
+        setSearchKeyword(keyword);
+
+        if (!keyword) {
+            setFilteredCustomers([]);
+            return;
+        }
+
+        const results = customers.filter((customer) =>
+            (customer.fullname?.toLowerCase() || "").includes(keyword) ||  // ✅ Kiểm tra fullname
+            (customer.phone || "").includes(keyword) ||  // ✅ Kiểm tra phone
+            (customer.email?.toLowerCase() || "").includes(keyword)  // ✅ Kiểm tra email
+        );
+
+        setFilteredCustomers(results);
+    };
 
     const handleVoucherChange = (voucherCode) => {
         setSelectedVoucher(voucherCode);
@@ -101,22 +130,6 @@ const SalePOSPage = () => {
             setCalculatedDiscount(discountAmount);
         } else {
             setCalculatedDiscount(0);
-        }
-    };
-
-
-    const handleCustomerChange = (e) => {
-        const customerId = Number(e.target.value);
-        setSelectedCustomer(customerId);
-        const selected = customers.find(c => c.id === customerId);
-        if (selected) {
-            setPhone(selected.phone || "");
-            setCustomerName(selected.fullname || "");
-            setEmail(selected.email || "");
-        } else {
-            setPhone("");
-            setCustomerName("");
-            setEmail("");
         }
     };
 
@@ -150,26 +163,42 @@ const SalePOSPage = () => {
         setShowAddCustomerForm(false);
     };
 
+    // Hàm reset thông tin khách hàng
+    const resetNewCustomer = () => {
+        setNewCustomer({
+            fullname: "",
+            phone: "",
+            email: ""
+        });
+        setShowAddCustomerForm(false);
+    };
+
     const handleSaveNewCustomer = async () => {
         try {
 
-            console.log("Dữ liệu gửi đi:", newCustomer);
+            // console.log("Dữ liệu gửi đi:", newCustomer);
 
-            // Kiểm tra nếu không có thông tin gì - xem như khách vãng lai
-            if (!newCustomer.fullname && !newCustomer.phone && !newCustomer.email) {
-                handleUseWalkInCustomer();
-                return;
-            }
+            // Loại bỏ khoảng trắng đầu/cuối khi nhập thông tin
+            const trimmedCustomer = {
+                fullname: newCustomer.fullname.trim(),
+                phone: newCustomer.phone.trim(),
+                email: newCustomer.email.trim(),
+            };
 
-            // Kiểm tra định dạng email trước khi gửi
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(newCustomer.email)) {
-                alert("Email không hợp lệ! Vui lòng kiểm tra lại.");
-                return;
-            }
+            // // Kiểm tra nếu không nhập đầy đủ thông tin
+            // if (!trimmedCustomer.fullname || !trimmedCustomer.phone || !trimmedCustomer.email) {
+            //     alert("Vui lòng nhập đầy đủ thông tin khách hàng.");
+            //     return;
+            // }
+
+            // // Kiểm tra nếu không có thông tin gì - xem như khách vãng lai
+            // if (!trimmedCustomer.fullname && !trimmedCustomer.phone && !trimmedCustomer.email) {
+            //     handleUseWalkInCustomer();
+            //     return;
+            // }
 
             // Gọi API để lưu khách hàng mới
-            const response = await SalePOS.createCustomer(newCustomer);
+            const response = await CustomerService.add(trimmedCustomer);
             console.log("Response từ backend:", response);
 
             if (response && response.id) {
@@ -177,24 +206,17 @@ const SalePOSPage = () => {
                 setCustomers(prev => [...prev, response]);
 
                 // Chọn khách hàng mới thêm
-                setSelectedCustomer(response.id);
-                setCustomerName(response.fullname);
-                setPhone(response.phone);
-                setEmail(response.email);
+                handleSelectCustomer(response);
 
-                // Đóng form
-                setShowAddCustomerForm(false);
-                setNewCustomer({
-                    fullname: "",
-                    phone: "",
-                    email: ""
-                });
+                // Reset form nhập liệu
+                resetNewCustomer();
+
             } else {
                 // alert("Không thể tạo khách hàng mới. Vui lòng thử lại!");
             }
         } catch (error) {
             console.error("Lỗi khi tạo khách hàng mới:", error);
-            alert("Đã xảy ra lỗi khi tạo khách hàng mới!");
+            // alert(`Lỗi khi tạo khách hàng: ${error.response?.data?.message || "Không xác định"}`);
         }
     };
 
@@ -329,15 +351,17 @@ const SalePOSPage = () => {
             setPaymentMethod(order.paymentMethod);
 
             // Cập nhật thông tin khách hàng
-            const selected = customers.find(c => c.id === order.customerId);
-            if (selected) {
-                setPhone(selected.phone || "");
-                setCustomerName(selected.fullname || "");
-                setEmail(selected.email || "");
-            } else if (order.customerId === "walk-in") {
+            if (order.customerId === "walk-in") {
                 setCustomerName("Khách vãng lai");
                 setPhone("");
                 setEmail("");
+            } else {
+                const selected = customers.find(c => c.id === order.customerId);
+                if (selected) {
+                    setPhone(selected.phone || "");
+                    setCustomerName(selected.fullname || "");
+                    setEmail(selected.email || "");
+                }
             }
         }
     };
@@ -393,35 +417,47 @@ const SalePOSPage = () => {
             return;
         }
 
+        // Đối với khách vãng lai, ta cần xử lý đặc biệt
+        let customerId = selectedCustomer;
+        if (selectedCustomer === "walk-in") {
+            // Bạn có thể có một ID mặc định cho khách vãng lai trong hệ thống
+            // hoặc có thể tạo một khách hàng mới đại diện cho khách vãng lai
+            customerId = 23; // Giả sử 23 là ID cho khách vãng lai
+        }
+
+        const orderRequest = {
+            customerId: customerId,
+            employeeId: currentEmployee.id,
+            voucherId: null, // Có thể thêm tính năng chọn voucher sau
+            paymentMethod: paymentMethod,
+            orderDetails: currentOrder.items.map(item => ({
+                productDetailId: item.id,
+                quantity: item.quantity
+            }))
+        };
+
         try {
-            // Đối với khách vãng lai, ta cần xử lý đặc biệt
-            let customerId = selectedCustomer;
-            if (selectedCustomer === "walk-in") {
-                // Bạn có thể có một ID mặc định cho khách vãng lai trong hệ thống
-                // hoặc có thể tạo một khách hàng mới đại diện cho khách vãng lai
-                customerId = 0; // Giả sử 0 là ID cho khách vãng lai
+
+            // 🟢 Bước 1: Tạo đơn hàng
+            console.log("📌 Gửi yêu cầu tạo đơn hàng:", orderRequest);
+            const createOrderResponse = await SalePOS.checkout(orderRequest);
+
+            if (!createOrderResponse || !createOrderResponse.data || !createOrderResponse.data.data) {
+                alert("Không thể tạo đơn hàng, vui lòng thử lại!");
+                return;
             }
 
-            const orderRequest = {
-                customerId: customerId,
-                employeeId: currentEmployee.id,
-                voucherId: null, // Có thể thêm tính năng chọn voucher sau
-                paymentMethod: paymentMethod,
-                orderDetails: currentOrder.items.map(item => ({
-                    productDetailId: item.id,
-                    quantity: item.quantity
-                }))
-            };
+            const orderId = createOrderResponse.data.data.id; // 🟢 Lấy `orderId` từ phản hồi BE
+            console.log("✅ Đơn hàng được tạo với ID:", orderId);
 
-            // Gọi API thanh toán
-            const response = await SalePOS.checkout(orderRequest);
+            // 🟢 Bước 2: Gửi yêu cầu thanh toán cho đơn hàng vừa tạo
+            const paymentResponse = await SalePOS.completePayment(orderId);
 
-            if (response && response.status === "success") {
+            if (paymentResponse && paymentResponse.status === "success") {
                 alert("Thanh toán thành công!");
-                // Xóa hóa đơn đã thanh toán
                 handleRemoveOrder(activeOrderIndex);
             } else {
-                alert("Thanh toán thất bại: " + (response?.message || "Có lỗi xảy ra"));
+                alert("Thanh toán thất bại!");
             }
         } catch (error) {
             console.error("Lỗi khi thanh toán:", error);
@@ -436,12 +472,14 @@ const SalePOSPage = () => {
 
     return (
         <div className="p-4 bg-gray-100 min-h-screen relative">
+
             {/* Form thêm khách hàng mới */}
             {showAddCustomerForm && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
                     <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+                        {/* Header */}
                         <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-xl font-bold">Thêm khách hàng mới</h3>
+                            <h3 className="text-xl font-bold">Tìm kiếm hoặc thêm khách hàng</h3>
                             <button
                                 onClick={handleCancelAddCustomer}
                                 className="text-gray-500 hover:text-gray-700"
@@ -450,44 +488,83 @@ const SalePOSPage = () => {
                             </button>
                         </div>
 
-                        <div className="space-y-3">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Họ tên</label>
-                                <input
-                                    type="text"
-                                    name="fullname"
-                                    value={newCustomer.fullname}
-                                    onChange={handleNewCustomerInputChange}
-                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                                    placeholder="Nhập họ tên khách hàng"
-                                />
-                            </div>
+                        {/* Ô tìm kiếm khách hàng */}
+                        <div className="relative">
+                            <input
+                                type="text"
+                                value={searchKeyword}
+                                onChange={handleSearchCustomer}
+                                placeholder="🔍 Nhập tên, số điện thoại hoặc email khách hàng..."
+                                className="border p-2 w-full rounded-md shadow-sm"
+                            />
+                            {/* Danh sách gợi ý khách hàng */}
+                            {filteredCustomers.length > 0 && (
+                                <ul className="absolute z-10 bg-white border rounded-md w-full mt-1 shadow">
+                                    {filteredCustomers.map((customer) => (
+                                        <li
+                                            key={customer.id}
+                                            onClick={() => handleSelectCustomer(customer)}
+                                            className="p-2 hover:bg-gray-100 cursor-pointer"
+                                        >
+                                            {customer.fullname} - {customer.phone}
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Số điện thoại</label>
-                                <input
-                                    type="tel"
-                                    name="phone"
-                                    value={newCustomer.phone}
-                                    onChange={handleNewCustomerInputChange}
-                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                                    placeholder="Nhập số điện thoại"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Email</label>
-                                <input
-                                    type="email"
-                                    name="email"
-                                    value={newCustomer.email}
-                                    onChange={handleNewCustomerInputChange}
-                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                                    placeholder="Nhập email"
-                                />
-                            </div>
                         </div>
 
+                        {/* Hiển thị thông tin khách hàng đã chọn */}
+                        {selectedCustomer && (
+                            <div className="mt-2 p-2 bg-gray-50 rounded">
+                                <p><strong>Tên:</strong> {selectedCustomer.fullname}</p>
+                                <p><strong>SĐT:</strong> {selectedCustomer.phone}</p>
+                                <p><strong>Email:</strong> {selectedCustomer.email}</p>
+                            </div>
+                        )}
+
+                        {/* Nếu không tìm thấy khách hàng, hiển thị form thêm mới */}
+                        {!selectedCustomer && (
+                            <div className="space-y-3 mt-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Họ tên</label>
+                                    <input
+                                        type="text"
+                                        name="fullname"
+                                        value={newCustomer.fullname}
+                                        onChange={handleNewCustomerInputChange}
+                                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                                        placeholder="Nhập họ tên khách hàng"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Số điện thoại</label>
+                                    <input
+                                        type="tel"
+                                        name="phone"
+                                        value={newCustomer.phone}
+                                        onChange={handleNewCustomerInputChange}
+                                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                                        placeholder="Nhập số điện thoại"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Email</label>
+                                    <input
+                                        type="email"
+                                        name="email"
+                                        value={newCustomer.email}
+                                        onChange={handleNewCustomerInputChange}
+                                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                                        placeholder="Nhập email"
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Nút Hành Động */}
                         <div className="mt-6 flex justify-between">
                             <button
                                 onClick={handleUseWalkInCustomer}
@@ -675,15 +752,6 @@ const SalePOSPage = () => {
                 <div className="bg-white p-4 rounded shadow">
                     <h3 className="text-lg font-semibold">Khách hàng</h3>
                     <div className="flex gap-2">
-                        <select value={selectedCustomer} onChange={handleCustomerChange} className="border p-2 w-full">
-                            <option value="">Chọn khách hàng</option>
-                            {selectedCustomer === "walk-in" && (
-                                <option value="walk-in">Khách vãng lai</option>
-                            )}
-                            {customers.map((c) => (
-                                <option key={c.id} value={c.id}>{c.fullname}</option>
-                            ))}
-                        </select>
                         <button
                             onClick={handleAddNewCustomerClick}
                             className="bg-blue-600 text-white px-4 py-2 rounded"

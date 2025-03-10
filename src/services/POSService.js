@@ -25,19 +25,6 @@ const SalePOS = {
         }
     },
 
-    // 🧑‍💼 Thêm khách hàng mới
-    createCustomer: async (customerData) => {
-        console.log("📌 Gọi API tạo khách hàng:", customerData);
-        try {
-            const response = await axios.post(API_URL_CUSTOMERS, customerData);
-            console.log("✅ Khách hàng tạo thành công:", response.data);
-            return response.data;
-        } catch (error) {
-            console.error("❌ Lỗi khi thêm khách hàng:", error.response?.data || error.message);
-            return null; // Trả về null để xử lý lỗi ở UI
-        }
-    },
-
 
     // 🧑‍💼 Lấy danh sách khách hàng theo bộ lọc
     getCustomers: async (filters) => {
