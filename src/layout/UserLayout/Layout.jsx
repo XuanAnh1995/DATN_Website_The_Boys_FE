@@ -1,7 +1,7 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import VoucherServices from "../../services/VoucherServices";
-import SanPhamService from "../../services/ProductService";
+import SanPhamService from "../../services/ProductDetailService";
 
 const images = [
   "https://static.vecteezy.com/system/resources/previews/002/294/859/original/flash-sale-web-banner-design-e-commerce-online-shopping-header-or-footer-banner-free-vector.jpg",
@@ -18,6 +18,9 @@ const Layout = () => {
   const pageSize = 8;
   const [showText, setShowText] = useState(false);
   const sanPhamsMoiNhat = [...sanPhams].sort((a, b) => b.id - a.id);
+  const params = { sort: "id,desc", page: currentPage, size: pageSize };
+  const [newSanPhams, setNewSanPhams] = useState([]);
+
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentImage((prevImage) => (prevImage + 1) % images.length);
@@ -40,22 +43,40 @@ const Layout = () => {
   useEffect(() => {
     const fetchSanPhams = async () => {
       try {
-        const response = await SanPhamService.getAllProducts(
-          currentPage,
-          pageSize
-        );
+        const params = { sort: "id,desc", page: currentPage, size: pageSize };
+        const response = await SanPhamService.getAllProductDetails(params);
         let data = response?.content || [];
+
         if (!Array.isArray(data)) {
           throw new Error("Invalid sản phẩm data format");
         }
+
         setSanPhams(data);
-        setTotalPages(response.totalPages || 1);
+        setTotalPages(response?.totalPages || 1);
       } catch (error) {
         console.error("Lỗi khi lấy danh sách sản phẩm:", error);
       }
     };
+
     fetchSanPhams();
   }, [currentPage]);
+
+  useEffect(() => {
+    const fetchNewSanPhams = async () => {
+      try {
+        const params = { sort: "id,desc", page: 0, size: 8 };
+        const response = await SanPhamService.getAllProductDetails(params);
+        let data = response?.content || [];
+        if (!Array.isArray(data))
+          throw new Error("Invalid sản phẩm data format");
+
+        setNewSanPhams(data);
+      } catch (error) {
+        console.error("Lỗi khi lấy sản phẩm mới về:", error);
+      }
+    };
+    fetchNewSanPhams();
+  }, []);
 
   return (
     <main className="bg-blue-50 text-gray-900">
@@ -114,26 +135,27 @@ const Layout = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
             {sanPhams.length > 0 ? (
               sanPhams.map((sanPham) => (
-                <div
-                  key={sanPham.id}
-                  className="bg-white w-[300px] h-[450px] p-4 pb-8 rounded-lg shadow-md border border-gray-300 transform transition-transform hover:scale-105 hover:shadow-xl flex flex-col"
-                >
-                  <img
-                    src={
-                      sanPham.photo ||
-                      "https://th.bing.com/th/id/OIP.SQDwBT12trBENj2yTziTyQAAAA?rs=1&pid=ImgDetMain"
-                    }
-                    alt={sanPham.productName}
-                    className="w-full h-60 object-cover rounded-lg"
-                  />
-                  <h3 className="text-lg font-semibold mt-2">
-                    {sanPham.productName}
-                  </h3>
-                  <p className="text-gray-700">
-                    Mã sản phẩm: {sanPham.productCode}
-                  </p>
-                  <p className="text-gray-700">Giá: {sanPham.salePrice} VND</p>
-                </div>
+                <Link to={`/san-pham/${sanPham.id}`} key={sanPham.id}>
+                  <div className="bg-white w-[300px] h-[450px] p-4 pb-8 rounded-lg shadow-md border border-gray-300 transform transition-transform hover:scale-105 hover:shadow-xl flex flex-col">
+                    <img
+                      src={
+                        sanPham.photo ||
+                        "https://th.bing.com/th/id/OIP.SQDwBT12trBENj2yTziTyQAAAA?rs=1&pid=ImgDetMain"
+                      }
+                      alt={sanPham.product.productName}
+                      className="w-full h-60 object-cover rounded-lg"
+                    />
+                    <h3 className="text-lg font-semibold mt-2">
+                      {sanPham.product.productName}
+                    </h3>
+                    <p className="text-gray-700">
+                      Mã sản phẩm: {sanPham.productDetailCode}
+                    </p>
+                    <p className="text-red-600 font-bold border border-red-600 p-1 rounded-md">
+                      Giá: {sanPham.salePrice} VND
+                    </p>
+                  </div>
+                </Link>
               ))
             ) : (
               <p className="text-gray-500 text-center w-full">
@@ -163,48 +185,47 @@ const Layout = () => {
             {">"}
           </button>
         </div>
-        {/* Giới Thiệu */}
-        <section className="p-6 mt-4 bg-gray-100 rounded-lg shadow-lg">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-red-600 mb-4">
-                Về chúng tôi
-              </h1>
-              <p className="text-gray-800 text-lg">
-                The Boys không chỉ là một nhóm, mà còn là biểu tượng của sự mạnh
-                mẽ, cá tính và tinh thần bất khuất. Với sự đoàn kết và phong
-                cách riêng biệt, chúng tôi đã tạo nên dấu ấn riêng trong thế
-                giới của mình.
+      </section>
+      {/* Giới Thiệu */}
+      <section className="p-6 mt-4 bg-gray-100 rounded-lg shadow-lg">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-red-600 mb-4">
+              Về chúng tôi
+            </h1>
+            <p className="text-gray-800 text-lg">
+              The Boys không chỉ là một nhóm, mà còn là biểu tượng của sự mạnh
+              mẽ, cá tính và tinh thần bất khuất. Với sự đoàn kết và phong cách
+              riêng biệt, chúng tôi đã tạo nên dấu ấn riêng trong thế giới của
+              mình.
+            </p>
+            <p className="text-gray-800 text-lg mt-2">
+              Nếu bạn đang tìm kiếm một cộng đồng mang đậm bản sắc, sự kiên
+              cường và tinh thần chiến đấu, The Boys chính là nơi dành cho bạn.
+            </p>
+            {showText && (
+              <p className="mt-4 text-lg font-bold text-black">
+                TheBoys là thương hiệu shop đẳng cấp,The Boys chính là nơi dành
+                cho bạn.
               </p>
-              <p className="text-gray-800 text-lg mt-2">
-                Nếu bạn đang tìm kiếm một cộng đồng mang đậm bản sắc, sự kiên
-                cường và tinh thần chiến đấu, The Boys chính là nơi dành cho
-                bạn.
-              </p>
-              {showText && (
-                <p className="mt-4 text-lg font-bold text-black">
-                  TheBoys là thương hiệu shop đẳng cấp,The Boys chính là nơi
-                  dành cho bạn.
-                </p>
-              )}
-              <button
-                className="mt-4 px-6 py-2 bg-red-600 text-white font-semibold rounded-lg shadow-md hover:bg-red-700 transition"
-                onClick={() => setShowText(!showText)}
-              >
-                Xem thêm
-              </button>
-            </div>
-            <div className="flex justify-center">
-              <h1 className="text-5xl font-extrabold text-black">
-                The<span className="text-red-600">Boys</span>
-              </h1>
-            </div>
+            )}
+            <button
+              className="mt-4 px-6 py-2 bg-red-600 text-white font-semibold rounded-lg shadow-md hover:bg-red-700 transition"
+              onClick={() => setShowText(!showText)}
+            >
+              Xem thêm
+            </button>
           </div>
-        </section>
+          <div className="flex justify-center">
+            <h1 className="text-5xl font-extrabold text-black">
+              The<span className="text-red-600">Boys</span>
+            </h1>
+          </div>
+        </div>
       </section>
       {/* Giới Thiệu hàng mới về */}
       <section className="p-6">
-        <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-purple-600 drop-shadow-lg uppercase text-center mb-4">
+        <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-blue-600 drop-shadow-lg uppercase text-center mb-4">
           Sản Phẩm Mới Về
         </h1>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -216,7 +237,7 @@ const Layout = () => {
             />
           </div>
           <div className="md:col-span-2 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {sanPhams.map((sanPham) => (
+            {newSanPhams.map((sanPham) => (
               <div
                 key={sanPham.id}
                 className="bg-white w-[300px] h-[400px] p-3 rounded-lg shadow-md border border-gray-300 hover:shadow-lg hover:scale-105 transition-transform"
@@ -226,13 +247,13 @@ const Layout = () => {
                     sanPham.photo ||
                     "https://cdn.boo.vn/media/catalog/product/1/_/1.2.02.3.18.002.123.23-10200011-bst-1.jpg"
                   }
-                  alt={sanPham.productName}
+                  alt={sanPham.product.productName}
                   className="w-full h-52 object-cover rounded-lg"
                 />
                 <h3 className="text-md font-semibold mt-2">
-                  {sanPham.productName}
+                  {sanPham.product.productName}
                 </h3>
-                <p className="text-gray-700">{sanPham.salePrice} VND</p>
+                <p className="text-red-600">{sanPham.salePrice} VND</p>
               </div>
             ))}
           </div>
