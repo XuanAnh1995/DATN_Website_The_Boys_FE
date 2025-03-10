@@ -5,6 +5,7 @@ import Switch from "react-switch";
 import ProductService from "../../../services/ProductService";
 import { toast } from "react-toastify";
 import UpdateModal from './components/UpdateModal';
+import CreateModal from './components/CreateModal';
 
 export default function Product() {
   const [items, setItems] = useState([]);
@@ -16,12 +17,13 @@ export default function Product() {
   const [sortDirection, setSortDirection] = useState("desc");
   const [status, setStatus] = useState(null);
   const [updateModal, setUpdateModal] = useState(false);
+  const [createModal, setCreateModal] = useState(false);
   const [productToUpdate, setProductToUpdate] = useState(null);
   const [updatedProduct, setUpdatedProduct] = useState({
     brandId: '',
     categoryId: '',
     materialId: '',
-    productNameId: ''
+    productName: ''
   });
   const navigate = useNavigate();
 
@@ -72,8 +74,8 @@ export default function Product() {
     }
   };
 
-  const handleViewDetail = (id) => {
-    navigate(`/admin/product/${id}`);
+  const handleViewDetail = (code) => {
+    navigate(`/admin/product/${code}`);
   };
 
   const handleUpdateProduct = (product) => {
@@ -81,7 +83,7 @@ export default function Product() {
       brandId: product.brand.id,
       categoryId: product.category.id,
       materialId: product.material.id,
-      productNameId: product.productName.id,
+      productName: product.productName,
     });
     setProductToUpdate(product.id);
     setUpdateModal(true);
@@ -111,6 +113,24 @@ export default function Product() {
     setProductToUpdate(null);
   };
 
+  
+  const confirmCreate = async (newProduct) => {
+    try {
+      const createdProduct = await ProductService.createProduct(newProduct);
+      setItems([...items, createdProduct]);
+      toast.success("Thêm sản phẩm mới thành công!");
+    } catch (error) {
+      console.error("Error creating product:", error);
+      toast.error("Thêm sản phẩm mới thất bại. Vui lòng thử lại!");
+    } finally {
+      setCreateModal(false);
+    }
+  };
+
+  const cancelCreate = () => {
+    setCreateModal(false);
+  };
+
   const handleToggleStatus = async (id) => {
     try {
       await ProductService.toggleProductStatus(id);
@@ -138,8 +158,9 @@ export default function Product() {
     });
 
     return sortedItems.map((item, index) => (
-      <tr key={item.id} className="bg-white hover:bg-gray-100 transition-colors">
+      <tr key={item.id} className="bg-white hover:bg-blue-50 transition-colors">
         <td className="px-4 py-2">{index + 1}</td>
+        <td className="px-4 py-2">{item.productCode}</td>
         <td className="px-4 py-2">{item.productName}</td>
         <td className="px-4 py-2">{item.brand.brandName}</td>
         <td className="px-4 py-2">{item.category.name}</td>
@@ -149,7 +170,7 @@ export default function Product() {
           {item.status ? " Kích hoạt" : " Ngừng bán"}
         </td>
         <td className="px-4 py-2 flex justify-center gap-4">
-          <button className="text-blue-500 hover:text-blue-600" onClick={() => handleViewDetail(item.id)}>
+          <button className="text-blue-500 hover:text-blue-600" onClick={() => handleViewDetail(item.productCode)}>
             <AiOutlineEye size={20} />
           </button>
           <button className="text-yellow-500 hover:text-yellow-600" onClick={() => handleUpdateProduct(item)}>
@@ -159,8 +180,10 @@ export default function Product() {
           <Switch
             onChange={() => handleToggleStatus(item.id)}
             checked={item.status}
-            offColor="#808080"
-            onColor="#00a000"
+            offColor="#d6d6d6"
+            onColor="#3b82f6"
+            offHandleColor="#888"
+            onHandleColor="#fff"
             uncheckedIcon={false}
             checkedIcon={false}
             height={20}
@@ -177,7 +200,7 @@ export default function Product() {
 
     return (
       <th
-        className="px-4 py-2 cursor-pointer hover:bg-gray-100 transition-colors relative"
+        className="px-4 py-2 cursor-pointer hover:bg-blue-100 transition-colors relative"
         onClick={() => handleSort(sortKey)}
       >
         <div className="flex items-center justify-center">
@@ -197,7 +220,7 @@ export default function Product() {
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      <h1 className="text-xl font-bold mb-4">Quản lý sản phẩm</h1>
+      <h1 className="text-xl font-bold mb-4 text-blue-600">Quản lý sản phẩm</h1>
 
       <div className="flex items-center justify-between mb-4">
         <div className="relative">
@@ -211,9 +234,9 @@ export default function Product() {
         </div>
 
         <div className="flex gap-2">
-          <button
+        <button
             className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-600"
-            onClick={() => navigate("/admin/product/new")}
+            onClick={() => setCreateModal(true)}
           >
             + Thêm mới
           </button>
@@ -222,8 +245,9 @@ export default function Product() {
 
       <table className="table-auto w-full bg-white rounded-lg shadow overflow-hidden text-center">
         <thead>
-          <tr className="bg-gray-100 text-center">
+          <tr className="bg-blue-100 text-center">
             <th className="px-4 py-2">STT</th>
+            {renderSortableHeader("Mã", "productCode")}
             {renderSortableHeader("Tên sản phẩm", "productName")}
             {renderSortableHeader("Thương hiệu", "brand.brandName")}
             {renderSortableHeader("Danh mục", "category.categoryName")}
@@ -272,7 +296,7 @@ export default function Product() {
       </div>
 
       <UpdateModal isVisible={updateModal} onConfirm={confirmUpdate} onCancel={cancelUpdate} updatedProduct={updatedProduct} setUpdatedProduct={setUpdatedProduct} />
-
+      <CreateModal isVisible={createModal} onConfirm={confirmCreate} onCancel={cancelCreate} />
     </div>
   );
 }

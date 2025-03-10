@@ -29,13 +29,31 @@ export default function ProductVariants({ generateData }) {
     setLoading(true);
     try {
       const response = await ProductDetailService.generateProductDetails(generateData);
+      console.log("response", response);
 
       if (response) {
-        const productDetails = response?.map((item) => ({
-          colorId: item?.color,
-          colorName: item?.colorName,
-          productName: item?.productName,
-          variants: item?.productDetail
+        const productDetails = response.map((item) => ({
+          colorId: item.color,
+          colorName: item.colorName,
+          productName: item.productName,
+          variants: item.productDetails.map((detail) => ({
+            productId: detail.productId,
+            size: detail.size,
+            sizeName: detail.sizeName,
+            color: detail.color,
+            collar: detail.collar,
+            sleeve: detail.sleeve,
+            promotion: detail.promotion,
+            importPrice: detail.importPrice,
+            salePrice: detail.salePrice,
+            quantity: detail.quantity,
+            description: detail.description,
+            photo: detail.photo,
+            brandName: detail.brandName,
+            collarName: detail.collarName,
+            sleeveName: detail.sleeveName,
+            promotionName: detail.promotionName,
+          })),
         }));
 
         setVariantsList(productDetails);
@@ -133,10 +151,10 @@ export default function ProductVariants({ generateData }) {
       variantData.variants.forEach((variant) => {
         const newVariant = {
           productId: variant.productId, // ID sản phẩm
-          sizeId: variant.size, // ID kích thước
-          colorId: variant.color, // ID màu sắc
-          collarId: variant.collar, // ID cổ áo
-          sleeveId: variant.sleeve, // ID tay áo
+          sizeId: [variant.size], // ID kích thước
+          colorId: [variant.color], // ID màu sắc
+          collarId: [variant.collar], // ID cổ áo
+          sleeveId: [variant.sleeve], // ID tay áo
           promotionId: variant.promotion, // ID khuyến mãi (nếu có)
           photo: variant.photo || null, // Hình ảnh (nếu có, nếu không để null)
           importPrice: variant.importPrice, // Giá nhập
@@ -202,7 +220,7 @@ export default function ProductVariants({ generateData }) {
                       variantData.variants.map((variant, index) => (
                         <tr key={`${variant.color}-${variant.size}-${index}`} className="border-b hover:bg-blue-50 transition-colors">
                           <td className="py-3 px-4">{index + 1}</td>
-                          <td className="py-3 px-4">{`${variant.productName} ${variant.brandName} ${variant.colorName} ${variant.collarName} ${variant.sleeveName} size ${variant.size}`}</td>
+                          <td className="py-3 px-4">{` ${variant.brandName} - ${variant.collarName} - ${variant.sleeveName} - ${variant.sizeName}`}</td>
                           <td className="py-3 px-6">
                             <input
                               type="text"
@@ -280,7 +298,7 @@ export default function ProductVariants({ generateData }) {
 
       {isVariantsListValid() && (
         <div className="p-6 flex justify-end mt-auto">
-          <button onClick={handleOpenModal} className="bg-orange-500 text-white px-4 py-2 rounded-lg">
+          <button onClick={handleOpenModal} className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-all">
             Lưu chi tiết sản phẩm
           </button>
         </div>

@@ -12,7 +12,8 @@ const Employee = lazy(() => import("../pages/admin/Employee"));
 
 // 📌 Quản lý sản phẩm và chi tiết
 const Product = lazy(() => import("../pages/admin/Product"));
-const ProductDetail = lazy(() => import("../pages/admin/ProductDetail"));
+const CreateProduct = lazy(() => import("../pages/admin/CreateProduct/index"));
+const ProductDetail = lazy(() => import("../pages/admin/ProductDetail/index"));
 
 // 📌 Quản lý thuộc tính sản phẩm
 const Brand = lazy(() => import("../pages/admin/Brand"));
@@ -39,7 +40,8 @@ const adminRoutes = [
   { path: "customer", component: Customer, role: "admin" },
   { path: "employee", component: Employee, role: "admin" },
   { path: "product", component: Product, role: "admin" },
-  { path: "product/:maSanPham", component: ProductDetail, role: "admin" },
+  { path: "product/:productCode", component: ProductDetail, role: "admin" },
+  { path: "product/create", component: CreateProduct, role: "admin" },
   { path: "brand", component: Brand, role: "admin" },
   { path: "material", component: Material, role: "admin" },
   { path: "category", component: Category, role: "admin" },
