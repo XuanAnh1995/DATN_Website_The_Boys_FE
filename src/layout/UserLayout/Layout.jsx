@@ -1,4 +1,4 @@
-import { Outlet, Link } from "react-router-dom";
+import { Outlet, Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import VoucherServices from "../../services/VoucherServices";
 import SanPhamService from "../../services/ProductDetailService";
@@ -17,10 +17,9 @@ const Layout = () => {
   const [totalPages, setTotalPages] = useState(1);
   const pageSize = 8;
   const [showText, setShowText] = useState(false);
-  const sanPhamsMoiNhat = [...sanPhams].sort((a, b) => b.id - a.id);
-  const params = { sort: "id,desc", page: currentPage, size: pageSize };
-  const [newSanPhams, setNewSanPhams] = useState([]);
 
+  const [newSanPhams, setNewSanPhams] = useState([]);
+  const navigate = useNavigate();
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentImage((prevImage) => (prevImage + 1) % images.length);
@@ -135,27 +134,27 @@ const Layout = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
             {sanPhams.length > 0 ? (
               sanPhams.map((sanPham) => (
-                <Link to={`/san-pham/${sanPham.id}`} key={sanPham.id}>
-                  <div className="bg-white w-[300px] h-[450px] p-4 pb-8 rounded-lg shadow-md border border-gray-300 transform transition-transform hover:scale-105 hover:shadow-xl flex flex-col">
-                    <img
-                      src={
-                        sanPham.photo ||
-                        "https://th.bing.com/th/id/OIP.SQDwBT12trBENj2yTziTyQAAAA?rs=1&pid=ImgDetMain"
-                      }
-                      alt={sanPham.product.productName}
-                      className="w-full h-60 object-cover rounded-lg"
-                    />
-                    <h3 className="text-lg font-semibold mt-2">
-                      {sanPham.product.productName}
-                    </h3>
-                    <p className="text-gray-700">
-                      Mã sản phẩm: {sanPham.productDetailCode}
-                    </p>
-                    <p className="text-red-600 font-bold border border-red-600 p-1 rounded-md">
-                      Giá: {sanPham.salePrice} VND
-                    </p>
-                  </div>
-                </Link>
+                <div
+                  key={sanPham.id}
+                  className="bg-white w-[300px] h-[450px] p-4 pb-8 rounded-lg shadow-md border border-gray-300 transform transition-transform hover:scale-105 hover:shadow-xl flex flex-col cursor-pointer"
+                  onClick={() => navigate(`/san-pham/${sanPham.id}`)} // ✅ Dùng navigate thay vì <Link>
+                >
+                  <img
+                    src={sanPham.photo || "https://via.placeholder.com/150"}
+                    alt={sanPham.product?.productName || "Sản phẩm"}
+                    className="w-full h-60 object-cover rounded-lg"
+                  />
+                  <h3 className="text-lg font-semibold mt-2">
+                    {sanPham.product?.productName || "Tên sản phẩm"}
+                  </h3>
+                  <p className="text-gray-700">
+                    Mã sản phẩm: {sanPham.productDetailCode || "Không có mã"}
+                  </p>
+                  <p className="text-red-600 font-bold border border-red-600 p-1 rounded-md">
+                    Giá:{" "}
+                    {sanPham.salePrice ? `${sanPham.salePrice} VND` : "Liên hệ"}
+                  </p>
+                </div>
               ))
             ) : (
               <p className="text-gray-500 text-center w-full">
@@ -164,9 +163,11 @@ const Layout = () => {
             )}
           </div>
         </div>
+
+        {/* Phân trang */}
         <div className="flex justify-center items-center mt-6 space-x-2">
           <button
-            className="px-3 py-1 border rounded-lg text-gray-500 hover:bg-blue-500 hover:text-white"
+            className="px-3 py-1 border rounded-lg text-gray-500 hover:bg-blue-500 hover:text-white disabled:opacity-50"
             onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 0))}
             disabled={currentPage === 0}
           >
@@ -176,7 +177,7 @@ const Layout = () => {
             Trang {currentPage + 1} / {totalPages}
           </span>
           <button
-            className="px-3 py-1 border rounded-lg text-gray-500 hover:bg-blue-500 hover:text-white"
+            className="px-3 py-1 border rounded-lg text-gray-500 hover:bg-blue-500 hover:text-white disabled:opacity-50"
             onClick={() =>
               setCurrentPage((prev) => Math.min(prev + 1, totalPages - 1))
             }
@@ -186,7 +187,7 @@ const Layout = () => {
           </button>
         </div>
       </section>
-      {/* Giới Thiệu */}
+      ;{/* Giới Thiệu */}
       <section className="p-6 mt-4 bg-gray-100 rounded-lg shadow-lg">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
           <div>
@@ -259,7 +260,6 @@ const Layout = () => {
           </div>
         </div>
       </section>
-
       <Outlet />
     </main>
   );

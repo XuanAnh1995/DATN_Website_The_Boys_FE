@@ -9,7 +9,7 @@ const UserMain = () => {
     <div>
       <Header />
       <Layout />
-      <Outlet /> {/* Hiển thị nội dung động ở đây */}
+      <Outlet /> {/* ✅ Nội dung động hiển thị ở đây */}
       <Footer />
     </div>
   );
