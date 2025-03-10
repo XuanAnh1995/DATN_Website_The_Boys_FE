@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import Modal from "react-modal";
 import { toast } from "react-toastify";
 import PromotionService from "../../../../../services/PromotionServices";
+
 const UpdateModal = ({
   isOpen,
   setUpdateModal,
@@ -17,18 +18,20 @@ const UpdateModal = ({
     status: false,
   });
 
-  // Cập nhật state khi mở modal
+  // Khi mở modal, cập nhật dữ liệu từ API
   useEffect(() => {
     if (selectedPromotion) {
+      console.log("Dữ liệu API nhận được:", selectedPromotion); // Debug dữ liệu
+
       setPromotion({
         promotionName: selectedPromotion.promotionName || "",
         promotionPercent: selectedPromotion.promotionPercent || "",
         description: selectedPromotion.description || "",
         startDate: selectedPromotion.startDate
-          ? selectedPromotion.startDate.split("T")[0]
+          ? new Date(selectedPromotion.startDate).toISOString().slice(0, 16)
           : "",
         endDate: selectedPromotion.endDate
-          ? selectedPromotion.endDate.split("T")[0]
+          ? new Date(selectedPromotion.endDate).toISOString().slice(0, 16)
           : "",
         status: selectedPromotion.status || false,
       });
@@ -46,6 +49,7 @@ const UpdateModal = ({
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Kiểm tra dữ liệu nhập vào
     if (
       !promotion.promotionName ||
       !promotion.promotionPercent ||
@@ -65,7 +69,7 @@ const UpdateModal = ({
       const updatedPromotion = {
         ...selectedPromotion,
         promotionName: promotion.promotionName,
-        promotionPercent: parseInt(promotion.promotionPercent),
+        promotionPercent: parseInt(promotion.promotionPercent) || 0, // Đảm bảo không bị `NaN`
         description: promotion.description,
         startDate: new Date(promotion.startDate).toISOString(),
         endDate: new Date(promotion.endDate).toISOString(),
@@ -77,7 +81,6 @@ const UpdateModal = ({
         updatedPromotion
       );
       toast.success("Cập nhật khuyến mãi thành công!");
-
       fetchPromotions();
       setUpdateModal(false);
     } catch (error) {
@@ -142,7 +145,7 @@ const UpdateModal = ({
                 Ngày bắt đầu
               </label>
               <input
-                type="date"
+                type="datetime-local"
                 name="startDate"
                 value={promotion.startDate}
                 onChange={handleChange}
@@ -155,7 +158,7 @@ const UpdateModal = ({
                 Ngày kết thúc
               </label>
               <input
-                type="date"
+                type="datetime-local"
                 name="endDate"
                 value={promotion.endDate}
                 onChange={handleChange}

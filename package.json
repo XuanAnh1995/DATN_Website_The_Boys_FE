@@ -18,6 +18,7 @@
     "file-saver": "^2.0.5",
     "firebase": "^11.3.0",
     "html5-qrcode": "^2.3.8",
+    "lucide-react": "^0.477.0",
     "qrcode.react": "^4.2.0",
     "rc-slider": "^11.1.8",
     "react": "^18.2.0",
@@ -32,6 +33,7 @@
     "react-switch": "^7.1.0",
     "react-toastify": "^11.0.3",
     "recharts": "^2.15.1",
+    "tshirt": "file:",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {

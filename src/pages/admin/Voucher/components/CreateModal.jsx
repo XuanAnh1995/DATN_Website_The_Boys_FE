@@ -104,7 +104,7 @@ export default function CreateModal({
         <div>
           <label className="font-semibold">Ngày bắt đầu:</label>
           <input
-            type="date"
+            type="datetime-local"
             name="startDate"
             value={voucher.startDate}
             onChange={handleChange}
@@ -114,7 +114,7 @@ export default function CreateModal({
         <div>
           <label className="font-semibold">Ngày kết thúc:</label>
           <input
-            type="date"
+            type="datetime-local"
             name="endDate"
             value={voucher.endDate}
             onChange={handleChange}
