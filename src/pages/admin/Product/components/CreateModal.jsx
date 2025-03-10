@@ -4,10 +4,16 @@ import BrandService from "../../../../services/BrandService";
 import CategoryService from "../../../../services/CategoryService";
 import MaterialService from "../../../../services/MaterialService";
 
-const UpdateModal = ({ isVisible, onConfirm, onCancel, updatedProduct, setUpdatedProduct }) => {
+const CreateModal = ({ isVisible, onConfirm, onCancel }) => {
     const [brandOptions, setBrandOptions] = useState([]);
     const [categoryOptions, setCategoryOptions] = useState([]);
     const [materialOptions, setMaterialOptions] = useState([]);
+    const [newProduct, setNewProduct] = useState({
+        brandId: '',
+        categoryId: '',
+        materialId: '',
+        productName: ''
+    });
 
     useEffect(() => {
         const fetchOptions = async () => {
@@ -28,45 +34,64 @@ const UpdateModal = ({ isVisible, onConfirm, onCancel, updatedProduct, setUpdate
         fetchOptions();
     }, []);
 
+    useEffect(() => {
+        if (isVisible) {
+            setNewProduct({
+                brandId: '',
+                categoryId: '',
+                materialId: '',
+                productName: '',
+                productCode: ''
+            });
+        }
+    }, [isVisible]);
+
     if (!isVisible) return null;
 
     return (
         <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex justify-center items-center z-50">
             <div className="bg-white rounded-lg shadow p-6 w-96">
-                <h2 className="text-xl mb-4">Cập nhật sản phẩm</h2>
+                <h2 className="text-xl mb-4">Thêm sản phẩm mới</h2>
                 <div className="mb-4">
                     <label className="block mb-2">Tên sản phẩm</label>
                     <input
                         type="text"
                         className="border rounded-lg px-4 py-2 w-full"
-                        value={updatedProduct.productName}
-                        onChange={(e) => setUpdatedProduct({ ...updatedProduct, productName: e.target.value })}
+                        value={newProduct.productName}
+                        onChange={(e) => setNewProduct({ ...newProduct, productName: e.target.value })}
+                        placeholder="Nhập tên sản phẩm..."
                     />
                 </div>
                 <div className="mb-4">
                     <label className="block mb-2">Thương hiệu</label>
                     <Select
-                        options={brandOptions}
-                        value={brandOptions.find(option => option.value === updatedProduct.brandId)}
-                        onChange={(selected) => setUpdatedProduct({ ...updatedProduct, brandId: selected.value })}
+                        options={[{ value: '', label: 'Chọn thương hiệu...' }, ...brandOptions]}
+                        value={brandOptions.find(option => option.value === newProduct.brandId) || { value: '', label: 'Chọn thương hiệu...' }}
+                        onChange={(selected) => setNewProduct({ ...newProduct, brandId: selected?.value || '' })}
+                        placeholder="Chọn thương hiệu..."
                     />
                 </div>
+
                 <div className="mb-4">
                     <label className="block mb-2">Danh mục</label>
                     <Select
-                        options={categoryOptions}
-                        value={categoryOptions.find(option => option.value === updatedProduct.categoryId)}
-                        onChange={(selected) => setUpdatedProduct({ ...updatedProduct, categoryId: selected.value })}
+                        options={[{ value: '', label: 'Chọn danh mục...' }, ...categoryOptions]}
+                        value={categoryOptions.find(option => option.value === newProduct.categoryId) || { value: '', label: 'Chọn danh mục...' }}
+                        onChange={(selected) => setNewProduct({ ...newProduct, categoryId: selected?.value || '' })}
+                        placeholder="Chọn danh mục..."
                     />
                 </div>
+
                 <div className="mb-4">
                     <label className="block mb-2">Chất liệu</label>
                     <Select
-                        options={materialOptions}
-                        value={materialOptions.find(option => option.value === updatedProduct.materialId)}
-                        onChange={(selected) => setUpdatedProduct({ ...updatedProduct, materialId: selected.value })}
+                        options={[{ value: '', label: 'Chọn chất liệu...' }, ...materialOptions]}
+                        value={materialOptions.find(option => option.value === newProduct.materialId) || { value: '', label: 'Chọn chất liệu...' }}
+                        onChange={(selected) => setNewProduct({ ...newProduct, materialId: selected?.value || '' })}
+                        placeholder="Chọn chất liệu..."
                     />
                 </div>
+
                 <div className="flex justify-end gap-4">
                     <button
                         className="bg-gray-300 px-4 py-2 rounded-lg hover:bg-gray-400"
@@ -75,10 +100,10 @@ const UpdateModal = ({ isVisible, onConfirm, onCancel, updatedProduct, setUpdate
                         Hủy
                     </button>
                     <button
-                        className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600"
-                        onClick={() => onConfirm(updatedProduct)}
+                        className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+                        onClick={() => onConfirm(newProduct)}
                     >
-                        Cập nhật
+                        Thêm mới
                     </button>
                 </div>
             </div>
@@ -86,4 +111,4 @@ const UpdateModal = ({ isVisible, onConfirm, onCancel, updatedProduct, setUpdate
     );
 };
 
-export default UpdateModal;
+export default CreateModal;

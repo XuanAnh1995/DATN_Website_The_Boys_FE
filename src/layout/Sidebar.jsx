@@ -18,6 +18,7 @@ import {
   FaChevronDown,
   FaChartBar,
   FaCashRegister,
+  FaRegPlusSquare 
 } from "react-icons/fa";
 
 function Sidebar() {
@@ -33,6 +34,7 @@ function Sidebar() {
 
   const productItems = [
     { label: "Sản phẩm", icon: <FaTshirt />, path: "/admin/product" },
+    { label: "Thêm sản phẩm", icon: <FaRegPlusSquare  />, path: "/admin/product/create" },
     { label: "Thương hiệu", icon: <FaTrademark />, path: "/admin/brand" },
     { label: "Chất liệu", icon: <FaCubes />, path: "/admin/material" },
     { label: "Cổ áo", icon: <FaThLarge />, path: "/admin/attribute/collar" },

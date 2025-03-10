@@ -38,13 +38,17 @@ export default function CreateModal({
         minCondition: Number(voucher.minCondition) || 0,
         maxDiscount: Number(voucher.maxDiscount) || 0,
         reducedPercent: Number(voucher.reducedPercent) || 0,
-        startDate: new Date(voucher.startDate).toISOString(),
-        endDate: new Date(voucher.endDate).toISOString(),
+        startDate: voucher.startDate ? new Date(voucher.startDate).toISOString() : null,
+        endDate: voucher.endDate ? new Date(voucher.endDate).toISOString() : null,
         status: voucher.isActive,
       };
 
+      if (!formattedVoucher.startDate || !formattedVoucher.endDate) {
+        throw new Error("Ngày bắt đầu và ngày kết thúc không được để trống");
+      }
+
       console.log("Dữ liệu gửi lên API:", formattedVoucher);
-      await VoucherService.createVoucher(formattedVoucher);
+      const response = await VoucherService.createVoucher(formattedVoucher);
       toast.success("Thêm voucher thành công!");
       fetchVouchers();
       setVoucher({
@@ -61,6 +65,7 @@ export default function CreateModal({
       onConfirm();
       onCancel();
     } catch (error) {
+      console.log(error);
       toast.error("Không thể thêm voucher. Vui lòng thử lại!");
     }
   };
