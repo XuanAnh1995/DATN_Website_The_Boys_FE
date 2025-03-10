@@ -104,8 +104,16 @@ const SalePOS = {
     checkout: async (orderData) => {
         console.log("📌 Bắt đầu luồng thanh toán với đơn hàng:", orderData);
         try {
+            // 🔍 Kiểm tra voucherId trước khi gửi
+            console.log("🎟️ Voucher ID trước khi gửi:", orderData.voucherId);
+
+            // 🔍 Kiểm tra tổng tiền trước khi gửi
+            console.log("💰 Tổng tiền trước khi gửi:", orderData.totalBill);
+
             // 🔥 **Bước 1: Tạo đơn hàng**
             const orderResponse = await SalePOS.createOrder(orderData);
+            console.log("📌 Response từ checkout:", orderResponse);
+
             const orderId = orderResponse.id;
             console.log(`✅ Đơn hàng #${orderId} được tạo.`);
 
@@ -119,7 +127,7 @@ const SalePOS = {
             const paymentResponse = await SalePOS.completePayment(orderId);
             console.log("✅ Thanh toán thành công:", paymentResponse);
 
-            return paymentResponse;
+            return { orderId, paymentResponse };
         } catch (error) {
             console.error("❌ Lỗi khi checkout:", error.response?.data || error.message);
             throw error;
