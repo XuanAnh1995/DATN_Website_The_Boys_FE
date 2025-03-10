@@ -46,10 +46,10 @@ const SalePOSPage = () => {
         fetchVouchers();
     }, []);
 
-    // 🟢 Cập nhật tiền thừa khi khách nhập số tiền
-    useEffect(() => {
-        setChangeAmount(Math.max(customerPaid - totalAmount, 0)); // Đảm bảo không âm
-    }, [customerPaid, totalAmount]);
+    // // 🟢 Cập nhật tiền thừa khi khách nhập số tiền
+    // useEffect(() => {
+    //     setChangeAmount(Math.max(customerPaid - totalAmount, 0)); // Đảm bảo không âm
+    // }, [customerPaid, totalAmount]);
 
     const handleSelectCustomer = (customer) => {
         setSelectedCustomer(customer.id);
@@ -119,16 +119,26 @@ const SalePOSPage = () => {
     };
 
     const handleVoucherChange = (voucherCode) => {
+        console.log("📌 Voucher được chọn:", voucherCode);
+
         setSelectedVoucher(voucherCode);
 
         const voucher = vouchers.find((v) => v.voucherCode === voucherCode);
+
+        console.log("📌 Voucher tìm thấy:", voucher);
+
         if (voucher && currentOrder.totalAmount >= voucher.minCondition) {
             const discountAmount = Math.min(
                 (currentOrder.totalAmount * voucher.reducedPercent) / 100,
                 voucher.maxDiscount
             );
+
+            console.log("✅ Giảm giá áp dụng:", discountAmount);
+
             setCalculatedDiscount(discountAmount);
         } else {
+            console.log("❌ Không đủ điều kiện để áp dụng voucher.");
+
             setCalculatedDiscount(0);
         }
     };
@@ -165,6 +175,7 @@ const SalePOSPage = () => {
 
     // Hàm reset thông tin khách hàng
     const resetNewCustomer = () => {
+        console.log("🔄 Resetting newCustomer...");
         setNewCustomer({
             fullname: "",
             phone: "",
@@ -185,35 +196,24 @@ const SalePOSPage = () => {
                 email: newCustomer.email.trim(),
             };
 
-            // // Kiểm tra nếu không nhập đầy đủ thông tin
-            // if (!trimmedCustomer.fullname || !trimmedCustomer.phone || !trimmedCustomer.email) {
-            //     alert("Vui lòng nhập đầy đủ thông tin khách hàng.");
-            //     return;
-            // }
-
-            // // Kiểm tra nếu không có thông tin gì - xem như khách vãng lai
-            // if (!trimmedCustomer.fullname && !trimmedCustomer.phone && !trimmedCustomer.email) {
-            //     handleUseWalkInCustomer();
-            //     return;
-            // }
-
             // Gọi API để lưu khách hàng mới
             const response = await CustomerService.add(trimmedCustomer);
             console.log("Response từ backend:", response);
 
-            if (response && response.id) {
-                // Thêm khách hàng mới vào danh sách
-                setCustomers(prev => [...prev, response]);
+            // 🟢 Kiểm tra response và cập nhật UI
+            if (response?.data?.id) {
+                console.log("🟢 Khách hàng đã được tạo, thêm vào danh sách...");
+                setCustomers(prev => [...prev, response.data]);
 
-                // Chọn khách hàng mới thêm
-                handleSelectCustomer(response);
+                console.log("🟢 Chọn khách hàng mới...");
+                handleSelectCustomer(response.data);
 
-                // Reset form nhập liệu
-                resetNewCustomer();
-
+                console.log("🟢 Reset form khách hàng...");
+                resetNewCustomer(); // Reset form
             } else {
-                // alert("Không thể tạo khách hàng mới. Vui lòng thử lại!");
+                console.log("❌ Không thể tạo khách hàng mới, dữ liệu trả về:", response);
             }
+
         } catch (error) {
             console.error("Lỗi khi tạo khách hàng mới:", error);
             // alert(`Lỗi khi tạo khách hàng: ${error.response?.data?.message || "Không xác định"}`);
@@ -392,12 +392,21 @@ const SalePOSPage = () => {
         }
     };
 
+    // useEffect(() => {
+    //     if (activeOrderIndex !== null && orders[activeOrderIndex]) {
+    //         const totalAmount = orders[activeOrderIndex].totalAmount;
+    //         setChangeAmount(customerPaid - (totalAmount - discount));
+    //     }
+    // }, [customerPaid, activeOrderIndex, orders, discount]);
+
     useEffect(() => {
         if (activeOrderIndex !== null && orders[activeOrderIndex]) {
             const totalAmount = orders[activeOrderIndex].totalAmount;
-            setChangeAmount(customerPaid - (totalAmount - discount));
+            const finalAmount = totalAmount - calculatedDiscount;
+            setChangeAmount(Math.max(customerPaid - finalAmount, 0)); // Đảm bảo không âm
         }
-    }, [customerPaid, activeOrderIndex, orders, discount]);
+    }, [customerPaid, activeOrderIndex, orders, calculatedDiscount]);
+
 
     const handlePayment = async () => {
         if (activeOrderIndex === null) {
@@ -420,14 +429,18 @@ const SalePOSPage = () => {
         // Đối với khách vãng lai, ta cần xử lý đặc biệt
         let customerId = selectedCustomer;
         if (selectedCustomer === "walk-in") {
-            console.log("🟢 Chọn khách vãng lai, sử dụng ID 23.");
-            customerId = 23; // Giả sử 23 là ID cho khách vãng lai
+            console.log("🟢 Chọn khách vãng lai, sử dụng ID -1.");
+            customerId = -1; // Giả sử -1 là ID cho khách vãng lai
         }
+
+        // 🟢 **Thêm console.log để kiểm tra giá trị trước khi gửi yêu cầu**
+        console.log("📌 Voucher ID trước khi gửi:", selectedVoucher);
+        console.log("📌 Tổng tiền trước khi gửi:", currentOrder?.totalAmount);
 
         const orderRequest = {
             customerId: customerId,
             employeeId: currentEmployee.id,
-            voucherId: null, // Có thể thêm tính năng chọn voucher sau
+            voucherId: selectedVoucher ? vouchers.find(v => v.voucherCode === selectedVoucher)?.id : null,
             paymentMethod: paymentMethod,
             orderDetails: currentOrder.items.map(item => ({
                 productDetailId: item.id,
@@ -435,23 +448,23 @@ const SalePOSPage = () => {
             }))
         };
 
+        console.log("📌 Gửi yêu cầu tạo đơn hàng:", orderRequest);
+
+
         try {
 
             // 🟢 Bước 1: Tạo đơn hàng
             console.log("📌 Gửi yêu cầu tạo đơn hàng:", orderRequest);
-            const createOrderResponse = await SalePOS.checkout(orderRequest);
+            const { orderId, paymentResponse } = await SalePOS.checkout(orderRequest);
 
-            if (!createOrderResponse || !createOrderResponse.data || !createOrderResponse.data.data) {
-                console.log("❌ Không thể tạo đơn hàng, vui lòng thử lại!");
+            if (!orderId) {
+                console.log("❌ Không thể lấy orderId từ checkout response:", paymentResponse);
                 return;
             }
 
-            const orderId = createOrderResponse.data.data.id; // 🟢 Lấy `orderId` từ phản hồi BE
             console.log("✅ Đơn hàng được tạo với ID:", orderId);
 
             // 🟢 Bước 2: Gửi yêu cầu thanh toán cho đơn hàng vừa tạo
-            const paymentResponse = await SalePOS.completePayment(orderId);
-
             if (paymentResponse && paymentResponse.status === "success") {
                 console.log("✅ Thanh toán thành công!");
                 handleRemoveOrder(activeOrderIndex);
@@ -771,19 +784,30 @@ const SalePOSPage = () => {
                     <p>Tổng tiền: {currentOrder.totalAmount.toLocaleString()} VND</p>
 
                     <div className="flex items-center mt-2">
-                        <label className="w-1/3">Voucher (F6):</label>
                         <select
                             value={selectedVoucher}
                             onChange={(e) => handleVoucherChange(e.target.value)}
                             className="border p-2 flex-1"
                         >
                             <option value="">Chọn voucher</option>
-                            {vouchers.length > 0 && vouchers.map((v) => (
-                                <option key={v.id} value={v.voucherCode}>
-                                    {v.voucherCode} - {v.voucherName}
-                                </option>
-                            ))}
+                            {vouchers
+                                .filter(v => {
+                                    const now = new Date(); // 🕒 Lấy thời gian hiện tại
+                                    const startDate = new Date(v.startDate);
+                                    const endDate = new Date(v.endDate);
+
+                                    return (
+                                        currentOrder?.totalAmount >= v.minCondition && // 🟢 Đủ điều kiện giá trị đơn hàng
+                                        now >= startDate && now <= endDate // ⏳ Kiểm tra xem voucher có hiệu lực không
+                                    );
+                                })
+                                .map(v => (
+                                    <option key={v.id} value={v.voucherCode}>
+                                        {v.voucherCode} - {v.voucherName}
+                                    </option>
+                                ))}
                         </select>
+
                     </div>
 
 
@@ -824,7 +848,7 @@ const SalePOSPage = () => {
                         className="bg-green-600 text-white w-full py-2 mt-4 rounded"
                         disabled={!activeOrderIndex && activeOrderIndex !== 0}
                     >
-                        Thanh toán (F9)
+                        Thanh toán
                     </button>
                 </div>
             </div>
