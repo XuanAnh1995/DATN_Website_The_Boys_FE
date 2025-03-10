@@ -20,6 +20,7 @@ const Layout = () => {
 
   const [newSanPhams, setNewSanPhams] = useState([]);
   const navigate = useNavigate();
+
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentImage((prevImage) => (prevImage + 1) % images.length);
@@ -137,7 +138,7 @@ const Layout = () => {
                 <div
                   key={sanPham.id}
                   className="bg-white w-[300px] h-[450px] p-4 pb-8 rounded-lg shadow-md border border-gray-300 transform transition-transform hover:scale-105 hover:shadow-xl flex flex-col cursor-pointer"
-                  onClick={() => navigate(`/san-pham/${sanPham.id}`)} // ✅ Dùng navigate thay vì <Link>
+                  onClick={() => navigate(`/san-pham/${sanPham.id}`)} // ✅ Click cả sản phẩm để chuyển trang
                 >
                   <img
                     src={sanPham.photo || "https://via.placeholder.com/150"}
@@ -154,6 +155,17 @@ const Layout = () => {
                     Giá:{" "}
                     {sanPham.salePrice ? `${sanPham.salePrice} VND` : "Liên hệ"}
                   </p>
+
+                  {/* Nút Xem chi tiết */}
+                  <button
+                    className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+                    onClick={(e) => {
+                      e.stopPropagation(); // ✅ Ngăn chặn sự kiện lan ra ngoài div cha
+                      navigate(`/san-pham/${sanPham.id}`);
+                    }}
+                  >
+                    Xem chi tiết
+                  </button>
                 </div>
               ))
             ) : (
