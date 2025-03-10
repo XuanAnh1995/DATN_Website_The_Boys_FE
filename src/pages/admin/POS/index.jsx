@@ -401,27 +401,26 @@ const SalePOSPage = () => {
 
     const handlePayment = async () => {
         if (activeOrderIndex === null) {
-            alert("Vui lòng chọn hóa đơn để thanh toán!");
+            console.log("⚠ Không có hóa đơn nào được chọn.");
             return;
         }
 
         const currentOrder = orders[activeOrderIndex];
 
         if (currentOrder.items.length === 0) {
-            alert("Giỏ hàng trống! Vui lòng thêm sản phẩm.");
+            console.log("⚠ Giỏ hàng trống!");
             return;
         }
 
         if (!selectedCustomer) {
-            alert("Vui lòng chọn khách hàng!");
+            console.log("⚠ Không có khách hàng nào được chọn.");
             return;
         }
 
         // Đối với khách vãng lai, ta cần xử lý đặc biệt
         let customerId = selectedCustomer;
         if (selectedCustomer === "walk-in") {
-            // Bạn có thể có một ID mặc định cho khách vãng lai trong hệ thống
-            // hoặc có thể tạo một khách hàng mới đại diện cho khách vãng lai
+            console.log("🟢 Chọn khách vãng lai, sử dụng ID 23.");
             customerId = 23; // Giả sử 23 là ID cho khách vãng lai
         }
 
@@ -443,7 +442,7 @@ const SalePOSPage = () => {
             const createOrderResponse = await SalePOS.checkout(orderRequest);
 
             if (!createOrderResponse || !createOrderResponse.data || !createOrderResponse.data.data) {
-                alert("Không thể tạo đơn hàng, vui lòng thử lại!");
+                console.log("❌ Không thể tạo đơn hàng, vui lòng thử lại!");
                 return;
             }
 
@@ -454,14 +453,13 @@ const SalePOSPage = () => {
             const paymentResponse = await SalePOS.completePayment(orderId);
 
             if (paymentResponse && paymentResponse.status === "success") {
-                alert("Thanh toán thành công!");
+                console.log("✅ Thanh toán thành công!");
                 handleRemoveOrder(activeOrderIndex);
             } else {
-                alert("Thanh toán thất bại!");
+                console.log("❌ Thanh toán thất bại!");
             }
         } catch (error) {
-            console.error("Lỗi khi thanh toán:", error);
-            alert("Có lỗi xảy ra khi thanh toán!");
+            console.error("❌ Lỗi khi thanh toán:", error);
         }
     };
 
