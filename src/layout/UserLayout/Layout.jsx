@@ -1,8 +1,8 @@
-import { Outlet, Link } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import VoucherServices from "../../services/VoucherServices";
 import SanPhamService from "../../services/ProductDetailService";
-
+import BrandService from "../../services/BrandService";
 const images = [
   "https://static.vecteezy.com/system/resources/previews/002/294/859/original/flash-sale-web-banner-design-e-commerce-online-shopping-header-or-footer-banner-free-vector.jpg",
   "https://cdn.shopify.com/s/files/1/0021/0970/2202/files/150_New_Arrivals_Main_Banner_1370X600_a54e428c-0030-4078-9a2f-20286f12e604_1920x.jpg?v=1628065313",
@@ -17,10 +17,16 @@ const Layout = () => {
   const [totalPages, setTotalPages] = useState(1);
   const pageSize = 8;
   const [showText, setShowText] = useState(false);
-  const sanPhamsMoiNhat = [...sanPhams].sort((a, b) => b.id - a.id);
-  const params = { sort: "id,desc", page: currentPage, size: pageSize };
   const [newSanPhams, setNewSanPhams] = useState([]);
-
+  const navigate = useNavigate();
+  const [brand, setBrand] = useState(""); // Lưu thương hiệu được chọn
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [brands, setBrands] = useState([]); // Danh sách thương hiệu từ API
+  const [selectedBrands, setSelectedBrands] = useState([]);
+  const handleFilter = () => {
+    onFilterChange({ brand, minPrice, maxPrice });
+  };
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentImage((prevImage) => (prevImage + 1) % images.length);
@@ -77,7 +83,42 @@ const Layout = () => {
     };
     fetchNewSanPhams();
   }, []);
+  useEffect(() => {
+    fetchBrands(); // Lấy danh sách thương hiệu khi trang load
+    fetchProducts({});
+  }, []);
 
+  const fetchBrands = async () => {
+    try {
+      const data = await BrandService.getAllBrands(); // Gọi API lấy thương hiệu
+      setBrands(data || []);
+    } catch (error) {
+      console.error("Lỗi khi lấy danh sách thương hiệu:", error);
+    }
+  };
+  const fetchProducts = async (filters) => {
+    try {
+      const params = {
+        brandIds: filters.selectedBrands?.length
+          ? filters.selectedBrands
+          : undefined,
+        minPrice: filters.minPrice || undefined,
+        maxPrice: filters.maxPrice || undefined,
+      };
+      const data = await SanPhamService.getAllProductDetails(params);
+      setSanPhams(data || []);
+    } catch (error) {
+      console.error("Lỗi khi lấy danh sách sản phẩm:", error);
+    }
+  };
+
+  const handleBrandChange = (brandId) => {
+    setSelectedBrands((prev) =>
+      prev.includes(brandId)
+        ? prev.filter((id) => id !== brandId)
+        : [...prev, brandId]
+    );
+  };
   return (
     <main className="bg-blue-50 text-gray-900">
       <div className="relative w-screen h-[40vh] overflow-hidden mt-2 border border-gray-300 shadow-lg">
@@ -127,35 +168,137 @@ const Layout = () => {
         />
       </div>
       {/* Giới Thiệu sản phảm  */}
-      <section className="p-6">
-        <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-purple-600 drop-shadow-lg uppercase text-center mb-4">
-          Sản Phẩm Hot
-        </h1>
-        <div className="flex justify-center">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+      <section className="p-6 flex gap-6">
+        {/* Sidebar lọc sản phẩm */}
+        <aside className="w-1/4 bg-white p-6 shadow-lg rounded-xl border border-gray-200">
+          <h2 className="text-xl font-bold text-blue-700 mb-4 text-center">
+            BỘ LỌC SẢN PHẨM
+          </h2>
+
+          {/* Lọc theo thương hiệu */}
+          <div className="mb-6">
+            <label className="block font-semibold text-gray-700 mb-2">
+              Thương hiệu:
+            </label>
+            <div className="flex flex-col gap-3">
+              {["Nike", "Adidas", "Puma", "LV", "Gucci"].map((brand) => (
+                <label
+                  key={brand}
+                  className="flex items-center gap-2 cursor-pointer hover:text-blue-600"
+                >
+                  <input type="checkbox" className="w-4 h-4 accent-blue-600" />
+                  {brand}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Lọc theo giá */}
+          <div className="mb-6">
+            <label className="block font-semibold text-gray-700 mb-2">
+              Khoảng giá:
+            </label>
+            <div className="flex items-center gap-3">
+              <input
+                type="number"
+                placeholder="Từ"
+                className="w-1/2 p-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-400"
+              />
+              <span>-</span>
+              <input
+                type="number"
+                placeholder="Đến"
+                className="w-1/2 p-2 border border-gray-300 rounded-lg focus:ring focus:ring-blue-400"
+              />
+            </div>
+          </div>
+
+          {/* Lọc theo kích thước */}
+          <div className="mb-6">
+            <label className="block font-semibold text-gray-700 mb-2">
+              Kích thước:
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {["S", "M", "L", "XL", "XXL"].map((size) => (
+                <button
+                  key={size}
+                  className="px-4 py-2 border rounded-lg text-gray-700 hover:bg-blue-600 hover:text-white transition"
+                >
+                  {size}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Lọc theo màu sắc */}
+          <div className="mb-6">
+            <label className="block font-semibold text-gray-700 mb-2">
+              Màu sắc:
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {["Đỏ", "Xanh", "Vàng", "Đen", "Trắng"].map((color) => (
+                <button
+                  key={color}
+                  className="px-4 py-2 border rounded-lg text-gray-700 hover:bg-blue-600 hover:text-white transition"
+                >
+                  {color}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Nút Áp Dụng */}
+          <button className="w-full bg-blue-600 text-white py-2 rounded-lg shadow-md hover:bg-blue-700 transition">
+            Áp dụng bộ lọc
+          </button>
+        </aside>
+
+        {/* Danh sách sản phẩm */}
+        <div className="w-3/4">
+          <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-purple-600 drop-shadow-lg uppercase text-center mb-4">
+            Sản Phẩm Hot
+          </h1>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {sanPhams.length > 0 ? (
               sanPhams.map((sanPham) => (
-                <Link to={`/san-pham/${sanPham.id}`} key={sanPham.id}>
-                  <div className="bg-white w-[300px] h-[450px] p-4 pb-8 rounded-lg shadow-md border border-gray-300 transform transition-transform hover:scale-105 hover:shadow-xl flex flex-col">
-                    <img
-                      src={
-                        sanPham.photo ||
-                        "https://th.bing.com/th/id/OIP.SQDwBT12trBENj2yTziTyQAAAA?rs=1&pid=ImgDetMain"
-                      }
-                      alt={sanPham.product.productName}
-                      className="w-full h-60 object-cover rounded-lg"
-                    />
-                    <h3 className="text-lg font-semibold mt-2">
-                      {sanPham.product.productName}
-                    </h3>
-                    <p className="text-gray-700">
-                      Mã sản phẩm: {sanPham.productDetailCode}
-                    </p>
-                    <p className="text-red-600 font-bold border border-red-600 p-1 rounded-md">
-                      Giá: {sanPham.salePrice} VND
-                    </p>
+                <div
+                  key={sanPham.id}
+                  className="relative cursor-pointer bg-white w-[300px] h-[450px] p-4 pb-10 rounded-lg shadow-md border border-gray-300 transform transition-transform hover:scale-105 hover:shadow-xl flex flex-col group"
+                >
+                  <img
+                    src={
+                      sanPham.photo ||
+                      "https://th.bing.com/th/id/OIP.SQDwBT12trBENj2yTziTyQAAAA?rs=1&pid=ImgDetMain"
+                    }
+                    alt={sanPham.product.productName}
+                    className="w-full h-60 object-cover rounded-lg"
+                  />
+                  <h3 className="text-lg font-semibold mt-2">
+                    {sanPham.product.productName}
+                  </h3>
+                  <p className="text-gray-700">
+                    Mã sản phẩm: {sanPham.productDetailCode}
+                  </p>
+                  <p className="text-red-600 font-bold border border-red-600 p-1 rounded-md">
+                    Giá: {sanPham.salePrice} VND
+                  </p>
+
+                  {/* Nút hiện lên khi hover */}
+                  <div className="absolute bottom-2 left-0 right-0 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={() => navigate(`/san-pham/${sanPham.id}`)}
+                      className="bg-red-500 text-white text-sm font-semibold py-1 px-3 rounded-md shadow-md hover:bg-red-600 transition"
+                    >
+                      🛒 Mua Ngay
+                    </button>
+                    <button
+                      onClick={() => addToCart(sanPham)}
+                      className="bg-blue-500 text-white text-sm font-semibold py-1 px-3 rounded-md shadow-md hover:bg-blue-600 transition"
+                    >
+                      ➕ Giỏ hàng
+                    </button>
                   </div>
-                </Link>
+                </div>
               ))
             ) : (
               <p className="text-gray-500 text-center w-full">
@@ -164,28 +307,29 @@ const Layout = () => {
             )}
           </div>
         </div>
-        <div className="flex justify-center items-center mt-6 space-x-2">
-          <button
-            className="px-3 py-1 border rounded-lg text-gray-500 hover:bg-blue-500 hover:text-white"
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 0))}
-            disabled={currentPage === 0}
-          >
-            {"<"}
-          </button>
-          <span className="text-sm text-gray-700">
-            Trang {currentPage + 1} / {totalPages}
-          </span>
-          <button
-            className="px-3 py-1 border rounded-lg text-gray-500 hover:bg-blue-500 hover:text-white"
-            onClick={() =>
-              setCurrentPage((prev) => Math.min(prev + 1, totalPages - 1))
-            }
-            disabled={currentPage === totalPages - 1}
-          >
-            {">"}
-          </button>
-        </div>
       </section>
+      <div className="flex justify-center items-center mt-6 space-x-2">
+        <button
+          className="px-3 py-1 border rounded-lg text-gray-500 hover:bg-blue-500 hover:text-white"
+          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 0))}
+          disabled={currentPage === 0}
+        >
+          {"<"}
+        </button>
+        <span className="text-sm text-gray-700">
+          Trang {currentPage + 1} / {totalPages}
+        </span>
+        <button
+          className="px-3 py-1 border rounded-lg text-gray-500 hover:bg-blue-500 hover:text-white"
+          onClick={() =>
+            setCurrentPage((prev) => Math.min(prev + 1, totalPages - 1))
+          }
+          disabled={currentPage === totalPages - 1}
+        >
+          {">"}
+        </button>
+      </div>
+
       {/* Giới Thiệu */}
       <section className="p-6 mt-4 bg-gray-100 rounded-lg shadow-lg">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
@@ -240,7 +384,7 @@ const Layout = () => {
             {newSanPhams.map((sanPham) => (
               <div
                 key={sanPham.id}
-                className="bg-white w-[300px] h-[400px] p-3 rounded-lg shadow-md border border-gray-300 hover:shadow-lg hover:scale-105 transition-transform"
+                className="relative cursor-pointer bg-white w-[300px] h-[400px] p-3 rounded-lg shadow-md border border-gray-300 hover:shadow-lg hover:scale-105 transition-transform flex flex-col group"
               >
                 <img
                   src={
@@ -254,6 +398,22 @@ const Layout = () => {
                   {sanPham.product.productName}
                 </h3>
                 <p className="text-red-600">{sanPham.salePrice} VND</p>
+
+                {/* Nút hiện lên khi hover */}
+                <div className="absolute bottom-2 left-0 right-0 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    onClick={() => navigate(`/san-pham/${sanPham.id}`)}
+                    className="bg-red-500 text-white text-xs font-semibold py-1 px-2 rounded-md shadow-md hover:bg-red-600 transition"
+                  >
+                    🛒 Mua Ngay
+                  </button>
+                  <button
+                    onClick={() => addToCart(sanPham)}
+                    className="bg-blue-500 text-white text-xs font-semibold py-1 px-2 rounded-md shadow-md hover:bg-blue-600 transition"
+                  >
+                    ➕ Giỏ hàng
+                  </button>
+                </div>
               </div>
             ))}
           </div>

@@ -1,5 +1,5 @@
 import { Routes, Route } from "react-router-dom";
-import UserMain from "../layout/UserLayout/UserMain"; // Sử dụng UserMain thay vì UserLayout
+import UserMain from "../layout/UserLayout/UserMain";
 
 const AppUserRouter = () => {
   return (
