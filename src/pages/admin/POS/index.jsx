@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import SalePOS from "../../../services/POSService";
+import SalePOS, { paymentMethodMapping } from "../../../services/POSService";
 import CustomerService from "../../../services/CustomerService"
 import { FaShoppingCart, FaTrash, FaPlus, FaTimes } from "react-icons/fa";
 
@@ -220,20 +220,48 @@ const SalePOSPage = () => {
         }
     };
 
-    const handleCreateOrder = () => {
-        const newOrder = {
-            id: Date.now(),
-            items: [],
-            totalAmount: 0,
-            discount: 0,
-            customerId: selectedCustomer,
-            paymentMethod: "cash"
-        };
+    // const handleCreateOrder = () => {
+    //     const newOrder = {
+    //         id: Date.now(),
+    //         items: [],
+    //         totalAmount: 0,
+    //         discount: 0,
+    //         customerId: selectedCustomer,
+    //         paymentMethod: "cash"
+    //     };
 
-        setOrders(prevOrders => [...prevOrders, newOrder]);
-        setActiveOrderIndex(orders.length);
+    //     setOrders(prevOrders => [...prevOrders, newOrder]);
+    //     setActiveOrderIndex(orders.length);
+    // };
+
+
+    const handleCreateOrder = async () => {
+        try {
+            const orderData = {
+                customerId: selectedCustomer || null,
+                employeeId: 1, // Tạm thời set cứng ID nhân viên là 1
+                voucherId: null,
+                paymentMethod: "cash",
+            };
+    
+            const newOrder = await SalePOS.createOrder(orderData);
+    
+            setOrders(prevOrders => [...prevOrders, { 
+                id: newOrder.id, 
+                items: [], 
+                totalAmount: 0, 
+                discount: 0, 
+                customerId: selectedCustomer, 
+                paymentMethod: orderData.paymentMethod
+            }]);
+    
+            setActiveOrderIndex(orders.length);
+            console.log("✅ Đơn hàng mới đã được tạo:", newOrder);
+        } catch (error) {
+            console.error("❌ Lỗi khi tạo đơn hàng:", error);
+        }
     };
-
+    
 
 
     const handleAddToCart = (product) => {
@@ -408,73 +436,152 @@ const SalePOSPage = () => {
     }, [customerPaid, activeOrderIndex, orders, calculatedDiscount]);
 
 
+
+
+    // const handlePayment = async () => {
+    //     if (activeOrderIndex === null) {
+    //         console.log("⚠ Không có hóa đơn nào được chọn.");
+    //         return;
+    //     }
+
+    //     const currentOrder = orders[activeOrderIndex];
+
+    //     if (currentOrder.items.length === 0) {
+    //         console.log("⚠ Giỏ hàng trống!");
+    //         return;
+    //     }
+
+    //     if (!selectedCustomer) {
+    //         console.log("⚠ Không có khách hàng nào được chọn.");
+    //         return;
+    //     }
+
+    //     // Đối với khách vãng lai, ta cần xử lý đặc biệt
+    //     let customerId = selectedCustomer;
+    //     if (selectedCustomer === "walk-in") {
+    //         console.log("🟢 Chọn khách vãng lai, sử dụng ID -1.");
+    //         customerId = -1; // Giả sử -1 là ID cho khách vãng lai
+    //     }
+
+    //     // 🟢 **Thêm console.log để kiểm tra giá trị trước khi gửi yêu cầu**
+    //     console.log("📌 Voucher ID trước khi gửi:", selectedVoucher);
+    //     console.log("📌 Tổng tiền trước khi gửi:", currentOrder?.totalAmount);
+
+    //     const orderRequest = {
+    //         customerId: customerId,
+    //         employeeId: currentEmployee.id,
+    //         voucherId: selectedVoucher ? vouchers.find(v => v.voucherCode === selectedVoucher)?.id : null,
+    //         paymentMethod: paymentMethod,
+    //         orderDetails: currentOrder.items.map(item => ({
+    //             productDetailId: item.id,
+    //             quantity: item.quantity
+    //         }))
+    //     };
+
+    //     console.log("📌 Gửi yêu cầu tạo đơn hàng:", orderRequest);
+
+
+    //     try {
+
+    //         // 🟢 Bước 1: Tạo đơn hàng
+    //         console.log("📌 Gửi yêu cầu tạo đơn hàng:", orderRequest);
+    //         const { orderId, paymentResponse } = await SalePOS.checkout(orderRequest);
+
+    //         if (!orderId) {
+    //             console.log("❌ Không thể lấy orderId từ checkout response:", paymentResponse);
+    //             return;
+    //         }
+
+    //         console.log("✅ Đơn hàng được tạo với ID:", orderId);
+
+    //         // 🟢 Bước 2: Gửi yêu cầu thanh toán cho đơn hàng vừa tạo
+    //         if (paymentResponse && paymentResponse.status === "success") {
+    //             console.log("✅ Thanh toán thành công!");
+    //             handleRemoveOrder(activeOrderIndex);
+    //         } else {
+    //             console.log("❌ Thanh toán thất bại!");
+    //         }
+    //     } catch (error) {
+    //         console.error("❌ Lỗi khi thanh toán:", error);
+    //     }
+    // };
+
+
     const handlePayment = async () => {
         if (activeOrderIndex === null) {
             console.log("⚠ Không có hóa đơn nào được chọn.");
             return;
         }
-
+    
         const currentOrder = orders[activeOrderIndex];
-
+    
         if (currentOrder.items.length === 0) {
             console.log("⚠ Giỏ hàng trống!");
             return;
         }
-
+    
         if (!selectedCustomer) {
             console.log("⚠ Không có khách hàng nào được chọn.");
             return;
         }
-
-        // Đối với khách vãng lai, ta cần xử lý đặc biệt
-        let customerId = selectedCustomer;
-        if (selectedCustomer === "walk-in") {
-            console.log("🟢 Chọn khách vãng lai, sử dụng ID -1.");
-            customerId = -1; // Giả sử -1 là ID cho khách vãng lai
-        }
-
-        // 🟢 **Thêm console.log để kiểm tra giá trị trước khi gửi yêu cầu**
+    
+        // Xử lý khách vãng lai
+        let customerId = selectedCustomer === "walk-in" ? -1 : selectedCustomer;
+    
         console.log("📌 Voucher ID trước khi gửi:", selectedVoucher);
         console.log("📌 Tổng tiền trước khi gửi:", currentOrder?.totalAmount);
-
+    
+        // Kiểm tra voucher hợp lệ
+        const voucherId = selectedVoucher ? vouchers.find(v => v.voucherCode === selectedVoucher)?.id : null;
+        if (selectedVoucher && !voucherId) {
+            console.log("⚠ Voucher không hợp lệ.");
+            return;
+        }
+    
+        // Kiểm tra phương thức thanh toán hợp lệ
+        console.log("📌 Phương thức thanh toán đã chọn:", paymentMethod);  // Kiểm tra giá trị paymentMethod
+        const paymentMethodCode = paymentMethodMapping[paymentMethod];
+        console.log("📌 Mã phương thức thanh toán:", paymentMethodCode);
+    
+        if (!paymentMethodCode) {
+            console.log("⚠ Phương thức thanh toán không hợp lệ.");
+            return;
+        }
+    
         const orderRequest = {
             customerId: customerId,
             employeeId: currentEmployee.id,
-            voucherId: selectedVoucher ? vouchers.find(v => v.voucherCode === selectedVoucher)?.id : null,
-            paymentMethod: paymentMethod,
+            voucherId: voucherId,
+            paymentMethod: paymentMethodCode,
+            totalAmount: currentOrder?.totalAmount || 0, // Đảm bảo tổng tiền không bị null
             orderDetails: currentOrder.items.map(item => ({
                 productDetailId: item.id,
                 quantity: item.quantity
             }))
         };
-
-        console.log("📌 Gửi yêu cầu tạo đơn hàng:", orderRequest);
-
-
+        
+        console.log("📌 Gửi yêu cầu tạo đơn hàng:", JSON.stringify(orderRequest, null, 2));
+        
+    
         try {
-
-            // 🟢 Bước 1: Tạo đơn hàng
-            console.log("📌 Gửi yêu cầu tạo đơn hàng:", orderRequest);
-            const { orderId, paymentResponse } = await SalePOS.checkout(orderRequest);
-
-            if (!orderId) {
-                console.log("❌ Không thể lấy orderId từ checkout response:", paymentResponse);
-                return;
-            }
-
-            console.log("✅ Đơn hàng được tạo với ID:", orderId);
-
-            // 🟢 Bước 2: Gửi yêu cầu thanh toán cho đơn hàng vừa tạo
-            if (paymentResponse && paymentResponse.status === "success") {
-                console.log("✅ Thanh toán thành công!");
+            // Sử dụng hàm checkout từ SalePOS service
+            const result = await SalePOS.checkout(orderRequest);
+            
+            if (result && result.paymentResponse) {
+                console.log("✅ Thanh toán thành công với ID đơn hàng:", result.orderId);
                 handleRemoveOrder(activeOrderIndex);
             } else {
-                console.log("❌ Thanh toán thất bại!");
+                console.log("❌ Thanh toán thất bại:", result);
             }
         } catch (error) {
-            console.error("❌ Lỗi khi thanh toán:", error);
+            console.error("❌ Lỗi khi thanh toán:", error.response?.data || error.message || error);
         }
     };
+    
+    
+    
+    
+    
 
     // Lấy đơn hàng hiện tại
     const currentOrder = activeOrderIndex !== null && activeOrderIndex < orders.length
@@ -816,17 +923,18 @@ const SalePOSPage = () => {
                     </p>
 
                     <div className="mt-2">
-                        <label>Phương thức thanh toán:</label>
-                        <select
-                            value={paymentMethod}
-                            onChange={(e) => setPaymentMethod(e.target.value)}
-                            className="border p-2 w-full mt-1"
-                        >
-                            <option value="cash">Tiền mặt</option>
-                            <option value="card">Thẻ</option>
-                            <option value="transfer">Chuyển khoản</option>
-                        </select>
-                    </div>
+                            <label>Phương thức thanh toán:</label>
+                            <select
+                                value={paymentMethod}
+                                onChange={(e) => setPaymentMethod(e.target.value)}
+                                className="border p-2 w-full mt-1"
+                            >
+                                <option value="cash">Tiền mặt</option>
+                                <option value="card">Thẻ</option>
+                                <option value="transfer">Chuyển khoản</option>
+                            </select>
+                        </div>
+
 
                     <div className="mt-2">
                         <label>Khách thanh toán:</label>

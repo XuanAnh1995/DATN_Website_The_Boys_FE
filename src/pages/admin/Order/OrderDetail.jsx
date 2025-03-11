@@ -7,21 +7,34 @@ const OrderDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [orderDetails, setOrderDetails] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchOrderDetails = async () => {
       try {
         const response = await OrderService.getOrderDetails(id);
-        setOrderDetails(response.data);
+        console.log("Order details response:", response);
+        if (response && response.data) {
+          setOrderDetails(response.data);
+        } else {
+          toast.error("Dữ liệu đơn hàng không hợp lệ");
+        }
       } catch (error) {
+        console.error("Lỗi khi tải chi tiết đơn hàng:", error);
         toast.error("Lỗi khi tải chi tiết đơn hàng");
+      } finally {
+        setLoading(false);
       }
     };
     fetchOrderDetails();
   }, [id]);
 
-  if (!orderDetails) {
+  if (loading) {
     return <div className="text-center text-gray-500 p-6">Đang tải...</div>;
+  }
+
+  if (!orderDetails) {
+    return <div className="text-center text-red-500 p-6">Không tìm thấy đơn hàng!</div>;
   }
 
   return (
@@ -29,10 +42,12 @@ const OrderDetail = () => {
       <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-4xl border-t-8 border-gray-700">
         <h2 className="text-3xl font-bold text-gray-700 text-center mb-4">HÓA ĐƠN</h2>
         <div className="border-b pb-4 mb-4">
-          <p className="text-lg font-semibold">{orderDetails.customer.fullname}</p>
-          <p className="text-gray-600">Số điện thoại: {orderDetails.customer.phone}</p>
-          <p className="text-gray-600">Mã đơn hàng: {orderDetails.orderCode}</p>
-          <p className="text-gray-600">Ngày tạo: {new Date(orderDetails.createDate).toLocaleDateString()}</p>
+          <p className="text-lg font-semibold">{orderDetails.customer?.fullname || "N/A"}</p>
+          <p className="text-gray-600">Số điện thoại: {orderDetails.customer?.phone || "N/A"}</p>
+          <p className="text-gray-600">Mã đơn hàng: {orderDetails.orderCode || "N/A"}</p>
+          <p className="text-gray-600">
+            Ngày tạo: {orderDetails.createDate ? new Date(orderDetails.createDate).toLocaleDateString() : "N/A"}
+          </p>
         </div>
 
         <table className="w-full border-collapse border text-left">
@@ -44,23 +59,37 @@ const OrderDetail = () => {
             </tr>
           </thead>
           <tbody>
-            {orderDetails.orderDetailResponses.map((detail) => (
-              <tr key={detail.id} className="border-b">
-                <td className="p-3">{detail.productName}</td>
-                <td className="p-3 text-center">{detail.quantity}</td>
-                <td className="p-3 text-right text-gray-700 font-semibold">
-                  {((detail.price || 0) * (detail.quantity || 0)).toLocaleString("vi-VN", { style: "currency", currency: "VND" })}
-                </td>
-              </tr>
-            ))}
+            {orderDetails.orderDetails.map((detail) => {
+              const product = detail.productDetail?.product;
+              const price = detail.productDetail?.salePrice ?? detail.productDetail?.product?.salePrice ?? 0;
+              const quantity = detail.quantity ?? 0;
+              const totalPrice = price * quantity;
+
+              return (
+                <tr key={detail.id} className="border-b">
+                  <td className="p-3">{product?.productName || "Không có tên"}</td>
+                  <td className="p-3 text-center">{quantity}</td>
+                  <td className="p-3 text-right text-gray-700 font-semibold">
+                    {totalPrice.toLocaleString("vi-VN", { style: "currency", currency: "VND" })}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
 
         <div className="text-right mt-4 border-t pt-4">
           <p className="text-lg font-bold text-gray-700">
-            TỔNG TIỀN: {orderDetails.totalBill.toLocaleString("vi-VN", { style: "currency", currency: "VND" })}
+            TỔNG TIỀN: {orderDetails.totalBill?.toLocaleString("vi-VN", { style: "currency", currency: "VND" }) || "N/A"}
           </p>
         </div>
+
+        {orderDetails.voucher && (
+          <div className="mt-4 p-4 bg-green-100 border-l-4 border-green-500">
+            <p className="text-green-700 font-semibold">{orderDetails.voucher?.voucherName || "Không có tên"}</p>
+            <p className="text-gray-700">{orderDetails.voucher?.description || "Không có mô tả"}</p>
+          </div>
+        )}
 
         <div className="mt-6 text-center">
           <button
