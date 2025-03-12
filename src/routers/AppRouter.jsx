@@ -5,20 +5,29 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
-import Layout from "../layout/Layout";
-import adminRoutes from "./AdminRouter";
-import AppUserRouter from "./AppUserRouter"; // Thêm router cho user
+import LayoutAdmin from "../layout/Layout";
+import adminRoutes from "./AdminRouter"; // Thêm router cho user
+import UserMain from "../layout/UserLayout/UserMain";
 
+import UserRouter from "./UserRouter";
 function AppRouter() {
   return (
     <Router>
       <Suspense fallback={<div>Loading...</div>}>
         <Routes>
           {/* Router dành cho người dùng */}
-          <Route path="/*" element={<AppUserRouter />} />
+          <Route path="/" element={<UserMain />}>
+            {UserRouter.map((route, index) => (
+              <Route
+                key={index}
+                path={route.path}
+                element={<route.component />}
+              />
+            ))}
+          </Route>
 
           {/* Router dành cho admin */}
-          <Route path="/admin" element={<Layout />}>
+          <Route path="/admin" element={<LayoutAdmin />}>
             {adminRoutes.map((route, index) => (
               <Route
                 key={index}

@@ -20,13 +20,7 @@ const Layout = () => {
   const [newSanPhams, setNewSanPhams] = useState([]);
   const navigate = useNavigate();
   const [brand, setBrand] = useState(""); // Lưu thương hiệu được chọn
-  const [minPrice, setMinPrice] = useState("");
-  const [maxPrice, setMaxPrice] = useState("");
-  const [brands, setBrands] = useState([]); // Danh sách thương hiệu từ API
-  const [selectedBrands, setSelectedBrands] = useState([]);
-  const handleFilter = () => {
-    onFilterChange({ brand, minPrice, maxPrice });
-  };
+
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentImage((prevImage) => (prevImage + 1) % images.length);
