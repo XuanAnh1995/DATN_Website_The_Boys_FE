@@ -127,7 +127,6 @@ const SalePOS = {
             const paymentResponse = await SalePOS.completePayment(orderId);
             console.log("✅ Thanh toán thành công:", paymentResponse);
 
-            return paymentResponse;
             return { orderId, paymentResponse };
         } catch (error) {
             console.error("❌ Lỗi khi checkout:", error.response?.data || error.message);

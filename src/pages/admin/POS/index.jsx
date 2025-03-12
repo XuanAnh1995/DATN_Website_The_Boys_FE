@@ -474,7 +474,9 @@ const SalePOSPage = () => {
 
             // 🟢 Bước 1: Tạo đơn hàng
             console.log("📌 Gửi yêu cầu tạo đơn hàng:", orderRequest);
+            
             const { orderId, paymentResponse } = await SalePOS.checkout(orderRequest);
+            console.log("📌 Kiểm tra orderId sau checkout:", orderId);  // Thêm log kiểm tra
 
             if (!orderId) {
                 console.log("❌ Không thể lấy orderId từ checkout response:", paymentResponse);
