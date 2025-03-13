@@ -3,6 +3,7 @@ import { lazy } from "react";
 const ViewProductDetail = lazy(
   () => import("../pages/Users/ViewProductDetail.jsx")
 );
+
 const PersonalPage = lazy(() => import("../pages/Users/PersonalPage.jsx"));
 const SearchPage = lazy(() => import("../pages/Users/SearchPage.jsx"));
 const Cart = lazy(() => import("../pages/Users/Cart.jsx"));
