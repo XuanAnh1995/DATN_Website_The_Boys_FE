@@ -1,23 +1,16 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import ProductDetailService from "../../services/ProductDetailService";
-import BrandService from "../../services/BrandService";
-import ColorService from "../../services/ColorService";
-import SizeService from "../../services/SizeService";
-import CollarService from "../../services/CollarService";
-import MaterialService from "../../services/MaterialService";
 
 const ViewProductDetail = () => {
-  const { id } = useParams();
+  const { id } = useParams(); // Lấy ID sản phẩm từ URL
   const [sanPham, setSanPham] = useState(null);
-  const [selectedImage, setSelectedImage] = useState("");
 
   useEffect(() => {
     const fetchProduct = async () => {
       try {
         const data = await ProductDetailService.getProductDetailById(id);
         setSanPham(data);
-        setSelectedImage(data.photo || "");
       } catch (error) {
         console.error("Lỗi khi lấy sản phẩm:", error);
       }
@@ -28,8 +21,7 @@ const ViewProductDetail = () => {
     }
   }, [id]);
 
-  if (!sanPham)
-    return <p className="text-center text-gray-500 text-2xl">Đang tải...</p>;
+  if (!sanPham) return <p className="text-center text-gray-500">Đang tải...</p>;
 
   return (
     <div className="max-w-7xl mx-auto p-8 bg-white shadow-lg rounded-lg flex gap-8">
@@ -52,10 +44,10 @@ const ViewProductDetail = () => {
         </p>
         <div className="flex items-center gap-6 mt-4">
           <p className="text-blue-600 font-bold text-3xl">
-            {sanPham.salePrice.toLocaleString()} VND
+            {sanPham.salePrice} VND
           </p>
           <p className="text-gray-500 line-through text-xl">
-            {sanPham.salePrice.toLocaleString()} VND
+            {sanPham.importPrice} VND
           </p>
         </div>
 
