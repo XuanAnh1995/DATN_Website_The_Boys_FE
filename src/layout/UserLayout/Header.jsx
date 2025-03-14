@@ -9,14 +9,6 @@ import {
 } from "react-icons/fa";
 
 const Header = () => {
-  // Danh sách banner thay đổi tự động
-  const images = [
-    "https://static.vecteezy.com/system/resources/previews/002/294/859/original/flash-sale-web-banner-design-e-commerce-online-shopping-header-or-footer-banner-free-vector.jpg",
-    "https://cdn.shopify.com/s/files/1/0021/0970/2202/files/150_New_Arrivals_Main_Banner_1370X600_a54e428c-0030-4078-9a2f-20286f12e604_1920x.jpg?v=1628065313",
-    "https://file.hstatic.net/1000253775/file/new_banner_pc_copy.jpg",
-  ];
-
-  const [currentImage, setCurrentImage] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
 
@@ -27,22 +19,14 @@ const Header = () => {
     }
   };
 
-  // Tự động đổi ảnh banner mỗi 3 giây
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentImage((prevImage) => (prevImage + 1) % images.length);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, []);
-
   return (
-    <header className="bg-green-900 text-white shadow-md">
+    <header className="bg-sky-900 text-white shadow-md">
       {/* Phần trên: Logo + Tìm kiếm + Đăng nhập + Giỏ hàng */}
       <div className="flex items-center justify-between p-4">
         {/* Logo hình tròn */}
         <Link to="/" className="flex items-center gap-3">
           <img
-            src="/src/assets/logo.jpg" // Đảm bảo đường dẫn logo đúng
+            src="/src/assets/logo.jpg"
             alt="Logo"
             className="w-14 h-14 object-cover rounded-full border-2 border-white shadow-md"
           />
@@ -91,59 +75,6 @@ const Header = () => {
             </span>
           </Link>
         </div>
-      </div>
-
-      {/* Phần dưới: Menu điều hướng */}
-      <div className="bg-amber-50 text-green-900 py-2 flex justify-between px-10 items-center">
-        <nav className="flex gap-6 text-lg font-medium">
-          <Link
-            to="/"
-            className="text-orange-500 border-b-2 border-orange-500 pb-1"
-          >
-            Trang chủ
-          </Link>
-          <Link
-            to="/men"
-            className="flex items-center gap-1 hover:text-orange-500"
-          >
-            Thời trang Nam <FaAngleDown />
-          </Link>
-          <Link
-            to="/products"
-            className="flex items-center gap-1 hover:text-orange-500"
-          >
-            Sản phẩm <FaAngleDown />
-          </Link>
-          <Link to="/boy" className="hover:text-orange-500">
-            Bé trai
-          </Link>
-          <Link to="/girl" className="hover:text-orange-500">
-            Bé gái
-          </Link>
-          <Link to="/news" className="hover:text-orange-500">
-            Tin tức
-          </Link>
-          <Link to="/contact" className="hover:text-orange-500">
-            Liên hệ
-          </Link>
-        </nav>
-
-        {/* Hotline */}
-        <div className="flex items-center gap-2 text-lg font-medium">
-          <FaPhoneAlt />
-          <span>
-            Hotline: <strong>1900 6750</strong>
-          </span>
-        </div>
-      </div>
-
-      {/* Banner tự động thay đổi */}
-      <div className="relative w-screen h-[40vh] overflow-hidden mt-2 border border-gray-300 shadow-lg">
-        <img
-          src={images[currentImage]}
-          alt="Banner"
-          className="w-full h-full object-cover transition-opacity duration-500 ease-in-out"
-        />
       </div>
     </header>
   );
