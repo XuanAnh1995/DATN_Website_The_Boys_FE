@@ -1,77 +1,90 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import {
-  FaSearch,
-  FaUser,
-  FaShoppingCart,
-  FaPhoneAlt,
-  FaAngleDown,
-} from "react-icons/fa";
+import { FaSearch, FaUser, FaShoppingCart } from "react-icons/fa";
+import ProductService from "../../services/ProductService";
 
 const Header = () => {
-  // Danh sách banner thay đổi tự động
-  const images = [
-    "https://static.vecteezy.com/system/resources/previews/002/294/859/original/flash-sale-web-banner-design-e-commerce-online-shopping-header-or-footer-banner-free-vector.jpg",
-    "https://cdn.shopify.com/s/files/1/0021/0970/2202/files/150_New_Arrivals_Main_Banner_1370X600_a54e428c-0030-4078-9a2f-20286f12e604_1920x.jpg?v=1628065313",
-    "https://file.hstatic.net/1000253775/file/new_banner_pc_copy.jpg",
-  ];
+  const [search, setSearch] = useState("");
+  const [suggestions, setSuggestions] = useState([]);
+  const navigate = useNavigate(); // Hook điều hướng
 
-  const [currentImage, setCurrentImage] = useState(0);
-  const [searchTerm, setSearchTerm] = useState("");
-  const navigate = useNavigate();
-
-  // Hàm tìm kiếm
-  const handleSearch = () => {
-    if (searchTerm.trim() !== "") {
-      navigate(`/search?query=${encodeURIComponent(searchTerm)}`);
+  const fetchSuggestions = useCallback(async () => {
+    if (!search.trim()) {
+      setSuggestions([]);
+      return;
     }
-  };
+    try {
+      const response = await ProductService.getFilteredProducts({
+        search,
+        size: 5,
+      });
+      setSuggestions(response.content || []);
+    } catch (error) {
+      console.error("Lỗi khi tìm kiếm sản phẩm:", error);
+    }
+  }, [search]);
 
-  // Tự động đổi ảnh banner mỗi 3 giây
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentImage((prevImage) => (prevImage + 1) % images.length);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, []);
+    const delayDebounceFn = setTimeout(() => {
+      fetchSuggestions();
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [fetchSuggestions]);
 
   return (
-    <header className="bg-green-900 text-white shadow-md">
-      {/* Phần trên: Logo + Tìm kiếm + Đăng nhập + Giỏ hàng */}
+    <header className="bg-sky-900 text-white shadow-md">
       <div className="flex items-center justify-between p-4">
-        {/* Logo hình tròn */}
         <Link to="/" className="flex items-center gap-3">
           <img
-            src="/src/assets/logo.jpg" // Đảm bảo đường dẫn logo đúng
+            src="/src/assets/logo.jpg"
             alt="Logo"
             className="w-14 h-14 object-cover rounded-full border-2 border-white shadow-md"
           />
         </Link>
 
-        {/* Thanh tìm kiếm */}
         <div className="relative flex-1 max-w-lg mx-4 flex items-center bg-white rounded-full">
-          <select className="bg-gray-200 px-3 py-2 rounded-l-full text-gray-700 focus:outline-none">
-            <option value="all">Tất cả</option>
-            <option value="men">Thời trang Nam</option>
-            <option value="women">Thời trang Nữ</option>
-          </select>
           <input
             type="text"
             placeholder="Tìm sản phẩm bạn mong muốn"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
             className="w-full px-3 py-2 text-gray-800 focus:outline-none"
           />
-          <button
-            onClick={handleSearch}
-            className="bg-orange-500 px-4 py-2 rounded-r-full text-white"
-          >
-            <FaSearch />
-          </button>
+          <FaSearch className="text-gray-500 absolute right-3" />
+          {suggestions.length > 0 && (
+            <div className="absolute top-full left-0 w-full bg-white shadow-lg rounded-md mt-1 max-h-60 overflow-auto z-50">
+              {suggestions.map((product) => (
+                <div
+                  key={product.id}
+                  className="flex items-center p-2 hover:bg-gray-100 border-b border-gray-200 cursor-pointer"
+                  onClick={() => {
+                    navigate(`/view-product/${product.id}`);
+                    setSuggestions([]); // Ẩn danh sách gợi ý sau khi click
+                  }}
+                >
+                  <img
+                    src={product.photo}
+                    alt={product.nameProduct}
+                    className="w-14 h-14 object-cover mr-3 rounded-md"
+                  />
+                  <div>
+                    <p className="text-sm font-semibold text-gray-800">
+                      {product.nameProduct}
+                    </p>
+                    <p className="text-xs text-red-500 font-bold">
+                      {product.salePrice}đ
+                      <span className="text-gray-400 line-through ml-2">
+                        {product.salePrice}đ
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Đăng nhập & Giỏ hàng */}
         <div className="flex items-center gap-6">
           <Link
             to="/login"
@@ -91,59 +104,6 @@ const Header = () => {
             </span>
           </Link>
         </div>
-      </div>
-
-      {/* Phần dưới: Menu điều hướng */}
-      <div className="bg-amber-50 text-green-900 py-2 flex justify-between px-10 items-center">
-        <nav className="flex gap-6 text-lg font-medium">
-          <Link
-            to="/"
-            className="text-orange-500 border-b-2 border-orange-500 pb-1"
-          >
-            Trang chủ
-          </Link>
-          <Link
-            to="/men"
-            className="flex items-center gap-1 hover:text-orange-500"
-          >
-            Thời trang Nam <FaAngleDown />
-          </Link>
-          <Link
-            to="/products"
-            className="flex items-center gap-1 hover:text-orange-500"
-          >
-            Sản phẩm <FaAngleDown />
-          </Link>
-          <Link to="/boy" className="hover:text-orange-500">
-            Bé trai
-          </Link>
-          <Link to="/girl" className="hover:text-orange-500">
-            Bé gái
-          </Link>
-          <Link to="/news" className="hover:text-orange-500">
-            Tin tức
-          </Link>
-          <Link to="/contact" className="hover:text-orange-500">
-            Liên hệ
-          </Link>
-        </nav>
-
-        {/* Hotline */}
-        <div className="flex items-center gap-2 text-lg font-medium">
-          <FaPhoneAlt />
-          <span>
-            Hotline: <strong>1900 6750</strong>
-          </span>
-        </div>
-      </div>
-
-      {/* Banner tự động thay đổi */}
-      <div className="relative w-screen h-[40vh] overflow-hidden mt-2 border border-gray-300 shadow-lg">
-        <img
-          src={images[currentImage]}
-          alt="Banner"
-          className="w-full h-full object-cover transition-opacity duration-500 ease-in-out"
-        />
       </div>
     </header>
   );
