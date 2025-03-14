@@ -52,10 +52,10 @@ const ViewProductDetail = () => {
         </p>
         <div className="flex items-center gap-6 mt-4">
           <p className="text-blue-600 font-bold text-3xl">
-            {sanPham.salePrice} VND
+            {sanPham.salePrice.toLocaleString()} VND
           </p>
           <p className="text-gray-500 line-through text-xl">
-            {sanPham.importPrice} VND
+            {sanPham.salePrice.toLocaleString()} VND
           </p>
         </div>
 
