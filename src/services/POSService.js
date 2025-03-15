@@ -63,7 +63,7 @@ const SalePOS = {
 
     /** 🛍️ **Thêm sản phẩm vào đơn hàng** */
     addProductToCart: async (orderId, productData) => {
-        console.log(`📌 Thêm sản phẩm vào đơn hàng ${orderId}:`, productData);
+        console.log(`📌 Thêm sản phẩm vào đơn hàng ${orderId}: `, productData);
         try {
             const response = await axios.post(`${API_URL_CHECKOUT}/orders/${orderId}/products`, productData);
             console.log("✅ Sản phẩm đã thêm vào đơn hàng:", response.data);
@@ -110,12 +110,18 @@ const SalePOS = {
             // 🔍 Kiểm tra tổng tiền trước khi gửi
             console.log("💰 Tổng tiền trước khi gửi:", orderData.totalBill);
 
-            // 🔥 **Bước 1: Tạo đơn hàng**
-            const orderResponse = await SalePOS.createOrder(orderData);
-            console.log("📌 Response từ checkout:", orderResponse);
-
-            const orderId = orderResponse.id;
-            console.log(`✅ Đơn hàng #${orderId} được tạo.`);
+            // 🔥 **Bước 1: 🛑 Chỉ tạo đơn hàng nếu chưa có orderId
+            let orderId = orderData.orderId ?? null;
+            if (!orderId) {
+                console.log("📌 Không có orderId, tiến hành tạo đơn hàng mới.");
+                const orderResponse = await SalePOS.createOrder(orderData);
+                if (!orderResponse || !orderResponse.id) {
+                    throw new Error("❌ API không trả về orderId!");
+                }
+                orderId = orderResponse.id;
+            } else {
+                console.log("✅ Sử dụng orderId đã có:", orderId);
+            }
 
             // 🔥 **Bước 2: Thêm sản phẩm vào đơn hàng**
             for (let item of orderData.orderDetails) {
@@ -135,4 +141,4 @@ const SalePOS = {
     }
 };
 
-export default SalePOS;
+export default SalePOS; 
