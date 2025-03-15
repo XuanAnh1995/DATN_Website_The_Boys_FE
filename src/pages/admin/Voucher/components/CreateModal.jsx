@@ -31,24 +31,60 @@ export default function CreateModal({
     }));
   };
 
+  const validateVoucher = () => {
+    if (!voucher.voucherCode.trim()) {
+      toast.error("Mã voucher không được để trống");
+      return false;
+    }
+    if (!voucher.voucherName.trim()) {
+      toast.error("Tên voucher không được để trống");
+      return false;
+    }
+    if (
+      isNaN(Number(voucher.minCondition)) ||
+      Number(voucher.minCondition) < 0
+    ) {
+      toast.error("Điều kiện tối thiểu phải là số không âm");
+      return false;
+    }
+    if (isNaN(Number(voucher.maxDiscount)) || Number(voucher.maxDiscount) < 0) {
+      toast.error("Mức giảm tối đa phải là số không âm");
+      return false;
+    }
+    if (
+      isNaN(Number(voucher.reducedPercent)) ||
+      Number(voucher.reducedPercent) < 0 ||
+      Number(voucher.reducedPercent) > 100
+    ) {
+      toast.error("Phần trăm giảm giá phải từ 0 đến 100");
+      return false;
+    }
+    if (!voucher.startDate || !voucher.endDate) {
+      toast.error("Ngày bắt đầu và ngày kết thúc không được để trống");
+      return false;
+    }
+    if (new Date(voucher.startDate) >= new Date(voucher.endDate)) {
+      toast.error("Ngày bắt đầu phải trước ngày kết thúc");
+      return false;
+    }
+    return true;
+  };
+
   const handleCreateVoucher = async () => {
+    if (!validateVoucher()) return;
     try {
       const formattedVoucher = {
         ...voucher,
         minCondition: Number(voucher.minCondition) || 0,
         maxDiscount: Number(voucher.maxDiscount) || 0,
         reducedPercent: Number(voucher.reducedPercent) || 0,
-        startDate: voucher.startDate ? new Date(voucher.startDate).toISOString() : null,
-        endDate: voucher.endDate ? new Date(voucher.endDate).toISOString() : null,
+        startDate: new Date(voucher.startDate).toISOString(),
+        endDate: new Date(voucher.endDate).toISOString(),
         status: voucher.isActive,
       };
 
-      if (!formattedVoucher.startDate || !formattedVoucher.endDate) {
-        throw new Error("Ngày bắt đầu và ngày kết thúc không được để trống");
-      }
-
       console.log("Dữ liệu gửi lên API:", formattedVoucher);
-      const response = await VoucherService.createVoucher(formattedVoucher);
+      await VoucherService.createVoucher(formattedVoucher);
       toast.success("Thêm voucher thành công!");
       fetchVouchers();
       setVoucher({
@@ -62,10 +98,10 @@ export default function CreateModal({
         endDate: "",
         isActive: true,
       });
-      onConfirm();
-      onCancel();
+      if (onConfirm) onConfirm();
+      if (onCancel) onCancel();
     } catch (error) {
-      console.log(error);
+      console.error(error);
       toast.error("Không thể thêm voucher. Vui lòng thử lại!");
     }
   };
@@ -75,64 +111,71 @@ export default function CreateModal({
       isOpen={isOpen}
       onRequestClose={onCancel}
       contentLabel="Thêm voucher"
-      className="bg-white p-6 rounded-lg shadow-lg max-w-md mx-auto mt-20 border border-gray-300"
+      className="bg-white p-6 rounded-lg shadow-lg max-w-lg mx-auto mt-20 border border-gray-300"
       overlayClassName="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
     >
       <h2 className="text-xl font-bold text-blue-600 mb-4 text-center">
         Thêm Voucher Mới
       </h2>
-      <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-4">
         {[
-          { label: "Mã Voucher", name: "voucherCode" },
-          { label: "Tên Voucher", name: "voucherName" },
-          { label: "Mô tả", name: "description" },
-          { label: "Điều kiện tối thiểu", name: "minCondition" },
-          { label: "Giảm tối đa", name: "maxDiscount" },
-          { label: "Phần trăm giảm", name: "reducedPercent" },
-        ].map((field) => (
-          <div key={field.name}>
-            <label className="font-semibold">{field.label}:</label>
+          "voucherCode",
+          "voucherName",
+          "description",
+          "minCondition",
+          "maxDiscount",
+          "reducedPercent",
+        ].map((name) => (
+          <div key={name}>
+            <label className="font-semibold">
+              {name === "voucherCode"
+                ? "Mã voucher"
+                : name === "voucherName"
+                  ? "Tên voucher"
+                  : name === "description"
+                    ? "Mô tả"
+                    : name === "minCondition"
+                      ? "Điều kiện tối thiểu Hóa Đơn"
+                      : name === "maxDiscount"
+                        ? "Mức giảm được giảm tối đa"
+                        : "Phần trăm giảm giá"}
+              :
+            </label>
             <input
               type="text"
-              name={field.name}
-              value={voucher[field.name]}
+              name={name}
+              value={voucher[name]}
               onChange={handleChange}
-              className="border rounded-lg px-4 py-2 w-full"
+              className="border rounded-lg px-4 py-2 w-full bg-white"
             />
           </div>
         ))}
-        <div>
-          <label className="font-semibold">Ngày bắt đầu:</label>
-          <input
-            type="datetime-local"
-            name="startDate"
-            value={voucher.startDate}
-            onChange={handleChange}
-            className="border rounded-lg px-4 py-2 w-full"
-          />
-        </div>
-        <div>
-          <label className="font-semibold">Ngày kết thúc:</label>
-          <input
-            type="datetime-local"
-            name="endDate"
-            value={voucher.endDate}
-            onChange={handleChange}
-            className="border rounded-lg px-4 py-2 w-full"
-          />
-        </div>
-        <div>
-          <label className="font-semibold">Trạng thái:</label>
-          <div>
+        {["startDate", "endDate"].map((name) => (
+          <div key={name}>
+            <label className="font-semibold">
+              {name === "startDate" ? "Ngày bắt đầu" : "Ngày kết thúc"}:
+            </label>
             <input
-              type="checkbox"
-              name="isActive"
-              checked={voucher.isActive}
+              type="datetime-local"
+              name={name}
+              value={voucher[name]}
               onChange={handleChange}
-              className="mr-2"
+              className="border rounded-lg px-4 py-2 w-full bg-white"
             />
-            <span>Hoạt động</span>
           </div>
+        ))}
+      </div>
+      <div className="mt-4">
+        <label className="font-semibold">Trạng thái:</label>
+        <div>
+          <input
+            type="checkbox"
+            name="isActive"
+            checked={voucher.isActive}
+            onChange={handleChange}
+            className="mr-2"
+          />
+          <span>Hoạt động</span>
         </div>
       </div>
       <div className="flex justify-end gap-2 mt-6">
