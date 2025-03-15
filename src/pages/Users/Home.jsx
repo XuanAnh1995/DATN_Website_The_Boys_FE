@@ -13,12 +13,12 @@ const Layout = () => {
   const pageSize = 8;
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
-
+  const [showText, setShowText] = useState(false);
   const [currentImage, setCurrentImage] = useState(0);
   const images = [
-    "https://static.vecteezy.com/system/resources/previews/002/294/859/original/flash-sale-web-banner-design-e-commerce-online-shopping-header-or-footer-banner-free-vector.jpg",
-    "https://cdn.shopify.com/s/files/1/0021/0970/2202/files/150_New_Arrivals_Main_Banner_1370X600_a54e428c-0030-4078-9a2f-20286f12e604_1920x.jpg?v=1628065313",
-    "https://file.hstatic.net/1000253775/file/new_banner_pc_copy.jpg",
+    "https://bepos.io/wp-content/uploads/2023/04/cac-chuong-trinh-khuyen-mai-hay-cho-nha-hang-1.png",
+    "https://img.ws.mms.shopee.vn/77f30d91f95a9724233456fb93dc99d7",
+    "https://cdn.tgdd.vn/Files/2022/05/12/1432069/san-sale-cuoi-tuan-nhan-ngay-ma-giam-tu-50-ngan.png",
   ];
 
   useEffect(() => {
@@ -82,7 +82,7 @@ const Layout = () => {
       </div>
 
       <section className="p-6">
-        <h2 className="text-2xl font-bold text-blue-700 mb-4 text-center">
+        <h2 className="text-2xl font-bold text-slate-950 mb-4 text-center">
           ƯU ĐÃI DÀNH CHO BẠN
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
@@ -91,7 +91,7 @@ const Layout = () => {
               key={voucher.id}
               className="relative bg-white p-5 rounded-xl shadow-lg flex flex-col justify-between items-center border border-blue-300 hover:shadow-2xl transition-transform transform hover:-translate-y-1 w-full max-w-xs mx-auto"
             >
-              <div className="bg-blue-600 px-5 py-4 text-lg font-bold text-white rounded-t-lg w-full text-center border-b-2 border-dashed border-white">
+              <div className="bg-red-400 px-5 py-4 text-lg font-bold text-white rounded-t-lg w-full text-center border-b-2 border-dashed border-white">
                 {voucher.voucherCode}
               </div>
               <div className="text-center py-4 px-2">
@@ -112,9 +112,44 @@ const Layout = () => {
           ))}
         </div>
       </section>
-
+      <section className="p-6 mt-4 bg-gray-100 rounded-lg shadow-lg">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-red-600 mb-4">
+              Về chúng tôi
+            </h1>
+            <p className="text-gray-800 text-lg">
+              The Boys không chỉ là một nhóm, mà còn là biểu tượng của sự mạnh
+              mẽ, cá tính và tinh thần bất khuất. Với sự đoàn kết và phong cách
+              riêng biệt, chúng tôi đã tạo nên dấu ấn riêng trong thế giới của
+              mình.
+            </p>
+            <p className="text-gray-800 text-lg mt-2">
+              Nếu bạn đang tìm kiếm một cộng đồng mang đậm bản sắc, sự kiên
+              cường và tinh thần chiến đấu, The Boys chính là nơi dành cho bạn.
+            </p>
+            {showText && (
+              <p className="mt-4 text-lg font-bold text-black">
+                TheBoys là thương hiệu shop đẳng cấp,The Boys chính là nơi dành
+                cho bạn.
+              </p>
+            )}
+            <button
+              className="mt-4 px-6 py-2 bg-red-600 text-white font-semibold rounded-lg shadow-md hover:bg-red-700 transition"
+              onClick={() => setShowText(!showText)}
+            >
+              Xem thêm
+            </button>
+          </div>
+          <div className="flex justify-center">
+            <h1 className="text-5xl font-extrabold text-black">
+              The<span className="text-red-600">Boys</span>
+            </h1>
+          </div>
+        </div>
+      </section>
       <section className="p-6 max-w-6xl mx-auto">
-        <h1 className="text-4xl font-extrabold text-center text-blue-700 mb-6">
+        <h1 className="text-4xl font-extrabold text-center text-red-600 mb-6">
           Sản Phẩm Hot
         </h1>
         <div className="grid gap-y-5 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
