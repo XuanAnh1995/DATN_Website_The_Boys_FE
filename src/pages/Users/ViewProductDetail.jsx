@@ -8,7 +8,7 @@ const ViewProductDetail = () => {
   const [selectedImage, setSelectedImage] = useState("");
 
   useEffect(() => {
-    const fetchProduct = async () => {
+    const fetchProductById = async () => {
       try {
         const data = await ProductDetailService.getProductDetailById(id);
         setSanPham(data);
@@ -19,9 +19,18 @@ const ViewProductDetail = () => {
     };
 
     if (id) {
-      fetchProduct();
+      fetchProductById();
     }
   }, [id]);
+
+  const fetchAllProducts = async () => {
+    try {
+      const response = await ProductDetailService.getAllProductDetails();
+      console.log("Danh sách sản phẩm:", response);
+    } catch (error) {
+      console.error("Lỗi khi lấy danh sách sản phẩm:", error);
+    }
+  };
 
   if (!sanPham)
     return <p className="text-center text-gray-500 text-3xl">Đang tải...</p>;
