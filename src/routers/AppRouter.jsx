@@ -29,7 +29,7 @@ function AppRouter() {
               <Route
                 key={index}
                 path={route.path}
-                element={<route.component />}
+                element={<route.components/>}
               />
             ))}
           </Route>
