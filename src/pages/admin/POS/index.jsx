@@ -425,8 +425,6 @@ const SalePOSPage = () => {
     }, [customerPaid, activeOrderIndex, orders, calculatedDiscount]);
 
 
-
-
     const handlePayment = async () => {
         if (activeOrderIndex === null) {
             console.log("⚠ Không có hóa đơn nào được chọn.");
@@ -452,11 +450,17 @@ const SalePOSPage = () => {
             customerId = -1; // Giả sử -1 là ID cho khách vãng lai
         }
 
-        // 🟢 **Thêm console.log để kiểm tra giá trị trước khi gửi yêu cầu**
-        console.log("📌 Voucher ID trước khi gửi:", selectedVoucher);
-        console.log("📌 Tổng tiền trước khi gửi:", currentOrder?.totalAmount);
+        console.log("📌 Kiểm tra đơn hàng hiện tại:", currentOrder);
+
+        // 🛑 **Thêm kiểm tra orderId**
+        if (!currentOrder.id) {
+            console.log("⚠ Đơn hàng chưa có ID, cần tạo mới.");
+        } else {
+            console.log("✅ Đang thanh toán đơn hàng đã tồn tại, ID:", currentOrder.id);
+        }
 
         const orderRequest = {
+            orderId: currentOrder.id ?? null, // Giữ nguyên orderId nếu đã có
             customerId: customerId,
             employeeId: currentEmployee.id,
             voucherId: selectedVoucher ? vouchers.find(v => v.voucherCode === selectedVoucher)?.id : null,
@@ -467,14 +471,11 @@ const SalePOSPage = () => {
             }))
         };
 
-        console.log("📌 Gửi yêu cầu tạo đơn hàng:", orderRequest);
-
+        console.log("📌 Gửi yêu cầu thanh toán với dữ liệu:", orderRequest);
 
         try {
 
             // 🟢 Bước 1: Tạo đơn hàng
-            console.log("📌 Gửi yêu cầu tạo đơn hàng:", orderRequest);
-            
             const { orderId, paymentResponse } = await SalePOS.checkout(orderRequest);
             console.log("📌 Kiểm tra orderId sau checkout:", orderId);  // Thêm log kiểm tra
 
@@ -482,8 +483,6 @@ const SalePOSPage = () => {
                 console.log("❌ Không thể lấy orderId từ checkout response:", paymentResponse);
                 return;
             }
-
-            console.log("✅ Đơn hàng được tạo với ID:", orderId);
 
             // 🟢 Bước 2: Gửi yêu cầu thanh toán cho đơn hàng vừa tạo
             if (paymentResponse && paymentResponse.status === "success") {
