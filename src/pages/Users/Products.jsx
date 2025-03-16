@@ -7,6 +7,8 @@ const formatCurrency = (amount) => {
 };
 
 const ProductList = () => {
+  const [selectedProducts, setSelectedProducts] = useState([]); // Danh sách sản phẩm được chọn để so sánh
+  const [showCompareModal, setShowCompareModal] = useState(false);
   const [products, setProducts] = useState([]);
   const [filters, setFilters] = useState({
     minPrice: null,
@@ -48,6 +50,15 @@ const ProductList = () => {
 
   const handleFilterChange = (e) => {
     setFilters({ ...filters, [e.target.name]: e.target.value });
+  };
+  // Chọn hoặc bỏ chọn sản phẩm để so sánh
+  const toggleCompare = (product) => {
+    setSelectedProducts((prev) => {
+      if (prev.some((p) => p.id === product.id)) {
+        return prev.filter((p) => p.id !== product.id);
+      }
+      return prev.length < 3 ? [...prev, product] : prev;
+    });
   };
 
   return (
@@ -135,31 +146,35 @@ const ProductList = () => {
           products.map((product) => (
             <div
               key={product.id}
-              className="relative bg-white w-[280px] h-[520px] p-4 rounded-xl shadow-lg border border-gray-200 transform transition-transform hover:scale-105 hover:shadow-2xl flex flex-col group mx-auto"
+              className={`relative bg-white w-[280px] h-[520px] p-4 rounded-xl shadow-lg border border-gray-200 transition transform hover:scale-105 flex flex-col group mx-auto ${
+                selectedProducts.some((p) => p.id === product.id)
+                  ? "border-2 border-blue-500"
+                  : ""
+              }`}
             >
-              <div className="relative">
-                <img
-                  src={product.photo || "/path/to/default-image.jpg"}
-                  alt={product.nameProduct}
-                  className="w-full h-64 object-cover rounded-lg"
-                />
-              </div>
+              <input
+                type="checkbox"
+                checked={selectedProducts.some((p) => p.id === product.id)}
+                onChange={() => toggleCompare(product)}
+                className="absolute top-3 right-3 w-5 h-5"
+              />
+              <img
+                src={product.photo || "/path/to/default-image.jpg"}
+                alt={product.nameProduct}
+                className="w-full h-64 object-cover rounded-lg"
+              />
               <h3 className="text-lg font-semibold mt-3 text-center">
                 {product.nameProduct}
               </h3>
-              <div className="text-center flex justify-center gap-2 mt-1">
-                <span className="text-red-600 font-bold text-lg">
-                  {formatCurrency(product.salePrice || 0)}
-                </span>
-              </div>
-              <div className="absolute bottom-4 left-0 right-0 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button
-                  onClick={() => navigate(`/view-product/${product.id}`)}
-                  className="bg-red-500 text-white text-sm font-semibold py-2 px-4 rounded-md shadow-md hover:bg-red-600 transition"
-                >
-                  🛒 Mua Ngay
-                </button>
-              </div>
+              <p className="text-red-600 font-bold text-lg text-center">
+                {formatCurrency(product.salePrice || 0)}
+              </p>
+              <button
+                onClick={() => navigate(`/view-product/${product.id}`)}
+                className="bg-red-500 text-white text-sm font-semibold py-2 px-4 rounded-md shadow-md hover:bg-red-600 transition mx-auto mt-auto"
+              >
+                🛒 Mua Ngay
+              </button>
             </div>
           ))
         ) : (
@@ -168,6 +183,16 @@ const ProductList = () => {
           </p>
         )}
       </div>
+      {selectedProducts.length > 1 && (
+        <div className="flex justify-center mt-6">
+          <button
+            onClick={() => setShowCompareModal(true)}
+            className="px-6 py-3 bg-green-500 text-white font-semibold rounded-lg shadow-md hover:bg-green-600 transition"
+          >
+            🔍 So Sánh {selectedProducts.length} Sản Phẩm
+          </button>
+        </div>
+      )}
       <div className="flex justify-center mt-6">
         <button
           onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 0))}
@@ -189,6 +214,62 @@ const ProductList = () => {
           Tiếp
         </button>
       </div>
+      {showCompareModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-5xl w-full relative">
+            {/* Nút Đóng */}
+            <button
+              onClick={() => setShowCompareModal(false)}
+              className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-2xl"
+            >
+              ✖
+            </button>
+            <h2 className="text-3xl font-bold text-center text-red-600 mb-6">
+              🏆 So Sánh Sản Phẩm
+            </h2>
+
+            {/* Bảng So Sánh */}
+            <div className="overflow-x-auto">
+              <table className="min-w-full border border-gray-300">
+                <thead>
+                  <tr className="bg-gray-200 text-gray-700">
+                    <th className="p-3 border">Ảnh</th>
+                    <th className="p-3 border">Tên</th>
+                    <th className="p-3 border">Giá</th>
+                    <th className="p-3 border">Đã Bán</th>
+                    <th className="p-3 border">Thương Hiệu</th>
+                    <th className="p-3 border">Đánh Giá ⭐</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedProducts.map((product) => (
+                    <tr key={product.id} className="text-center">
+                      <td className="p-3 border">
+                        <img
+                          src={product.photo || "/path/to/default-image.jpg"}
+                          alt={product.nameProduct}
+                          className="w-20 h-20 object-cover rounded-md"
+                        />
+                      </td>
+                      <td className="p-3 border">{product.nameProduct}</td>
+                      <td className="p-3 border text-red-600 font-bold">
+                        {formatCurrency(product.salePrice)}
+                      </td>
+                      <td className="p-3 border">{product.quantitySaled}</td>
+                      <td className="p-3 border text-blue-600">
+                        {product.brand || "N/A"}
+                      </td>
+                      <td className="p-3 border text-yellow-500 font-semibold">
+                        {product.rating || "Chưa có"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 };
