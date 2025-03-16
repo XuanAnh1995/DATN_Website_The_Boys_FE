@@ -1,4 +1,4 @@
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useNavigate, Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import VoucherServices from "../../services/VoucherServices";
 import ProductService from "../../services/ProductService";
@@ -10,6 +10,7 @@ const Layout = () => {
   const [vouchers, setVouchers] = useState([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  const [brands, setBrands] = useState([]);
   const pageSize = 8;
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
@@ -69,6 +70,17 @@ const Layout = () => {
     } catch (error) {
       console.error("Lỗi khi lấy danh sách sản phẩm:", error);
     }
+  };
+  const [selectedProducts, setSelectedProducts] = useState([]);
+  const [showCompareModal, setShowCompareModal] = useState(false);
+
+  const toggleSelectProduct = (product) => {
+    setSelectedProducts((prevSelected) => {
+      const isSelected = prevSelected.some((p) => p.id === product.id);
+      return isSelected
+        ? prevSelected.filter((p) => p.id !== product.id) // Bỏ chọn
+        : [...prevSelected, product]; // Chọn thêm
+    });
   };
 
   return (
@@ -209,6 +221,18 @@ const Layout = () => {
                   <button className="bg-blue-500 text-white text-sm font-semibold py-2 px-4 rounded-md shadow-md hover:bg-blue-600 transition">
                     ➕ Giỏ hàng
                   </button>
+                  <button
+                    onClick={() => toggleSelectProduct(product)}
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold shadow-md transition ${
+                      selectedProducts.some((p) => p.id === product.id)
+                        ? "bg-green-600 text-white"
+                        : "bg-gray-300 text-black"
+                    }`}
+                  >
+                    {selectedProducts.some((p) => p.id === product.id)
+                      ? "✔ Đã chọn"
+                      : "🔍 Chọn so sánh"}
+                  </button>
                 </div>
               </div>
             ))
@@ -240,6 +264,95 @@ const Layout = () => {
           </button>
         </div>
       </section>
+      {selectedProducts.length > 1 && (
+        <div className="flex justify-center mt-6">
+          <button
+            onClick={() => setShowCompareModal(true)}
+            className="px-6 py-3 bg-green-500 text-white font-semibold rounded-lg shadow-md hover:bg-green-600 transition"
+          >
+            🔍 So Sánh {selectedProducts.length} Sản Phẩm
+          </button>
+        </div>
+      )}
+      {showCompareModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-5xl w-full relative overflow-y-auto max-h-[90vh]">
+            {/* Nút Đóng */}
+            <button
+              onClick={() => setShowCompareModal(false)}
+              className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-2xl"
+            >
+              ✖
+            </button>
+
+            {/* Tiêu Đề */}
+            <h2 className="text-3xl font-bold text-center text-red-600 mb-6">
+              🏆 So Sánh Sản Phẩm
+            </h2>
+
+            {/* Bảng So Sánh */}
+            <div className="overflow-x-auto">
+              <table className="min-w-full border border-gray-300">
+                <thead>
+                  <tr className="bg-gray-200 text-gray-700 text-left">
+                    <th className="p-3 border">Ảnh</th>
+                    <th className="p-3 border">Tên Sản Phẩm</th>
+                    <th className="p-3 border">Giá Bán</th>
+                    <th className="p-3 border">Đã Bán</th>
+                    <th className="p-3 border">Mô Tả</th>
+                    <th className="p-3 border">Thương Hiệu</th>
+                    <th className="p-3 border">Đánh Giá ⭐</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedProducts.map((product) => (
+                    <tr key={product.id} className="text-center bg-gray-50">
+                      {/* Ảnh */}
+                      <td className="p-3 border">
+                        <img
+                          src={product.photo || "/path/to/default-image.jpg"}
+                          alt={product.nameProduct}
+                          className="w-20 h-20 object-cover rounded-md"
+                        />
+                      </td>
+
+                      {/* Tên Sản Phẩm */}
+                      <td className="p-3 border font-semibold">
+                        {product.nameProduct}
+                      </td>
+
+                      {/* Giá */}
+                      <td className="p-3 border text-red-600 font-bold">
+                        {formatCurrency(product.salePrice)}
+                      </td>
+
+                      {/* Đã Bán */}
+                      <td className="p-3 border text-gray-600">
+                        {product.quantitySaled}
+                      </td>
+
+                      {/* Mô Tả */}
+                      <td className="p-3 border text-gray-500">
+                        {product.description || "Không có mô tả"}
+                      </td>
+
+                      {/* Thương Hiệu */}
+                      <td className="p-3 border text-blue-600">
+                        {product.brand || "Không rõ"}
+                      </td>
+
+                      {/* Đánh Giá */}
+                      <td className="p-3 border text-yellow-500 font-semibold">
+                        {product.rating || "Chưa có"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 };
