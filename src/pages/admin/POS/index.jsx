@@ -25,6 +25,15 @@ const SalePOSPage = () => {
     const [searchKeyword, setSearchKeyword] = useState("");
     const [filteredCustomers, setFilteredCustomers] = useState([]);
 
+    const [currentPage, setCurrentPage] = useState(1);
+    const productsPerPage = 5; // Số sản phẩm trên mỗi trang
+
+    const indexOfLastProduct = currentPage * productsPerPage;
+    const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
+    const currentProducts = filteredProducts.slice(indexOfFirstProduct, indexOfLastProduct);
+
+    const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
     // State cho form thêm khách hàng mới
     const [showAddCustomerForm, setShowAddCustomerForm] = useState(false);
     const [newCustomer, setNewCustomer] = useState({
@@ -276,11 +285,23 @@ const SalePOSPage = () => {
             // Kiểm tra sản phẩm đã tồn tại trong giỏ hàng chưa
             const existingItemIndex = currentOrder.items.findIndex(item => item.id === product.id);
             if (existingItemIndex !== -1) {
+                const existingItem = currentOrder.items[existingItemIndex];
+
+                // Kiểm tra nếu số lượng vượt quá tồn kho
+                if (existingItem.quantity >= product.quantity) {
+                    alert(`Sản phẩm "${product.product?.productName}" chỉ còn ${product.quantity} sản phẩm trong kho.`);
+                    return updatedOrders;
+                }
+
                 console.log(`🔄 [UPDATE] Sản phẩm ${product.id} đã có trong giỏ hàng, tăng số lượng lên.`);
                 currentOrder.items[existingItemIndex].quantity += 1;
             } else {
                 console.log(`➕ [NEW] Thêm sản phẩm mới:`, product);
-                currentOrder.items.push({ ...product, quantity: 1 });
+                currentOrder.items.push({
+                    ...product,
+                    quantity: 1,
+                    quantityAvailable: product.quantity     // Lưu số lượng tồn kho
+                });
             }
 
             currentOrder.totalAmount = currentOrder.items.reduce((sum, item) => {
@@ -741,8 +762,16 @@ const SalePOSPage = () => {
                                                 <input
                                                     type="number"
                                                     min="1"
+                                                    max={item.quantityAvailable || 1} // giới hạn số lượng tối đa theo tồn kho
                                                     value={isNaN(item.quantity) || item.quantity < 1 ? 1 : item.quantity}
-                                                    onChange={(e) => handleQuantityChange(item.id, parseInt(e.target.value) || 1)}
+                                                    onChange={(e) => { 
+                                                        const newQuantity = parseInt(e.target.value) || 1;
+                                                        if(newQuantity > item.quantityAvailable) {
+                                                            alert(`Sản phẩm "${item.product?.productName}" chỉ còn ${item.quantityAvailable} sản phẩm trong kho.`);
+                                                            return;
+                                                        }
+                                                        handleQuantityChange(item.id, newQuantity);
+                                                    }}
                                                     className="w-16 p-1 text-center border rounded"
                                                 />
                                             </td>
@@ -764,6 +793,7 @@ const SalePOSPage = () => {
                         </table>
                     )}
 
+                    {/*Danh sách chi tiêt sản phẩm*/}
                     <div className="mt-6">
                         <h3 className="text-lg font-semibold mb-2">Danh sách sản phẩm</h3>
                         <table className="min-w-full bg-white border border-gray-200 rounded-lg shadow-sm">
@@ -780,8 +810,8 @@ const SalePOSPage = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredProducts.length > 0 ? (
-                                    filteredProducts.map((product) => {
+                                {currentProducts.length > 0 ? (
+                                    currentProducts.map((product) => {
                                         const discountPercent = product.promotion?.promotionPercent || 0;
                                         const discount = discountPercent > 0 ? `${discountPercent}%` : "Không có";
 
@@ -791,7 +821,7 @@ const SalePOSPage = () => {
 
                                         return (
                                             <tr key={product.id} className="hover:bg-gray-50">
-                                                <td className="py-2 px-4 border-b">{product.product?.productCode || "Không có mã"}</td>
+                                                <td className="py-2 px-4 border-b">{product.productDetailCode || "Không có mã"}</td>
                                                 <td className="py-2 px-4 border-b">{product.product?.productName || "Không có tên"}</td>
                                                 <td className="py-2 px-4 border-b">{product.color?.name || "Không xác định"}</td>
                                                 <td className="py-2 px-4 border-b">{product.size?.name || "Không xác định"}</td>
@@ -818,6 +848,17 @@ const SalePOSPage = () => {
                                 )}
                             </tbody>
                         </table>
+                        <div className="flex justify-center mt-4">
+                            {Array.from({ length: Math.ceil(filteredProducts.length / productsPerPage) }, (_, index) => (
+                                <button
+                                    key={index + 1}
+                                    onClick={() => paginate(index + 1)}
+                                    className={`mx-1 px-3 py-1 rounded ${currentPage === index + 1 ? "bg-blue-500 text-white" : "bg-gray-200"}`}
+                                >
+                                    {index + 1}
+                                </button>
+                            ))}
+                        </div>
                     </div>
 
 
@@ -890,6 +931,7 @@ const SalePOSPage = () => {
                                     const endDate = new Date(v.endDate);
 
                                     return (
+                                        v.status === true && // 🟢 Voucher đang hoạt động
                                         currentOrder?.totalAmount >= v.minCondition && // 🟢 Đủ điều kiện giá trị đơn hàng
                                         now >= startDate && now <= endDate // ⏳ Kiểm tra xem voucher có hiệu lực không
                                     );
