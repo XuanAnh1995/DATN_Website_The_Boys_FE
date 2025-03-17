@@ -47,6 +47,8 @@ const SalePOS = {
             // ✅ Chuyển paymentMethod từ String -> Integer
             orderData.paymentMethod = paymentMethodMapping[orderData.paymentMethod] || 1;
 
+            console.log("🔍 Dữ liệu thực sự gửi đi:", JSON.stringify(orderData, null, 2));
+
             const response = await axios.post(`${API_URL_CHECKOUT}/orders`, orderData);
             console.log("✅ Đơn hàng tạo thành công:", response.data);
 
@@ -75,10 +77,10 @@ const SalePOS = {
     },
 
     /** 💳 **Thanh toán đơn hàng** */
-    completePayment: async (orderId) => {
+    completePayment: async (orderId, paymentData) => {
         console.log(`📌 Hoàn tất thanh toán cho đơn hàng #${orderId}`);
         try {
-            const response = await axios.put(`${API_URL_CHECKOUT}/orders/${orderId}/payment`);
+            const response = await axios.put(`${API_URL_CHECKOUT}/orders/${orderId}/payment`, paymentData);
             console.log("✅ Thanh toán hoàn tất:", response.data);
             return response.data;
         } catch (error) {
@@ -104,33 +106,27 @@ const SalePOS = {
     checkout: async (orderData) => {
         console.log("📌 Bắt đầu luồng thanh toán với đơn hàng:", orderData);
         try {
-            // 🔍 Kiểm tra voucherId trước khi gửi
-            console.log("🎟️ Voucher ID trước khi gửi:", orderData.voucherId);
-
-            // 🔍 Kiểm tra tổng tiền trước khi gửi
-            console.log("💰 Tổng tiền trước khi gửi:", orderData.totalBill);
-
-            // 🔥 **Bước 1: 🛑 Chỉ tạo đơn hàng nếu chưa có orderId
             let orderId = orderData.orderId ?? null;
             if (!orderId) {
                 console.log("📌 Không có orderId, tiến hành tạo đơn hàng mới.");
                 const orderResponse = await SalePOS.createOrder(orderData);
-                if (!orderResponse || !orderResponse.id) {
-                    throw new Error("❌ API không trả về orderId!");
-                }
                 orderId = orderResponse.id;
             } else {
                 console.log("✅ Sử dụng orderId đã có:", orderId);
             }
 
-            // 🔥 **Bước 2: Thêm sản phẩm vào đơn hàng**
+            // Thêm sản phẩm vào đơn hàng
             for (let item of orderData.orderDetails) {
                 await SalePOS.addProductToCart(orderId, item);
             }
             console.log("✅ Tất cả sản phẩm đã được thêm vào đơn hàng.");
 
-            // 🔥 **Bước 3: Thanh toán đơn hàng**
-            const paymentResponse = await SalePOS.completePayment(orderId);
+            // Thanh toán đơn hàng
+            const paymentData = {
+                customerId: orderData.customerId,
+                voucherId: orderData.voucherId
+            };
+            const paymentResponse = await SalePOS.completePayment(orderId, paymentData);
             console.log("✅ Thanh toán thành công:", paymentResponse);
 
             return { orderId, paymentResponse };

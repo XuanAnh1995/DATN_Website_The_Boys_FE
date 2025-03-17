@@ -62,6 +62,13 @@ const SalePOSPage = () => {
         setEmail(customer.email);
         setSearchKeyword(customer.fullname); // Hiển thị tên khách hàng trong input
         setFilteredCustomers([]); // Ẩn danh sách gợi ý
+        if (activeOrderIndex !== null) {
+            setOrders(prevOrders => {
+                const updatedOrders = [...prevOrders];
+                updatedOrders[activeOrderIndex].customerId = customer.id;
+                return updatedOrders;
+            });
+        }
     };
 
     useEffect(() => {
@@ -140,6 +147,13 @@ const SalePOSPage = () => {
             console.log("✅ Giảm giá áp dụng:", discountAmount);
 
             setCalculatedDiscount(discountAmount);
+            if (activeOrderIndex !== null) {
+                setOrders(prevOrders => {
+                    const updatedOrders = [...prevOrders];
+                    updatedOrders[activeOrderIndex].voucherId = voucher.id;
+                    return updatedOrders;
+                });
+            }
         } else {
             console.log("❌ Không đủ điều kiện để áp dụng voucher.");
 
@@ -224,27 +238,13 @@ const SalePOSPage = () => {
         }
     };
 
-    // const handleCreateOrder = () => {
-    //     const newOrder = {
-    //         id: Date.now(),
-    //         items: [],
-    //         totalAmount: 0,
-    //         discount: 0,
-    //         customerId: selectedCustomer,
-    //         paymentMethod: "cash"
-    //     };
-
-    //     setOrders(prevOrders => [...prevOrders, newOrder]);
-    //     setActiveOrderIndex(orders.length);
-    // };
-
 
     const handleCreateOrder = async () => {
         try {
             const orderData = {
-                customerId: selectedCustomer || null,
+                customerId: selectedCustomer && selectedCustomer !== "walk-in" ? selectedCustomer : -1,
                 employeeId: 1, // Tạm thời set cứng ID nhân viên là 1
-                voucherId: null,
+                voucherId: selectedVoucher ? vouchers.find(v => v.voucherCode === selectedVoucher)?.id : null,
                 paymentMethod: "cash",
             };
 
@@ -255,10 +255,12 @@ const SalePOSPage = () => {
                 items: [],
                 totalAmount: 0,
                 discount: 0,
-                customerId: selectedCustomer,
+                customerId: orderData.customerId,
+                voucherId: orderData.voucherId,
                 paymentMethod: orderData.paymentMethod
             }]);
 
+            console.log("🔍 Kiểm tra giá trị customerId trước khi gửi:", selectedCustomer);
             setActiveOrderIndex(orders.length);
             console.log("✅ Đơn hàng mới đã được tạo:", newOrder);
         } catch (error) {
@@ -509,6 +511,33 @@ const SalePOSPage = () => {
             if (paymentResponse && paymentResponse.status === "success") {
                 console.log("✅ Thanh toán thành công!");
                 handleRemoveOrder(activeOrderIndex);
+
+                // Reset các state liên quan đến khách hàng
+                setSelectedCustomer("");
+                setCustomerName("");
+                setPhone("");
+                setEmail("");
+                setSearchKeyword(""); // Reset ô tìm kiếm khách hàng
+                setFilteredCustomers([]); // Ẩn danh sách gợi ý khách hàng
+
+                // Reset các state liên quan đến thanh toán
+                setTotalAmount(0);
+                setCustomerPaid(0);
+                setChangeAmount(0);
+                setSelectedVoucher("");
+                setCalculatedDiscount(0);
+
+                // Reset các state liên quan đến form thêm khách hàng (nếu cần)
+                setShowAddCustomerForm(false);
+                setNewCustomer({
+                    fullname: "",
+                    phone: "",
+                    email: ""
+                });
+
+                // 🟢 Cập nhật danh sách sản phẩm sau khi thanh toán
+                await fetchProductDetails(); // Gọi lại API để lấy dữ liệu sản phẩm mới
+
             } else {
                 console.log("❌ Thanh toán thất bại!");
             }
@@ -764,9 +793,9 @@ const SalePOSPage = () => {
                                                     min="1"
                                                     max={item.quantityAvailable || 1} // giới hạn số lượng tối đa theo tồn kho
                                                     value={isNaN(item.quantity) || item.quantity < 1 ? 1 : item.quantity}
-                                                    onChange={(e) => { 
+                                                    onChange={(e) => {
                                                         const newQuantity = parseInt(e.target.value) || 1;
-                                                        if(newQuantity > item.quantityAvailable) {
+                                                        if (newQuantity > item.quantityAvailable) {
                                                             alert(`Sản phẩm "${item.product?.productName}" chỉ còn ${item.quantityAvailable} sản phẩm trong kho.`);
                                                             return;
                                                         }
@@ -812,8 +841,13 @@ const SalePOSPage = () => {
                             <tbody>
                                 {currentProducts.length > 0 ? (
                                     currentProducts.map((product) => {
-                                        const discountPercent = product.promotion?.promotionPercent || 0;
-                                        const discount = discountPercent > 0 ? `${discountPercent}%` : "Không có";
+                                        const now = new Date();
+                                        const startDate = product.promotion?.startDate ? new Date(product.promotion.startDate) : null;
+                                        const endDate = product.promotion?.endDate ? new Date(product.promotion.endDate) : null;
+
+                                        const isPromotionActive = startDate && endDate && now >= startDate && now <= endDate;
+                                        const discountPercent = isPromotionActive ? product.promotion.promotionPercent : 0;
+                                        const discount = discountPercent > 0 ? `${discountPercent}%` : "___";
 
                                         const discountedPrice = discountPercent > 0
                                             ? product.salePrice * (1 - discountPercent / 100)
@@ -938,7 +972,7 @@ const SalePOSPage = () => {
                                 })
                                 .map(v => (
                                     <option key={v.id} value={v.voucherCode}>
-                                        {v.voucherCode} - {v.voucherName}
+                                        {v.voucherCode} - {v.voucherName} - {v.reducedPercent + "%"}
                                     </option>
                                 ))}
                         </select>
