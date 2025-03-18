@@ -3,6 +3,30 @@ import { useParams, useNavigate } from "react-router-dom";
 import OrderService from "../../../services/OrderService";
 import { toast } from "react-toastify";
 
+
+// Các trạng thái đơn hàng
+const orderStatusMap = {
+  "-1": "Đã hủy",
+  "0": "Chờ xác nhận",
+  "1": "Chờ thanh toán",
+  "2": "Đã xác nhận",
+  "3": "Đang giao hàng",
+  "4": "Giao hàng không thành công",
+  "5": "Hoàn thành"
+};
+
+// Tạo lớp CSS cho từng trạng thái
+const getStatusClass = (status) => {
+  const baseClasses = "px-2 py-1 rounded-full text-xs font-medium";
+  return status === -1 ? `${baseClasses} bg-red-100 text-red-800` :
+    status === 0 ? `${baseClasses} bg-yellow-100 text-yellow-800` :
+    status === 1 ? `${baseClasses} bg-blue-100 text-blue-800` :
+    status === 2 ? `${baseClasses} bg-green-100 text-green-800` :
+    status === 3 ? `${baseClasses} bg-purple-100 text-purple-800` :
+    status === 4 ? `${baseClasses} bg-orange-100 text-orange-800` : 
+    `${baseClasses} bg-gray-100 text-gray-800`;
+};
+
 const OrderDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -239,8 +263,13 @@ useEffect(() => {
   const formatCurrency = (amount) => {
     if (amount === undefined || amount === null) return "N/A";
     return amount.toLocaleString("vi-VN", { style: "currency", currency: "VND" });
-  };
 
+    
+  };
+  console.log("orderDetails:", orderDetails);
+  console.log("order:", orderDetails?.order);
+  console.log("statusOrder:", orderDetails?.order?.statusOrder);
+  console.log("Keys in orderStatusMap:", Object.keys(orderStatusMap));
   return (
     <div className="bg-gray-100 py-8 min-h-screen">
       <div className="container mx-auto px-4">
@@ -257,30 +286,32 @@ useEffect(() => {
 
           {/* Customer Info */}
           <div className="p-6 border-b">
-            <h3 className="text-lg font-semibold text-gray-700 mb-4">Thông tin khách hàng</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-500">Họ và tên</p>
-                <p className="font-medium">{orderDetails.customer?.fullname || "N/A"}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Số điện thoại</p>
-                <p className="font-medium">{orderDetails.customer?.phone || "N/A"}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Ngày đặt hàng</p>
-                <p className="font-medium">{formatDate(orderDetails.createDate)}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Trạng thái</p>
-                <p className="font-medium">
-                  <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
-                    {orderDetails.status || "Đã xác nhận"}
-                  </span>
-                </p>
-              </div>
-            </div>
-          </div>
+  <h3 className="text-lg font-semibold text-gray-700 mb-4">Thông tin khách hàng</h3>
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div>
+      <p className="text-sm text-gray-500">Họ và tên</p>
+      <p className="font-medium">{orderDetails.customer?.fullname || "N/A"}</p>
+    </div>
+    <div>
+      <p className="text-sm text-gray-500">Số điện thoại</p>
+      <p className="font-medium">{orderDetails.customer?.phone || "N/A"}</p>
+    </div>
+    <div>
+      <p className="text-sm text-gray-500">Ngày đặt hàng</p>
+      <p className="font-medium">{formatDate(orderDetails.createDate)}</p>
+    </div>
+    <div>
+      <p className="text-sm text-gray-500">Trạng thái đơn hàng</p>
+    
+      <p className="font-medium">
+  <span className={getStatusClass(parseInt(orderDetails?.statusOrder))}>
+    {orderStatusMap[orderDetails?.statusOrder?.toString()] || "Không xác định"}
+  </span>
+</p>
+
+    </div>
+  </div>
+</div>
 
           {/* Order Details */}
           <div className="p-6">
