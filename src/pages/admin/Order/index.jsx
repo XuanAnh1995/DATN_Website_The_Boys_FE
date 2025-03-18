@@ -291,6 +291,9 @@ export default function Order() {
                     <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Tổng tiền sau giảm
                     </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Tên Voucher
+                    </th>
                     <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Số lượng SP
                     </th>
@@ -322,6 +325,9 @@ export default function Order() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-700 font-medium">
                         {formatCurrency(item.totalBill)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{item.voucher?.voucherName || "Không Có Voucher"}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         <div className="text-sm font-medium">{item.totalAmount}</div>
