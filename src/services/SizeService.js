@@ -3,13 +3,11 @@ import axios from 'axios';
 const API_URL = 'http://localhost:8080/api/sizes';
 
 const SizeService = {
-    getAllSizes: (search = "", page = 0, size = 10, sortBy = "id", sortDir = "asc") => {
-        return axios.get(API_URL, {
+    getAllSizes: async (search = "", page = 0, size = 10, sortBy = "id", sortDir = "asc") => {
+        const response = await axios.get(API_URL, {
             params: { search, page, size, sortBy, sortDir },
-        }).then(response => {
-            // Trả về dữ liệu theo cấu trúc API
-            return response.data.data;
         });
+        return response.data.data;
     },
 
 
