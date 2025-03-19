@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import SalePOS from "../../../services/POSService";
+import ColorService from "../../../services/ColorService"
+import SizeService from "../../../services/SizeService"
 import CustomerService from "../../../services/CustomerService"
 import { FaShoppingCart, FaTrash, FaPlus, FaTimes } from "react-icons/fa";
 
@@ -17,6 +19,14 @@ const SalePOSPage = () => {
     const [customerName, setCustomerName] = useState("");
     const [email, setEmail] = useState("");
     const [totalAmount, setTotalAmount] = useState(0);
+    const [filter, setFilter] = useState({
+        minPrice: "",
+        maxPrice: ""
+    });
+
+    // State mới cho danh sách màu sắc và kích thước
+    const [colors, setColors] = useState([]);
+    const [sizes, setSizes] = useState([]);
 
     const [selectedVoucher, setSelectedVoucher] = useState("");
     const [calculatedDiscount, setCalculatedDiscount] = useState(0);
@@ -26,7 +36,7 @@ const SalePOSPage = () => {
     const [filteredCustomers, setFilteredCustomers] = useState([]);
 
     const [currentPage, setCurrentPage] = useState(1);
-    const productsPerPage = 5; // Số sản phẩm trên mỗi trang
+    const productsPerPage = 8; // Số sản phẩm trên mỗi trang
 
     const indexOfLastProduct = currentPage * productsPerPage;
     const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
@@ -53,6 +63,8 @@ const SalePOSPage = () => {
         fetchProductDetails();
         fetchCustomers();
         fetchVouchers();
+        fetchColors(); // Lấy danh sách màu sắc
+        fetchSizes();  // Lấy danh sách kích thước
     }, []);
 
     const handleSelectCustomer = (customer) => {
@@ -72,17 +84,49 @@ const SalePOSPage = () => {
     };
 
     useEffect(() => {
+        let filtered = allProducts;
+        // Lọc theo searchTerm (tìm kiếm chung)
         if (searchTerm) {
-            const filtered = allProducts.filter(product =>
+            filtered = filtered.filter(product =>
                 product.product?.productName?.toLowerCase().includes(searchTerm.toLowerCase())
             );
-            setFilteredProducts(filtered);
-        } else {
-            setFilteredProducts(allProducts);
         }
-    }, [searchTerm, allProducts]);
 
+        // Lọc theo màu sắc
+        if (filter.color) {
+            filtered = filtered.filter(product =>
+                product.color?.name?.toLowerCase().includes(filter.color.toLowerCase())
+            );
+        }
 
+        // Lọc theo kích thước
+        if (filter.size) {
+            filtered = filtered.filter(product =>
+                product.size?.name?.toLowerCase().includes(filter.size.toLowerCase())
+            );
+        }
+
+        // Lọc theo khoảng giá
+        const minPrice = Number(filter.minPrice) || 0;
+        const maxPrice = Number(filter.maxPrice) || Infinity;
+        filtered = filtered.filter(product => {
+            const now = new Date();
+            const startDate = product.promotion?.startDate ? new Date(product.promotion.startDate) : null;
+            const endDate = product.promotion?.endDate ? new Date(product.promotion.endDate) : null;
+            const isPromotionActive = startDate && endDate && now >= startDate && now <= endDate;
+            const discountPercent = isPromotionActive ? product.promotion.promotionPercent : 0;
+            const effectivePrice = discountPercent > 0
+                ? product.salePrice * (1 - discountPercent / 100)
+                : product.salePrice;
+
+            return effectivePrice >= minPrice && effectivePrice <= maxPrice;
+        });
+
+        setFilteredProducts(filtered);
+        setCurrentPage(1); // Reset về trang đầu tiên khi áp dụng bộ lọc
+    }, [searchTerm, allProducts, filter]);
+
+    // Hàm lấy danh sách sản phẩm chi tiết
     const fetchProductDetails = async () => {
         try {
             const response = await SalePOS.getProductDetails({});
@@ -93,6 +137,7 @@ const SalePOSPage = () => {
         }
     };
 
+    // Hàm lấy danh sách khách hàng
     const fetchCustomers = async () => {
         try {
             const response = await SalePOS.getCustomers();
@@ -102,6 +147,7 @@ const SalePOSPage = () => {
         }
     };
 
+    // Hàm lấy danh sách voucher
     const fetchVouchers = async () => {
         try {
             const response = await SalePOS.getVouchers();
@@ -110,6 +156,26 @@ const SalePOSPage = () => {
             console.log("Lỗi khi lấy danh sách voucher", error)
         }
     }
+
+    // Hàm lấy danh sách màu sắc
+    const fetchColors = async () => {
+        try {
+            const response = await ColorService.getAllColors();
+            setColors(response.content || []); // Giả sử API trả về { content: [...] }
+        } catch (error) {
+            console.error("Lỗi khi lấy danh sách màu sắc:", error);
+        }
+    };
+
+    // Hàm lấy danh sách kích thước
+    const fetchSizes = async () => {
+        try {
+            const response = await SizeService.getAllSizes();
+            setSizes(response.content || []); // Giả sử API trả về { content: [...] }
+        } catch (error) {
+            console.error("Lỗi khi lấy danh sách kích thước:", error);
+        }
+    };
 
     const handleSearchCustomer = (e) => {
         const keyword = e.target.value.toLowerCase();
@@ -618,11 +684,6 @@ const SalePOSPage = () => {
     //     }
     // };
 
-
-
-
-
-
     // Lấy đơn hàng hiện tại
     const currentOrder = activeOrderIndex !== null && activeOrderIndex < orders.length
         ? orders[activeOrderIndex]
@@ -825,6 +886,64 @@ const SalePOSPage = () => {
                     {/*Danh sách chi tiêt sản phẩm*/}
                     <div className="mt-6">
                         <h3 className="text-lg font-semibold mb-2">Danh sách sản phẩm</h3>
+
+                        {/* Form Bộ Lọc */}
+                        <div className="mb-4 flex gap-4">
+                            <div className="flex-1">
+                                <label className="block text-sm font-medium text-gray-700">Giá tối thiểu (VND)</label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    value={filter.minPrice}
+                                    onChange={(e) => setFilter({ ...filter, minPrice: e.target.value })}
+                                    placeholder="Nhập giá tối thiểu"
+                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                                />
+                            </div>
+                            <div className="flex-1">
+                                <label className="block text-sm font-medium text-gray-700">Giá tối đa (VND)</label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    value={filter.maxPrice}
+                                    onChange={(e) => setFilter({ ...filter, maxPrice: e.target.value })}
+                                    placeholder="Nhập giá tối đa"
+                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                                />
+                            </div>
+                            <div className="flex-1">
+                                <label className="block text-sm font-medium text-gray-700">Màu sắc</label>
+                                <select
+                                    value={filter.color}
+                                    onChange={(e) => setFilter({ ...filter, color: e.target.value })}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                                >
+                                    <option value="">Chọn màu sắc</option>
+                                    {colors.map((color) => (
+                                        <option key={color.id} value={color.name}>
+                                            {color.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="flex-1">
+                                <label className="block text-sm font-medium text-gray-700">Kích thước</label>
+                                <select
+                                    value={filter.size}
+                                    onChange={(e) => setFilter({ ...filter, size: e.target.value })}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                                >
+                                    <option value="">Chọn kích thước</option>
+                                    {sizes.map((size) => (
+                                        <option key={size.id} value={size.name}>
+                                            {size.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* Bảng Danh Sách Sản Phẩm */}
                         <table className="min-w-full bg-white border border-gray-200 rounded-lg shadow-sm">
                             <thead>
                                 <tr className="bg-gray-100">
