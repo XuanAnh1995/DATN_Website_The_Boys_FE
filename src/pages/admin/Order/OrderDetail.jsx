@@ -3,7 +3,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import OrderService from "../../../services/OrderService";
 import { toast } from "react-toastify";
 
-
 // Các trạng thái đơn hàng
 const orderStatusMap = {
   "-1": "Đã hủy",
@@ -53,171 +52,166 @@ const OrderDetail = () => {
     fetchOrderDetails();
   }, [id]);
 
-  // Add print style to hide menubar
+  // Fix print style to include all products
+  useEffect(() => {
+    const style = document.createElement("style");
+    style.innerHTML = `
+      @media print {
+        /* Ẩn tất cả mọi thứ trước tiên */
+        body * {
+          visibility: hidden;
+        }
+        
+        /* Chỉ hiển thị phần nội dung đơn hàng */
+        .container .bg-white.rounded-lg.shadow-lg {
+          visibility: visible;
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 100%;
+          padding: 0;
+          margin: 0;
+          box-shadow: none !important;
+          border-radius: 0 !important;
+        }
+        
+        /* Làm cho tất cả các phần tử con trong container đơn hàng hiển thị */
+        .container .bg-white.rounded-lg.shadow-lg * {
+          visibility: visible;
+        }
+        
+        /* Đảm bảo bảng hiển thị đầy đủ */
+        table.print-table {
+          width: 100% !important;
+          display: table !important;
+          page-break-inside: auto !important;
+          border-collapse: collapse !important;
+        }
+        
+        /* Đảm bảo tbody hiển thị đúng */
+        table.print-table tbody {
+          display: table-row-group !important;
+        }
+        
+        /* Đảm bảo các dòng trong bảng hiển thị đầy đủ */
+        table.print-table tr {
+          display: table-row !important;
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
+        }
+        
+        /* Đảm bảo các ô trong bảng hiển thị đầy đủ */
+        table.print-table td, table.print-table th {
+          display: table-cell !important;
+          
+        }
+        
+        /* Đảm bảo header và footer bảng hiển thị đúng */
+        table.print-table thead {
+          display: table-header-group !important;
+        }
+        
+        table.print-table tfoot {
+          display: table-footer-group !important;
+        }
+        
+        /* Ẩn các phần không cần in */
+        .no-print, .bg-gray-50, button {
+          display: none !important;
+        }
+        
+        /* Định dạng tiêu đề và màu sắc */
+        .bg-gray-800 {
+          background-color: #f8f9fa !important;
+          color: #333 !important;
+          border-bottom: 2px solid #4a90e2;
+          padding: 15px 20px !important;
+        }
+        
+        /* Định dạng tiêu đề */
+        .text-2xl.font-bold {
+          font-size: 24px !important;
+          color: #2c3e50 !important;
+        }
+        
+        /* Định dạng mã đơn hàng */
+        .bg-blue-500 {
+          background-color: #4a90e2 !important;
+          color: white !important;
+          padding: 4px 12px !important;
+          border-radius: 20px !important;
+        }
+        
+        /* Định dạng phần thông tin khách hàng */
+        .border-b {
+          border-bottom: 1px solid #e0e0e0 !important;
+          padding: 15px 20px !important;
+        }
+        
+        /* Tiêu đề phần */
+        .text-lg.font-semibold {
+          color: #2c3e50 !important;
+          font-size: 18px !important;
+          margin-bottom: 15px !important;
+        }
+        
+        /* Nhãn thông tin */
+        .text-sm.text-gray-500 {
+          color: #7f8c8d !important;
+          font-size: 12px !important;
+          margin-bottom: 4px !important;
+        }
+        
+        /* Giá trị thông tin */
+        .font-medium {
+          color: #2c3e50 !important;
+          font-size: 14px !important;
+        }
+        
+        /* Thêm logo hoặc thông tin cửa hàng */
+        .bg-white.rounded-lg.shadow-lg:before {
+          content: "CỬA HÀNG The Boys" !important;
+          display: block !important;
+          text-align: center !important;
+          font-size: 28px !important;
+          font-weight: bold !important;
+          color: #4a90e2 !important;
+          margin: 20px 0 10px !important;
+        }
+        
+        /* Thêm thông tin liên hệ cửa hàng */
+        .bg-white.rounded-lg.shadow-lg:after {
+          content: "Địa chỉ: 123 Đường ABC, Quận XYZ, TP. MNV | Hotline: 0123 456 789 | Email: info@xyz.com" !important;
+          display: block !important;
+          text-align: center !important;
+          font-size: 12px !important;
+          color: #7f8c8d !important;
+          padding: 20px 0 !important;
+          border-top: 1px solid #e0e0e0 !important;
+          margin-top: 20px !important;
+        }
+        
+        /* Số trang */
+        @page {
+          margin: 0.5cm !important;
+          size: portrait !important;
+        }
+        
+        /* Màu sắc và font cho toàn bộ trang in */
+        body {
+          background-color: white !important;
+          font-family: Arial, sans-serif !important;
+          color: #333 !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
 
-useEffect(() => {
-  const style = document.createElement("style");
-  style.innerHTML = `
-    @media print {
-      /* Ẩn tất cả mọi thứ trước tiên */
-      body * {
-        visibility: hidden;
-      }
-      
-      /* Chỉ hiển thị phần nội dung đơn hàng */
-      .container .bg-white.rounded-lg.shadow-lg,
-      .container .bg-white.rounded-lg.shadow-lg * {
-        visibility: visible;
-      }
-      
-      /* Ẩn các phần không cần in */
-      .container .bg-white.rounded-lg.shadow-lg .no-print,
-      .container .bg-white.rounded-lg.shadow-lg .bg-gray-50,
-      .container .bg-white.rounded-lg.shadow-lg button {
-        display: none !important;
-      }
-      
-      /* Đặt container lên đầu trang và căn chỉnh */
-      .container .bg-white.rounded-lg.shadow-lg {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        padding: 0;
-        margin: 0;
-        box-shadow: none !important;
-        border-radius: 0 !important;
-      }
-      
-      /* Định dạng tiêu đề và màu sắc */
-      .bg-gray-800 {
-        background-color: #f8f9fa !important;
-        color: #333 !important;
-        border-bottom: 2px solid #4a90e2;
-        padding: 15px 20px !important;
-      }
-      
-      /* Định dạng tiêu đề */
-      .text-2xl.font-bold {
-        font-size: 24px !important;
-        color: #2c3e50 !important;
-      }
-      
-      /* Định dạng mã đơn hàng */
-      .bg-blue-500 {
-        background-color: #4a90e2 !important;
-        color: white !important;
-        padding: 4px 12px !important;
-        border-radius: 20px !important;
-      }
-      
-      /* Định dạng phần thông tin khách hàng */
-      .border-b {
-        border-bottom: 1px solid #e0e0e0 !important;
-        padding: 15px 20px !important;
-      }
-      
-      /* Tiêu đề phần */
-      .text-lg.font-semibold {
-        color: #2c3e50 !important;
-        font-size: 18px !important;
-        margin-bottom: 15px !important;
-      }
-      
-      /* Nhãn thông tin */
-      .text-sm.text-gray-500 {
-        color: #7f8c8d !important;
-        font-size: 12px !important;
-        margin-bottom: 4px !important;
-      }
-      
-      /* Giá trị thông tin */
-      .font-medium {
-        color: #2c3e50 !important;
-        font-size: 14px !important;
-      }
-      
-      /* Định dạng bảng */
-      table {
-        width: 100% !important;
-        border-collapse: collapse !important;
-        margin-top: 10px !important;
-      }
-      
-      /* Định dạng header bảng */
-      thead tr {
-        background-color: #f8f9fa !important;
-        border-bottom: 2px solid #e0e0e0 !important;
-      }
-      
-      /* Các cột trong bảng */
-      th, td {
-        padding: 12px 15px !important;
-        text-align: left !important;
-      }
-      
-      /* Định dạng footer bảng */
-      tfoot tr {
-        border-top: 2px solid #e0e0e0 !important;
-        font-weight: bold !important;
-      }
-      
-      /* Định dạng tổng tiền */
-      .text-xl.font-bold.text-gray-800 {
-        color: #2c3e50 !important;
-        font-size: 18px !important;
-      }
-      
-      /* Định dạng phần voucher */
-      .bg-green-50 {
-        background-color: #f0f9f0 !important;
-        border-left: 4px solid #4caf50 !important;
-        padding: 15px !important;
-        margin-top: 15px !important;
-      }
-      
-      /* Thêm logo hoặc thông tin cửa hàng */
-      .bg-white.rounded-lg.shadow-lg:before {
-        content: "CỬA HÀNG The Boys" !important;
-        display: block !important;
-        text-align: center !important;
-        font-size: 28px !important;
-        font-weight: bold !important;
-        color: #4a90e2 !important;
-        margin: 20px 0 10px !important;
-      }
-      
-      /* Thêm thông tin liên hệ cửa hàng */
-      .bg-white.rounded-lg.shadow-lg:after {
-        content: "Địa chỉ: 123 Đường ABC, Quận XYZ, TP. MNV | Hotline: 0123 456 789 | Email: info@xyz.com" !important;
-        display: block !important;
-        text-align: center !important;
-        font-size: 12px !important;
-        color: #7f8c8d !important;
-        padding: 20px 0 !important;
-        border-top: 1px solid #e0e0e0 !important;
-        margin-top: 20px !important;
-      }
-      
-      /* Số trang */
-      @page {
-        margin: 0.5cm !important;
-      }
-      
-      /* Màu sắc và font cho toàn bộ trang in */
-      body {
-        background-color: white !important;
-        font-family: Arial, sans-serif !important;
-        color: #333 !important;
-      }
-    }
-  `;
-  document.head.appendChild(style);
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
 
-  return () => {
-    document.head.removeChild(style);
-  };
-}, []);
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-100">
@@ -263,13 +257,8 @@ useEffect(() => {
   const formatCurrency = (amount) => {
     if (amount === undefined || amount === null) return "N/A";
     return amount.toLocaleString("vi-VN", { style: "currency", currency: "VND" });
-
-    
   };
-  console.log("orderDetails:", orderDetails);
-  console.log("order:", orderDetails?.order);
-  console.log("statusOrder:", orderDetails?.order?.statusOrder);
-  console.log("Keys in orderStatusMap:", Object.keys(orderStatusMap));
+
   return (
     <div className="bg-gray-100 py-8 min-h-screen">
       <div className="container mx-auto px-4">
@@ -286,38 +275,36 @@ useEffect(() => {
 
           {/* Customer Info */}
           <div className="p-6 border-b">
-  <h3 className="text-lg font-semibold text-gray-700 mb-4">Thông tin khách hàng</h3>
-  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-    <div>
-      <p className="text-sm text-gray-500">Họ và tên</p>
-      <p className="font-medium">{orderDetails.customer?.fullname || "N/A"}</p>
-    </div>
-    <div>
-      <p className="text-sm text-gray-500">Số điện thoại</p>
-      <p className="font-medium">{orderDetails.customer?.phone || "N/A"}</p>
-    </div>
-    <div>
-      <p className="text-sm text-gray-500">Ngày đặt hàng</p>
-      <p className="font-medium">{formatDate(orderDetails.createDate)}</p>
-    </div>
-    <div>
-      <p className="text-sm text-gray-500">Trạng thái đơn hàng</p>
-    
-      <p className="font-medium">
-  <span className={getStatusClass(parseInt(orderDetails?.statusOrder))}>
-    {orderStatusMap[orderDetails?.statusOrder?.toString()] || "Không xác định"}
-  </span>
-</p>
-
-    </div>
-  </div>
-</div>
+            <h3 className="text-lg font-semibold text-gray-700 mb-4">Thông tin khách hàng</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-gray-500">Họ và tên</p>
+                <p className="font-medium">{orderDetails.customer?.fullname || "N/A"}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Số điện thoại</p>
+                <p className="font-medium">{orderDetails.customer?.phone || "N/A"}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Ngày đặt hàng</p>
+                <p className="font-medium">{formatDate(orderDetails.createDate)}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Trạng thái đơn hàng</p>
+                <p className="font-medium">
+                  <span className={getStatusClass(parseInt(orderDetails?.statusOrder))}>
+                    {orderStatusMap[orderDetails?.statusOrder?.toString()] || "Không xác định"}
+                  </span>
+                </p>
+              </div>
+            </div>
+          </div>
 
           {/* Order Details */}
           <div className="p-6">
             <h3 className="text-lg font-semibold text-gray-700 mb-4">Các sản phẩm</h3>
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full print-table">
                 <thead>
                   <tr className="bg-gray-100 text-gray-600 text-sm leading-normal">
                     <th className="py-3 px-4 text-left">Sản phẩm</th>
@@ -391,7 +378,12 @@ useEffect(() => {
           <div className="bg-gray-50 px-6 py-4 flex justify-between items-center no-print">
             <button
               className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition flex items-center"
-              onClick={() => window.print()}
+              onClick={() => {
+                // Đảm bảo bảng được hiển thị đầy đủ trước khi in
+                setTimeout(() => {
+                  window.print();
+                }, 100);
+              }}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
