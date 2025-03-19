@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import SalePOS from "../../../services/POSService";
 import ColorService from "../../../services/ColorService"
 import SizeService from "../../../services/SizeService"
@@ -31,6 +31,8 @@ const SalePOSPage = () => {
     const [selectedVoucher, setSelectedVoucher] = useState("");
     const [calculatedDiscount, setCalculatedDiscount] = useState(0);
     const [vouchers, setVouchers] = useState([]);
+    // Thêm state để lưu voucher tối ưu
+    const [optimalVoucher, setOptimalVoucher] = useState(null);
 
     const [searchKeyword, setSearchKeyword] = useState("");
     const [filteredCustomers, setFilteredCustomers] = useState([]);
@@ -44,6 +46,17 @@ const SalePOSPage = () => {
 
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
+    // Mảng các hóa đơn đang tạo
+    const [orders, setOrders] = useState([]);
+    const [activeOrderIndex, setActiveOrderIndex] = useState(null);
+
+    // Định nghĩa currentOrder bằng useMemo
+    const currentOrder = useMemo(() => {
+        return activeOrderIndex !== null && activeOrderIndex < orders.length
+            ? orders[activeOrderIndex]
+            : { items: [], totalAmount: 0, discount: 0 };
+    }, [activeOrderIndex, orders]);
+
     // State cho form thêm khách hàng mới
     const [showAddCustomerForm, setShowAddCustomerForm] = useState(false);
     const [newCustomer, setNewCustomer] = useState({
@@ -51,10 +64,6 @@ const SalePOSPage = () => {
         phone: "",
         email: ""
     });
-
-    // Mảng các hóa đơn đang tạo
-    const [orders, setOrders] = useState([]);
-    const [activeOrderIndex, setActiveOrderIndex] = useState(null);
 
     // Nhân viên hiện tại (giả định)
     const [currentEmployee] = useState({ id: 1, name: "Nhân viên mặc định" });
@@ -125,6 +134,42 @@ const SalePOSPage = () => {
         setFilteredProducts(filtered);
         setCurrentPage(1); // Reset về trang đầu tiên khi áp dụng bộ lọc
     }, [searchTerm, allProducts, filter]);
+
+    // Tìm voucher tối ưu mỗi khi totalAmount thay đổi
+    useEffect(() => {
+        if (currentOrder?.totalAmount > 0) {
+            const validVouchers = vouchers.filter(v => {
+                const now = new Date();
+                const startDate = new Date(v.startDate);
+                const endDate = new Date(v.endDate);
+                return (
+                    v.status === true &&
+                    currentOrder.totalAmount >= v.minCondition &&
+                    now >= startDate && now <= endDate
+                );
+            });
+
+            // Tính giá trị giảm giá cho từng voucher và tìm voucher tối ưu
+            const vouchersWithDiscount = validVouchers.map(voucher => ({
+                ...voucher,
+                discountValue: calculateDiscount(voucher, currentOrder.totalAmount)
+            }));
+
+            // Sắp xếp theo giá trị giảm giá giảm dần
+            const sortedVouchers = vouchersWithDiscount.sort((a, b) => b.discountValue - a.discountValue);
+
+            // Lấy voucher tối ưu (giảm giá nhiều nhất)
+            const bestVoucher = sortedVouchers[0];
+            setOptimalVoucher(bestVoucher || null);
+
+            // Tự động áp dụng voucher tối ưu (tùy chọn)
+            if (bestVoucher && !selectedVoucher) {
+                handleVoucherChange(bestVoucher.voucherCode);
+            }
+        } else {
+            setOptimalVoucher(null);
+        }
+    }, [currentOrder.totalAmount, vouchers, selectedVoucher]);
 
     // Hàm lấy danh sách sản phẩm chi tiết
     const fetchProductDetails = async () => {
@@ -225,6 +270,16 @@ const SalePOSPage = () => {
 
             setCalculatedDiscount(0);
         }
+    };
+
+    // Hàm tính giá trị giảm giá thực tế cho một voucher
+    const calculateDiscount = (voucher, totalAmount) => {
+        if (!voucher || totalAmount < voucher.minCondition) return 0;
+        const discountAmount = Math.min(
+            (totalAmount * voucher.reducedPercent) / 100,
+            voucher.maxDiscount
+        );
+        return discountAmount;
     };
 
     const handleAddNewCustomerClick = () => {
@@ -684,10 +739,10 @@ const SalePOSPage = () => {
     //     }
     // };
 
-    // Lấy đơn hàng hiện tại
-    const currentOrder = activeOrderIndex !== null && activeOrderIndex < orders.length
-        ? orders[activeOrderIndex]
-        : { items: [], totalAmount: 0, discount: 0 };
+    // // Lấy đơn hàng hiện tại
+    // const currentOrder = activeOrderIndex !== null && activeOrderIndex < orders.length
+    //     ? orders[activeOrderIndex]
+    //     : { items: [], totalAmount: 0, discount: 0 };
 
     return (
         <div className="p-4 bg-gray-100 min-h-screen relative">
@@ -828,6 +883,8 @@ const SalePOSPage = () => {
                                 <tr>
                                     <th className="p-2">Mã Sản Phẩm</th>
                                     <th className="p-2">Tên Sản Phẩm</th>
+                                    <th className="p-2">Màu sắc</th>
+                                    <th className="p-2">Kích thước</th>
                                     <th className="p-2">Giá Bán</th>
                                     <th className="p-2">Số Lượng</th>
                                     <th className="p-2">Thành Tiền</th>
@@ -843,8 +900,10 @@ const SalePOSPage = () => {
 
                                     return (
                                         <tr key={item.id} className="text-center border">
-                                            <td className="p-2">{item.product?.productCode || "Không có mã"}</td>
+                                            <td className="p-2">{item.productDetailCode || "Không có mã"}</td>
                                             <td className="p-2">{item.product?.productName || "Không có tên"}</td>
+                                            <td className="p-2">{item.color?.name || "Không có mã"}</td>
+                                            <td className="p-2">{item.size?.name || "Không có mã"}</td>
                                             <td className="p-2 text-blue-600 font-bold">
                                                 {discountedPrice.toLocaleString()} VND
                                             </td>
@@ -1070,34 +1129,39 @@ const SalePOSPage = () => {
                     <h3 className="text-lg font-semibold mt-4">Thanh toán</h3>
                     <p>Tổng tiền: {currentOrder.totalAmount.toLocaleString()} VND</p>
 
-                    <div className="flex items-center mt-2">
+                    {/* Chọn voucher */}
+                    <div className="mt-2">
+                        <label className="block text-sm font-medium text-gray-700">Chọn voucher</label>
                         <select
                             value={selectedVoucher}
                             onChange={(e) => handleVoucherChange(e.target.value)}
-                            className="border p-2 flex-1"
+                            className="border p-2 w-full mt-1 rounded-md"
                         >
                             <option value="">Chọn voucher</option>
                             {vouchers
                                 .filter(v => {
-                                    const now = new Date(); // 🕒 Lấy thời gian hiện tại
+                                    const now = new Date();
                                     const startDate = new Date(v.startDate);
                                     const endDate = new Date(v.endDate);
-
                                     return (
-                                        v.status === true && // 🟢 Voucher đang hoạt động
-                                        currentOrder?.totalAmount >= v.minCondition && // 🟢 Đủ điều kiện giá trị đơn hàng
-                                        now >= startDate && now <= endDate // ⏳ Kiểm tra xem voucher có hiệu lực không
+                                        v.status === true &&
+                                        currentOrder?.totalAmount >= v.minCondition &&
+                                        now >= startDate && now <= endDate
                                     );
+                                })
+                                .sort((a, b) => {
+                                    const discountA = calculateDiscount(a, currentOrder.totalAmount);
+                                    const discountB = calculateDiscount(b, currentOrder.totalAmount);
+                                    return discountB - discountA; // Sắp xếp giảm dần theo giá trị giảm giá
                                 })
                                 .map(v => (
                                     <option key={v.id} value={v.voucherCode}>
-                                        {v.voucherCode} - {v.voucherName} - {v.reducedPercent + "%"}
+                                        {v.voucherCode} - {v.voucherName} - {v.reducedPercent}%
+                                        (Giảm {calculateDiscount(v, currentOrder.totalAmount).toLocaleString()} VND)
                                     </option>
                                 ))}
                         </select>
-
                     </div>
-
 
                     <p className="font-bold text-lg mt-2">
                         KHÁCH PHẢI TRẢ: {(currentOrder.totalAmount - calculatedDiscount).toLocaleString()} VND
