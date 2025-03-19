@@ -1,18 +1,28 @@
-import { Suspense } from "react";
+import { Suspense } from 'react';
 import {
   BrowserRouter as Router,
   Routes,
   Route,
   Navigate,
-} from "react-router-dom";
-import Layout from "../layout/Layout";
-import adminRoutes from "./AdminRouter";
+} from 'react-router-dom';
+import Layout from '../layout/Layout';
+import adminRoutes from './AdminRouter';
+import ProtectedRoute from './ProtectedRoute';
+
 function AppRouter() {
   return (
     <Router>
       <Suspense fallback={<div>Loading...</div>}>
         <Routes>
-          <Route path="/admin" element={<Layout />}>
+          {/* Admin Routes */}
+          <Route
+            path="/admin/*"
+            element={
+              <ProtectedRoute allowedRoles={['ADMIN']}>
+                <Layout />
+              </ProtectedRoute>
+            }
+          >
             {adminRoutes.map((route, index) => (
               <Route
                 key={index}
@@ -21,6 +31,11 @@ function AppRouter() {
               />
             ))}
           </Route>
+
+          {/* Unauthorized Page */}
+          <Route path="/unauthorized" element={<div>Access Denied</div>} />
+
+          {/* Default Route */}
           <Route path="*" element={<div>404 - Page Not Found</div>} />
         </Routes>
       </Suspense>

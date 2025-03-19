@@ -22,10 +22,20 @@ const VoucherService = {
     return axios.get(`${API_URL}/${id}`);
   },
   createVoucher: (voucherData) => {
-    return axios.post(API_URL, voucherData);
+    try {
+      return axios.post(API_URL, voucherData);
+    } catch (error) {
+      console.error("Lỗi khi lấy thông tin khách hàng:", error);
+      throw error;
+    }
   },
   updateVoucher: (id, voucherData) => {
-    return axios.put(`${API_URL}/${id}`, voucherData);
+    try {
+      return axios.put(`${API_URL}/${id}`, voucherData);
+    } catch (error) {
+      console.error("Lỗi khi lấy thông tin khách hàng:", error);
+      throw error;
+    }
   },
   toggleStatusVoucher: (id) => {
     return axios.put(`${API_URL}/${id}/toggle-status`);

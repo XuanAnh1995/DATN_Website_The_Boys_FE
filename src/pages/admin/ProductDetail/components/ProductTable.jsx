@@ -36,9 +36,9 @@ const ProductTable = ({ products, handleToggleStatus, handleUpdateProduct, openD
               )}
               <span>{product.product.productName}</span>
             </td>
-            <td className="px-4 py-2">{product.collar?.collarName || 'N/A'}</td>
-            <td className="px-4 py-2">{product.color?.colorName || 'N/A'}</td>
-            <td className="px-4 py-2">{product.size?.sizeName || 'N/A'}</td>
+            <td className="px-4 py-2">{product.collar?.name || 'N/A'}</td>
+            <td className="px-4 py-2">{product.color?.name || 'N/A'}</td>
+            <td className="px-4 py-2">{product.size?.name || 'N/A'}</td>
             <td className="px-4 py-2">{product.sleeve?.sleeveName || 'N/A'}</td>
             <td className="px-4 py-2">{product.quantity}</td>
             <td className="px-4 py-2">{product.importPrice}</td>
