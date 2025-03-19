@@ -1,41 +1,54 @@
-import { Suspense } from 'react';
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-} from 'react-router-dom';
-import Layout from '../layout/Layout';
-import adminRoutes from './AdminRouter';
-import ProtectedRoute from './ProtectedRoute';
+import { Suspense } from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import LayoutAdmin from "../layout/AdminLayout/Layout";
+import adminRoutes from "./AdminRouter";
+import UserMain from "../layout/UserLayout/Layout";
+import UserRouter from "./UserRouter";
+
+// Import trang Login và Unauthorized
+import Login from "../pages/share/Login";
+import Unauthorized from "../pages/share/Unauthorized";
 
 function AppRouter() {
+  const { isLoggedIn, role } = useSelector((state) => state.user);
+
+  console.log("User Role:", role);
+
   return (
     <Router>
       <Suspense fallback={<div>Loading...</div>}>
         <Routes>
+          <Route path="/" element={<Navigate to="/home" replace />} />
+
+          {/* Route Public */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/unauthorized" element={<Unauthorized />} />
+
           {/* Admin Routes */}
           <Route
             path="/admin/*"
             element={
-              <ProtectedRoute allowedRoles={['ADMIN']}>
-                <Layout />
-              </ProtectedRoute>
+              isLoggedIn && role === "ADMIN" ? <LayoutAdmin /> : <Navigate to={isLoggedIn ? "/unauthorized" : "/login"} replace />
             }
           >
             {adminRoutes.map((route, index) => (
-              <Route
-                key={index}
-                path={route.path}
-                element={<route.component />}
-              />
+              <Route key={index} path={route.path} element={<route.component />} />
             ))}
           </Route>
 
-          {/* Unauthorized Page */}
-          <Route path="/unauthorized" element={<div>Access Denied</div>} />
+          {/* User Routes */}
+          <Route
+            path="/"
+            element={
+              isLoggedIn && (role === "CUSTOMER" || role === "ADMIN") ? <UserMain /> : <Navigate to={isLoggedIn ? "/unauthorized" : "/login"} replace />
+            }
+          >
+            {UserRouter.map((route, index) => (
+              <Route key={index} path={route.path} element={<route.component />} />
+            ))}
+          </Route>
 
-          {/* Default Route */}
           <Route path="*" element={<div>404 - Page Not Found</div>} />
         </Routes>
       </Suspense>
