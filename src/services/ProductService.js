@@ -1,4 +1,4 @@
-import axios from "axios";
+import api from "../ultils/api"; // Sử dụng api từ api.js
 
 const ProductService = {
   async getAllProducts(
@@ -10,7 +10,7 @@ const ProductService = {
     sortDirection = "asc"
   ) {
     try {
-      const response = await axios.get(`http://localhost:8080/api/products`, {
+      const response = await api.get(`/api/products`, {
         params: {
           page,
           size,
@@ -29,9 +29,7 @@ const ProductService = {
 
   async getProductById(id) {
     try {
-      const response = await axios.get(
-        `http://localhost:8080/api/products/${id}`
-      );
+      const response = await api.get(`/api/products/${id}`);
       return response.data.data;
     } catch (error) {
       console.error("Error fetching product data:", error);
@@ -41,10 +39,7 @@ const ProductService = {
 
   async createProduct(productData) {
     try {
-      const response = await axios.post(
-        `http://localhost:8080/api/products`,
-        productData
-      );
+      const response = await api.post(`/api/products`, productData);
       return response.data.data;
     } catch (error) {
       console.error("Error creating product:", error);
@@ -54,10 +49,7 @@ const ProductService = {
 
   async updateProduct(id, productData) {
     try {
-      const response = await axios.put(
-        `http://localhost:8080/api/products/${id}`,
-        productData
-      );
+      const response = await api.put(`/api/products/${id}`, productData);
       return response.data.data;
     } catch (error) {
       console.error("Error updating product:", error);
@@ -67,9 +59,7 @@ const ProductService = {
 
   async deleteProduct(id) {
     try {
-      const response = await axios.delete(
-        `http://localhost:8080/api/products/${id}`
-      );
+      const response = await api.delete(`/api/products/${id}`);
       return response.data.data;
     } catch (error) {
       console.error("Error deleting product:", error);
@@ -79,15 +69,14 @@ const ProductService = {
 
   async toggleProductStatus(id) {
     try {
-      const response = await axios.patch(
-        `http://localhost:8080/api/products/${id}/toggle-status`
-      );
+      const response = await api.patch(`/api/products/${id}/toggle-status`);
       return response.data.data;
     } catch (error) {
       console.error("Error toggling product status:", error);
       throw error;
     }
   },
+
   async getFilteredProducts({
     search = "",
     brandIds = [],
@@ -105,27 +94,24 @@ const ProductService = {
     size = 10,
   }) {
     try {
-      const response = await axios.get(
-        `http://localhost:8080/api/products/filter`,
-        {
-          params: {
-            search,
-            brandIds: brandIds.length > 0 ? brandIds.join(",") : null,
-            categoryIds: categoryIds.length > 0 ? categoryIds.join(",") : null,
-            materialIds: materialIds.length > 0 ? materialIds.join(",") : null,
-            collarIds: collarIds.length > 0 ? collarIds.join(",") : null,
-            sleeveIds: sleeveIds.length > 0 ? sleeveIds.join(",") : null,
-            colorIds: colorIds.length > 0 ? colorIds.join(",") : null,
-            sizeIds: sizeIds.length > 0 ? sizeIds.join(",") : null,
-            minPrice,
-            maxPrice,
-            sortBy,
-            sortDir,
-            page,
-            size,
-          },
-        }
-      );
+      const response = await api.get(`/api/products/filter`, {
+        params: {
+          search,
+          brandIds: brandIds.length > 0 ? brandIds.join(",") : null,
+          categoryIds: categoryIds.length > 0 ? categoryIds.join(",") : null,
+          materialIds: materialIds.length > 0 ? materialIds.join(",") : null,
+          collarIds: collarIds.length > 0 ? collarIds.join(",") : null,
+          sleeveIds: sleeveIds.length > 0 ? sleeveIds.join(",") : null,
+          colorIds: colorIds.length > 0 ? colorIds.join(",") : null,
+          sizeIds: sizeIds.length > 0 ? sizeIds.join(",") : null,
+          minPrice,
+          maxPrice,
+          sortBy,
+          sortDir,
+          page,
+          size,
+        },
+      });
       return response.data;
     } catch (error) {
       console.error("Error fetching filtered products:", error);

@@ -172,9 +172,9 @@ export default function ProductVariants({ generateData }) {
         console.log("Dữ liệu chi tiết sản phẩm đã được lưu", response);
         toast.success("Dữ liệu chi tiết sản phẩm đã được lưu thành công!");
 
-        const productId = response?.[0]?.product.id;
-        if (productId) {
-          navigate(`/admin/product/${productId}`);
+        const productCode = response?.[0]?.product.productCode;
+        if (productCode) {
+          navigate(`/admin/product/${productCode}`);
         }
       })
       .catch((error) => {

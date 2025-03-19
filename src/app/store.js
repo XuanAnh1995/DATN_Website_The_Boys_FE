@@ -1,12 +1,10 @@
-import { configureStore } from "@reduxjs/toolkit";
-import { setUser, logOutUser } from "../features/common/UserSlice";
-const ConbinedReducer = {
-  // auth: authReducer,
-  // products: productReducer,
-  setUser: setUser,
-  logOutUser: logOutUser,
-};
+import { configureStore } from '@reduxjs/toolkit';
+import userReducer from '../store/userSlice'; // Import userSlice reducer
 
-export default configureStore({
-  reducer: ConbinedReducer,
+const store = configureStore({
+  reducer: {
+    user: userReducer, // Thêm user reducer
+  },
 });
+
+export default store;

@@ -1,15 +1,26 @@
-//Tạo một hàm giả, kiểm tra xác thực người dùng
-const CheckAuth = async () => {
-  //Giả lập API để lấy token và role
-  return new Promise((resolve, reject) => {
-    const token = localStorage.getItem("token");
-    const role = localStorage.getItem("role");
+import { setUser } from '../store/userSlice';
+import store from './store';
+import AuthService from '../services/AuthService';
 
-    if (token) {
+const CheckAuth = async () => {
+  return new Promise((resolve, reject) => {
+    const token = AuthService.getToken(); 
+    const role = AuthService.getRole(); 
+
+    if (token && role) {
+      store.dispatch(
+        setUser({
+          name: 'User', // Nếu có API lấy tên, thay thế giá trị này
+          email: 'user@example.com', // Thay bằng dữ liệu thực tế
+          role, 
+          token, 
+        })
+      );
       resolve({ token, role });
     } else {
-      reject("No token");
+      reject('No token or role');
     }
   });
 };
+
 export default CheckAuth;

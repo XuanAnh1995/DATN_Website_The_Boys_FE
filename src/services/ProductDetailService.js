@@ -1,15 +1,11 @@
-import axios from "axios";
+import api from "../ultils/api"; // Sử dụng api từ api.js
 
 const ProductDetailService = {
   async createProductDetail(productDetailData) {
     try {
-      const response = await axios.post(
-        `http://localhost:8080/api/product-details`,
-        productDetailData,
-        {
-          headers: { "Content-Type": "application/json" },
-        }
-      );
+      const response = await api.post(`/api/product-details`, productDetailData, {
+        headers: { "Content-Type": "application/json" },
+      });
       return response.data.data;
     } catch (error) {
       console.error("Error creating product detail:", error);
@@ -19,13 +15,9 @@ const ProductDetailService = {
 
   async generateProductDetails(generateModel) {
     try {
-      const response = await axios.post(
-        `http://localhost:8080/api/product-details/generate`,
-        generateModel,
-        {
-          headers: { "Content-Type": "application/json" },
-        }
-      );
+      const response = await api.post(`/api/product-details/generate`, generateModel, {
+        headers: { "Content-Type": "application/json" },
+      });
       return response.data.data;
     } catch (error) {
       console.error("Error generating product details:", error);
@@ -44,11 +36,7 @@ const ProductDetailService = {
         sleeveIds: params.sleeveIds ? params.sleeveIds.join(",") : undefined,
       };
 
-      const response = await axios.get(
-        `http://localhost:8080/api/product-details`,
-        { params: formattedParams }
-      );
-      console.log("response", response);
+      const response = await api.get(`/api/product-details`, { params: formattedParams });
       return response.data.data;
     } catch (error) {
       console.error("Error fetching product details:", error);
@@ -58,9 +46,7 @@ const ProductDetailService = {
 
   async getProductDetailById(id) {
     try {
-      const response = await axios.get(
-        `http://localhost:8080/api/product-details/${id}`
-      );
+      const response = await api.get(`/api/product-details/${id}`);
       return response.data.data;
     } catch (error) {
       console.error("Error fetching product detail by ID:", error);
@@ -70,13 +56,9 @@ const ProductDetailService = {
 
   async updateProductDetail(id, updateData) {
     try {
-      const response = await axios.put(
-        `http://localhost:8080/api/product-details/${id}`,
-        updateData,
-        {
-          headers: { "Content-Type": "application/json" },
-        }
-      );
+      const response = await api.put(`/api/product-details/${id}`, updateData, {
+        headers: { "Content-Type": "application/json" },
+      });
       return response.data.data;
     } catch (error) {
       console.error("Error updating product detail:", error);
@@ -86,9 +68,7 @@ const ProductDetailService = {
 
   async toggleProductDetailStatus(id) {
     try {
-      const response = await axios.patch(
-        `http://localhost:8080/api/product-details/${id}/toggle-status`
-      );
+      const response = await api.patch(`/api/product-details/${id}/toggle-status`);
       return response.data.data;
     } catch (error) {
       console.error("Error toggling product detail status:", error);

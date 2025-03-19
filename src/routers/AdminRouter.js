@@ -35,25 +35,25 @@ const Statistic = lazy(() => import("../pages/admin/Statistics"));
 
 
 const adminRoutes = [
-  { path: "dashboard", component: Dashboard, role: "admin" },
-  {path: "salePOS", component: POS, role: "admin"},
-  { path: "customer", component: Customer, role: "admin" },
-  { path: "employee", component: Employee, role: "admin" },
-  { path: "product", component: Product, role: "admin" },
-  { path: "product/:productCode", component: ProductDetail, role: "admin" },
-  { path: "product/create", component: CreateProduct, role: "admin" },
-  { path: "brand", component: Brand, role: "admin" },
-  { path: "material", component: Material, role: "admin" },
-  { path: "category", component: Category, role: "admin" },
-  { path: "attribute/collar", component: Collar, role: "admin" },
-  { path: "attribute/color", component: Color, role: "admin" },
-  { path: "attribute/size", component: Size, role: "admin" },
-  { path: "attribute/sleeve", component: Sleeve, role: "admin" },
-  { path: "attribute/promotion", component: Promotion, role: "admin" },
-  { path: "order", component: Order, role: "admin" },
-  { path: "order/:id/details", component: OrderDetail, role: "admin" },
-  { path: "voucher", component: Voucher, role: "admin" },
-  { path: "statistics", component: Statistic, role: "admin" }
+  { path: "dashboard", component: Dashboard, role: "ADMIN" },
+  {path: "salePOS", component: POS, role: "ADMIN"},
+  { path: "customer", component: Customer, role: "ADMIN" },
+  { path: "employee", component: Employee, role: "ADMIN" },
+  { path: "product", component: Product, role: "ADMIN" },
+  { path: "product/:productCode", component: ProductDetail, role: "ADMIN" },
+  { path: "product/create", component: CreateProduct, role: "ADMIN" },
+  { path: "brand", component: Brand, role: "ADMIN" },
+  { path: "material", component: Material, role: "ADMIN" },
+  { path: "category", component: Category, role: "ADMIN" },
+  { path: "attribute/collar", component: Collar, role: "ADMIN" },
+  { path: "attribute/color", component: Color, role: "ADMIN" },
+  { path: "attribute/size", component: Size, role: "ADMIN" },
+  { path: "attribute/sleeve", component: Sleeve, role: "ADMIN" },
+  { path: "attribute/promotion", component: Promotion, role: "ADMIN" },
+  { path: "order", component: Order, role: "ADMIN" },
+  { path: "order/:id/details", component: OrderDetail, role: "ADMIN" },
+  { path: "voucher", component: Voucher, role: "ADMIN" },
+  { path: "statistics", component: Statistic, role: "ADMIN" }
 ];
 
 export default adminRoutes;

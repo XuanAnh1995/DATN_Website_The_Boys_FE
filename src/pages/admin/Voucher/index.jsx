@@ -182,6 +182,7 @@ export default function Voucher() {
         isOpen={isCreateModalOpen}
         onCancel={() => setIsCreateModalOpen(false)}
         fetchVouchers={fetchVouchers}
+        
       />
       <UpdateModal
         isOpen={updateModal}
