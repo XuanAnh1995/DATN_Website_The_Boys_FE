@@ -5,16 +5,36 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recha
 
 const MonthlyRevenueChart = () => {
     const [monthlyRevenue, setMonthlyRevenue] = useState([]);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
-        StatisticsService.getMonthlyRevenue().then(res => {
-            const formattedData = res.data.data.map(item => ({
-                month: `Tháng ${item.monthNumber}`,
-                revenue: item.monthlyRevenue
-            }));
-            setMonthlyRevenue(formattedData);
-        });
+        const fetchData = async () => {
+            try {
+                const data = await StatisticsService.getMonthlyRevenue();
+                const formattedData = data.map(item => ({
+                    month: `Tháng ${item.monthNumber}`,
+                    revenue: item.monthlyRevenue || 0,
+                }));
+                setMonthlyRevenue(formattedData);
+                setError(null);
+            } catch (err) {
+                console.error("Lỗi khi tải doanh thu tháng:", err);
+                setError("Không thể tải dữ liệu doanh thu tháng.");
+            }
+        };
+        fetchData();
     }, []);
+
+    if (error) {
+        return (
+            <Card className="col-span-2">
+                <CardContent>
+                    <h2 className="text-xl font-bold">Doanh thu theo tháng</h2>
+                    <p className="text-red-500">{error}</p>
+                </CardContent>
+            </Card>
+        );
+    }
 
     return (
         <Card className="col-span-2">

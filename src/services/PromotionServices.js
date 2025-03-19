@@ -1,42 +1,80 @@
-import axios from "axios";
+import api from "../ultils/api"; // Import instance Axios đã cấu hình
 
-const API_URL = "http://localhost:8080/api/promotion";
+const API_URL = "/api/promotion"; // Đường dẫn tương đối vì baseURL đã được cấu hình trong api.js
 
 const PromotionService = {
-  getAllPromotions: (
-    search = "",
-    page = 0,
-    size = 10,
-    sortBy = "id",
-    sortDir = "asc"
-  ) => {
-    return axios
-      .get(API_URL, {
+  // Lấy danh sách khuyến mãi
+  getAllPromotions: async (search = "", page = 0, size = 10, sortBy = "id", sortDir = "asc") => {
+    try {
+      const response = await api.get(API_URL, {
         params: { search, page, size, sortBy, sortDir },
-      })
-      .then((response) => {
-        return response.data.data;
       });
+      console.log("Danh sách khuyến mãi: ", response.data.data);
+      return response.data.data; // Trả về dữ liệu từ API
+    } catch (error) {
+      console.error("❌ Lỗi khi lấy danh sách khuyến mãi:", error.response?.data || error.message);
+      throw error; // Ném lỗi để phía gọi xử lý tiếp
+    }
   },
 
-  getPromotionById: (id) => {
-    return axios.get(`${API_URL}/${id}`);
+  // Lấy khuyến mãi theo ID
+  getPromotionById: async (id) => {
+    try {
+      const response = await api.get(`${API_URL}/${id}`);
+      console.log(`Khuyến mãi ${id}:`, response.data);
+      return response.data; // Trả về dữ liệu khuyến mãi
+    } catch (error) {
+      console.error(`❌ Lỗi khi lấy khuyến mãi ${id}:`, error.response?.data || error.message);
+      throw error;
+    }
   },
 
-  createPromotion: (promotionData) => {
-    return axios.post(API_URL, promotionData);
+  // Tạo mới khuyến mãi
+  createPromotion: async (promotionData) => {
+    try {
+      const response = await api.post(API_URL, promotionData);
+      console.log("Khuyến mãi đã tạo:", response.data);
+      return response.data; // Trả về dữ liệu khuyến mãi vừa tạo
+    } catch (error) {
+      console.error("❌ Lỗi khi tạo khuyến mãi:", error.response?.data || error.message);
+      throw error;
+    }
   },
 
-  updatePromotion: (id, promotionData) => {
-    return axios.put(`${API_URL}/${id}`, promotionData);
+  // Cập nhật khuyến mãi
+  updatePromotion: async (id, promotionData) => {
+    try {
+      const response = await api.put(`${API_URL}/${id}`, promotionData);
+      console.log(`Khuyến mãi ${id} đã cập nhật:`, response.data);
+      return response.data; // Trả về dữ liệu khuyến mãi đã cập nhật
+    } catch (error) {
+      console.error(`❌ Lỗi khi cập nhật khuyến mãi ${id}:`, error.response?.data || error.message);
+      throw error;
+    }
   },
 
-  toggleStatusPromotion: (id) => {
-    return axios.put(`${API_URL}/${id}/toggle-status`);
+  // Chuyển đổi trạng thái khuyến mãi
+  toggleStatusPromotion: async (id) => {
+    try {
+      const response = await api.put(`${API_URL}/${id}/toggle-status`);
+      console.log(`Trạng thái khuyến mãi ${id} đã thay đổi:`, response.data);
+      return response.data; // Trả về dữ liệu sau khi thay đổi trạng thái
+    } catch (error) {
+      console.error(`❌ Lỗi khi thay đổi trạng thái khuyến mãi ${id}:`, error.response?.data || error.message);
+      throw error;
+    }
   },
 
-  deletePromotion: (id) => {
-    return axios.delete(`${API_URL}/${id}`);
+  // Xóa khuyến mãi
+  deletePromotion: async (id) => {
+    try {
+      const response = await api.delete(`${API_URL}/${id}`);
+      console.log(`Khuyến mãi ${id} đã xóa:`, response.data);
+      return response.data; // Trả về dữ liệu phản hồi từ server
+    } catch (error) {
+      console.error(`❌ Lỗi khi xóa khuyến mãi ${id}:`, error.response?.data || error.message);
+      throw error;
+    }
   },
 };
 

@@ -1,24 +1,23 @@
-import axios from "axios";
+import api from "../ultils/api"; // Import instance Axios đã cấu hình
 
-const API_URL_CHECKOUT = "http://localhost:8080/api/sale-pos";
-const API_URL_PRODUCT_DETAIL = "http://localhost:8080/api/product-details";
-const API_URL_CUSTOMERS = "http://localhost:8080/api/customers";
-const API_URL_VOUCHERS = "http://localhost:8080/api/vouchers";
-const API_URL_ORDERS = "http://localhost:8080/api/orders";
+const API_URL_CHECKOUT = "/api/sale-pos";
+const API_URL_PRODUCT_DETAIL = "/api/product-details";
+const API_URL_CUSTOMERS = "/api/customers";
+const API_URL_VOUCHERS = "/api/vouchers";
+const API_URL_ORDERS = "/api/orders";
 
 const paymentMethodMapping = {
     "cash": 1,
     "card": 2,
-    "transfer": 3
+    "transfer": 3,
 };
 
 const SalePOS = {
-
     /** 🛒 Lấy danh sách sản phẩm theo bộ lọc */
     getProductDetails: async (filters) => {
         console.log("📌 Lấy danh sách sản phẩm với bộ lọc:", filters);
         try {
-            const response = await axios.get(API_URL_PRODUCT_DETAIL, { params: filters });
+            const response = await api.get(API_URL_PRODUCT_DETAIL, { params: filters });
             console.log("✅ Danh sách sản phẩm:", response.data.data);
             return response.data.data;
         } catch (error) {
@@ -31,7 +30,7 @@ const SalePOS = {
     getCustomers: async (filters) => {
         console.log("📌 Lấy danh sách khách hàng với bộ lọc:", filters);
         try {
-            const response = await axios.get(API_URL_CUSTOMERS, { params: filters });
+            const response = await api.get(API_URL_CUSTOMERS, { params: filters });
             console.log("✅ Dữ liệu khách hàng:", response.data.data);
             return response.data.data;
         } catch (error) {
@@ -49,7 +48,7 @@ const SalePOS = {
 
             console.log("🔍 Dữ liệu thực sự gửi đi:", JSON.stringify(orderData, null, 2));
 
-            const response = await axios.post(`${API_URL_CHECKOUT}/orders`, orderData);
+            const response = await api.post(`${API_URL_CHECKOUT}/orders`, orderData);
             console.log("✅ Đơn hàng tạo thành công:", response.data);
 
             if (!response.data || !response.data.data || !response.data.data.id) {
@@ -67,7 +66,7 @@ const SalePOS = {
     addProductToCart: async (orderId, productData) => {
         console.log(`📌 Thêm sản phẩm vào đơn hàng ${orderId}: `, productData);
         try {
-            const response = await axios.post(`${API_URL_CHECKOUT}/orders/${orderId}/products`, productData);
+            const response = await api.post(`${API_URL_CHECKOUT}/orders/${orderId}/products`, productData);
             console.log("✅ Sản phẩm đã thêm vào đơn hàng:", response.data);
             return response.data;
         } catch (error) {
@@ -80,7 +79,7 @@ const SalePOS = {
     completePayment: async (orderId, paymentData) => {
         console.log(`📌 Hoàn tất thanh toán cho đơn hàng #${orderId}`);
         try {
-            const response = await axios.put(`${API_URL_CHECKOUT}/orders/${orderId}/payment`, paymentData);
+            const response = await api.put(`${API_URL_CHECKOUT}/orders/${orderId}/payment`, paymentData);
             console.log("✅ Thanh toán hoàn tất:", response.data);
             return response.data;
         } catch (error) {
@@ -93,7 +92,7 @@ const SalePOS = {
     getVouchers: async () => {
         console.log("📌 Lấy danh sách voucher hợp lệ");
         try {
-            const response = await axios.get(`${API_URL_VOUCHERS}`);
+            const response = await api.get(API_URL_VOUCHERS);
             console.log("✅ Danh sách voucher hợp lệ:", response.data.data);
             return response.data.data;
         } catch (error) {
@@ -124,7 +123,7 @@ const SalePOS = {
             // Thanh toán đơn hàng
             const paymentData = {
                 customerId: orderData.customerId,
-                voucherId: orderData.voucherId
+                voucherId: orderData.voucherId,
             };
             const paymentResponse = await SalePOS.completePayment(orderId, paymentData);
             console.log("✅ Thanh toán thành công:", paymentResponse);
@@ -134,7 +133,7 @@ const SalePOS = {
             console.error("❌ Lỗi khi checkout:", error.response?.data || error.message);
             throw error;
         }
-    }
+    },
 };
 
-export default SalePOS; 
+export default SalePOS;

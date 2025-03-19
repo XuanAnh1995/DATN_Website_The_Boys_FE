@@ -5,16 +5,36 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recha
 
 const WeeklyRevenueChart = () => {
     const [weeklyRevenue, setWeeklyRevenue] = useState([]);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
-        StatisticsService.getWeeklyRevenue().then(res => {
-            const formattedData = res.data.data.map(item => ({
-                week: `Tuần ${item.weekNumber}`,
-                revenue: item.weeklyRevenue
-            }));
-            setWeeklyRevenue(formattedData);
-        });
+        const fetchData = async () => {
+            try {
+                const data = await StatisticsService.getWeeklyRevenue();
+                const formattedData = data.map(item => ({
+                    week: `Tuần ${item.weekNumber}`,
+                    revenue: item.weeklyRevenue || 0,
+                }));
+                setWeeklyRevenue(formattedData);
+                setError(null);
+            } catch (err) {
+                console.error("Lỗi khi tải doanh thu tuần:", err);
+                setError("Không thể tải dữ liệu doanh thu tuần.");
+            }
+        };
+        fetchData();
     }, []);
+
+    if (error) {
+        return (
+            <Card className="col-span-2">
+                <CardContent>
+                    <h2 className="text-xl font-bold">Doanh thu theo tuần</h2>
+                    <p className="text-red-500">{error}</p>
+                </CardContent>
+            </Card>
+        );
+    }
 
     return (
         <Card className="col-span-2">

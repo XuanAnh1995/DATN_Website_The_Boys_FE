@@ -5,12 +5,36 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recha
 
 const YearlyRevenueChart = () => {
     const [yearlyRevenue, setYearlyRevenue] = useState([]);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
-        StatisticsService.getYearlyRevenue().then(res => {
-            setYearlyRevenue(res.data.data);
-        });
+        const fetchData = async () => {
+            try {
+                const data = await StatisticsService.getYearlyRevenue();
+                const formattedData = data.map(item => ({
+                    yearNumber: item.yearNumber,
+                    yearlyRevenue: item.yearlyRevenue || 0,
+                }));
+                setYearlyRevenue(formattedData);
+                setError(null);
+            } catch (err) {
+                console.error("Lỗi khi tải doanh thu năm:", err);
+                setError("Không thể tải dữ liệu doanh thu năm.");
+            }
+        };
+        fetchData();
     }, []);
+
+    if (error) {
+        return (
+            <Card className="col-span-2">
+                <CardContent>
+                    <h2 className="text-xl font-bold">Doanh thu theo năm</h2>
+                    <p className="text-red-500">{error}</p>
+                </CardContent>
+            </Card>
+        );
+    }
 
     return (
         <Card className="col-span-2">

@@ -10,42 +10,73 @@ const StatisticsPage = () => {
     const [activeTab, setActiveTab] = useState("daily");
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
-    const [dailyRevenue, setDailyRevenue] = useState([]);
-    const [weeklyRevenue, setWeeklyRevenue] = useState([]);
-    const [monthlyRevenue, setMonthlyRevenue] = useState([]);
-    const [yearlyRevenue, setYearlyRevenue] = useState([]);
     const [totalRevenue, setTotalRevenue] = useState(0);
     const [totalCustomers, setTotalCustomers] = useState(0);
     const [totalInvoices, setTotalInvoices] = useState(0);
     const [totalAdmins, setTotalAdmins] = useState(0);
     const [totalStaff, setTotalStaff] = useState(0);
-    const [topSellingProducts, setTopSellingProducts] = useState([]); 
-    
+    const [topSellingProducts, setTopSellingProducts] = useState([]);
+    const [error, setError] = useState(null);
+
     useEffect(() => {
-        StatisticsService.getDailyRevenue().then(res => setDailyRevenue(res.data.data));
-        StatisticsService.getWeeklyRevenue().then(res => setWeeklyRevenue(res.data.data));
-        StatisticsService.getMonthlyRevenue().then(res => setMonthlyRevenue(res.data.data));
-        StatisticsService.getYearlyRevenue().then(res => setYearlyRevenue(res.data.data));
-        StatisticsService.getTotalRevenue().then(res => setTotalRevenue(res.data.data));
-        StatisticsService.getTotalCustomers().then(res => setTotalCustomers(res.data.data));
-        StatisticsService.getTotalInvoices().then(res => setTotalInvoices(res.data.data));
-        StatisticsService.getTotalAdmins().then(res => setTotalAdmins(res.data.data));
-        StatisticsService.getTotalStaff().then(res => setTotalStaff(res.data.data));
+        const fetchData = async () => {
+            try {
+                const [
+                    totalRevenueRes,
+                    totalCustomersRes,
+                    totalInvoicesRes,
+                    totalAdminsRes,
+                    totalStaffRes,
+                ] = await Promise.all([
+                    StatisticsService.getTotalRevenue(),
+                    StatisticsService.getTotalCustomers(),
+                    StatisticsService.getTotalInvoices(),
+                    StatisticsService.getTotalAdmins(),
+                    StatisticsService.getTotalStaff(),
+                ]);
+                setTotalRevenue(totalRevenueRes || 0);
+                setTotalCustomers(totalCustomersRes || 0);
+                setTotalInvoices(totalInvoicesRes || 0);
+                setTotalAdmins(totalAdminsRes || 0);
+                setTotalStaff(totalStaffRes || 0);
+                setError(null);
+            } catch (err) {
+                console.error("Lỗi khi tải dữ liệu thống kê:", err);
+                setError("Không thể tải dữ liệu thống kê.");
+            }
+        };
+        fetchData();
     }, []);
 
-    const fetchTopSellingProducts = () => {
-        if (!startDate || !endDate) return;
-        StatisticsService.getTopSellingProducts(startDate, endDate)
-            .then(res => setTopSellingProducts(res.data.data)) 
-            .catch(err => console.error("Lỗi khi tải top sản phẩm:", err));
+    const fetchTopSellingProducts = async () => {
+        if (!startDate || !endDate) {
+            setError("Vui lòng chọn khoảng thời gian.");
+            return;
+        }
+        try {
+            const data = await StatisticsService.getTopSellingProducts(startDate, endDate);
+            setTopSellingProducts(data || []);
+            setError(null);
+        } catch (err) {
+            console.error("Lỗi khi tải top sản phẩm:", err);
+            setError("Không thể tải danh sách sản phẩm bán chạy.");
+        }
     };
+
+    if (error) {
+        return (
+            <div className="p-6">
+                <p className="text-red-500">{error}</p>
+            </div>
+        );
+    }
 
     return (
         <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <Card>
                 <CardContent>
-                <h2 className="text-xl font-bold">Tổng doanh thu</h2>
-                <p className="text-2xl">{totalRevenue.toLocaleString("vi-VN")} đ</p>
+                    <h2 className="text-xl font-bold">Tổng doanh thu</h2>
+                    <p className="text-2xl">{totalRevenue.toLocaleString("vi-VN")} đ</p>
                 </CardContent>
             </Card>
             <Card>
@@ -104,10 +135,10 @@ const StatisticsPage = () => {
                     </div>
 
                     {/* Hiển thị biểu đồ theo tab được chọn */}
-                    {activeTab === "daily" && <DailyRevenueChart data={dailyRevenue} />}
-                    {activeTab === "weekly" && <WeeklyRevenueChart data={weeklyRevenue} />}
-                    {activeTab === "monthly" && <MonthlyRevenueChart data={monthlyRevenue} />}
-                    {activeTab === "yearly" && <YearlyRevenueChart data={yearlyRevenue} />}
+                    {activeTab === "daily" && <DailyRevenueChart />}
+                    {activeTab === "weekly" && <WeeklyRevenueChart />}
+                    {activeTab === "monthly" && <MonthlyRevenueChart />}
+                    {activeTab === "yearly" && <YearlyRevenueChart />}
                 </CardContent>
             </Card>
 
@@ -116,9 +147,24 @@ const StatisticsPage = () => {
                 <CardContent>
                     <h2 className="text-xl font-bold">Top 5 sản phẩm bán chạy</h2>
                     <div className="flex gap-4 mb-4">
-                        <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="border p-2 rounded" />
-                        <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="border p-2 rounded" />
-                        <button onClick={fetchTopSellingProducts} className="bg-blue-500 text-white px-4 py-2 rounded">Lọc</button>
+                        <input
+                            type="date"
+                            value={startDate}
+                            onChange={e => setStartDate(e.target.value)}
+                            className="border p-2 rounded"
+                        />
+                        <input
+                            type="date"
+                            value={endDate}
+                            onChange={e => setEndDate(e.target.value)}
+                            className="border p-2 rounded"
+                        />
+                        <button
+                            onClick={fetchTopSellingProducts}
+                            className="bg-blue-500 text-white px-4 py-2 rounded"
+                        >
+                            Lọc
+                        </button>
                     </div>
                     <table className="w-full border-collapse border border-gray-300">
                         <thead>
@@ -130,14 +176,24 @@ const StatisticsPage = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {topSellingProducts.map((product, index) => (
-                                <tr key={index}>
-                                    <td className="border p-2 text-center">{index + 1}</td>
-                                    <td className="border p-2">{product.productDetailName}</td>
-                                    <td className="border p-2 text-center">{product.totalQuantitySold}</td>
-                                    <td className="border p-2 text-right">{product.totalRevenue.toLocaleString("vi-VN")} đ</td>
+                            {topSellingProducts.length > 0 ? (
+                                topSellingProducts.map((product, index) => (
+                                    <tr key={index}>
+                                        <td className="border p-2 text-center">{index + 1}</td>
+                                        <td className="border p-2">{product.productDetailName || "Không xác định"}</td>
+                                        <td className="border p-2 text-center">{product.totalQuantitySold || 0}</td>
+                                        <td className="border p-2 text-right">
+                                            {(product.totalRevenue || 0).toLocaleString("vi-VN")} đ
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="4" className="border p-2 text-center">
+                                        Chưa có dữ liệu
+                                    </td>
                                 </tr>
-                            ))}
+                            )}
                         </tbody>
                     </table>
                 </CardContent>

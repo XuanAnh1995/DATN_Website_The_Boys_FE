@@ -1,31 +1,68 @@
-import axios from "axios";
+import api from "../ultils/api" // Import instance Axios đã cấu hình từ api.js
 
-const API_URL = "http://localhost:8080/api/collars";
+const API_URL = "/api/collars"; // Đường dẫn tương đối vì baseURL đã được cấu hình trong api.js
 
 const CollarService = {
-    getAllCollars: (search = "", page = 0, size = 10, sortBy = "id", sortDir = "asc") => {
-        return axios.get(API_URL, {
-            params: { search, page, size, sortBy, sortDir },
-        }).then(response => {
-            // Trả về dữ liệu theo cấu trúc API
-            return response.data.data;
-        });
+    // Lấy danh sách cổ áo
+    getAllCollars: async (search = "", page = 0, size = 10, sortBy = "id", sortDir = "asc") => {
+        try {
+            const response = await api.get(API_URL, {
+                params: { search, page, size, sortBy, sortDir },
+            });
+            console.log("Danh sách cổ áo: ", response.data.data);
+            return response.data.data; // Trả về dữ liệu từ API
+        } catch (error) {
+            console.error("❌ Lỗi khi lấy danh sách cổ áo:", error.response?.data || error.message);
+            throw error; // Ném lỗi để phía gọi xử lý tiếp
+        }
     },
 
-    getCollarById: (id) => {
-        return axios.get(`${API_URL}/${id}`);
+    // Lấy cổ áo theo ID
+    getCollarById: async (id) => {
+        try {
+            const response = await api.get(`${API_URL}/${id}`);
+            console.log(`Cổ áo ${id}:`, response.data);
+            return response.data; // Trả về dữ liệu cổ áo
+        } catch (error) {
+            console.error(`❌ Lỗi khi lấy cổ áo ${id}:`, error.response?.data || error.message);
+            throw error;
+        }
     },
 
-    createCollar: (brandData) => {
-        return axios.post(API_URL, brandData);
+    // Tạo mới cổ áo
+    createCollar: async (collarData) => {
+        try {
+            const response = await api.post(API_URL, collarData);
+            console.log("Cổ áo đã tạo:", response.data);
+            return response.data; // Trả về dữ liệu cổ áo vừa tạo
+        } catch (error) {
+            console.error("❌ Lỗi khi tạo cổ áo:", error.response?.data || error.message);
+            throw error;
+        }
     },
 
-    updateCollar: (id, brandData) => {
-        return axios.put(`${API_URL}/${id}`, brandData);
+    // Cập nhật cổ áo
+    updateCollar: async (id, collarData) => {
+        try {
+            const response = await api.put(`${API_URL}/${id}`, collarData);
+            console.log(`Cổ áo ${id} đã cập nhật:`, response.data);
+            return response.data; // Trả về dữ liệu cổ áo đã cập nhật
+        } catch (error) {
+            console.error(`❌ Lỗi khi cập nhật cổ áo ${id}:`, error.response?.data || error.message);
+            throw error;
+        }
     },
 
-    toggleStatusCollar: (id) => {
-        return axios.put(`${API_URL}/${id}/toggle-status`);
+    // Chuyển đổi trạng thái cổ áo
+    toggleStatusCollar: async (id) => {
+        try {
+            const response = await api.put(`${API_URL}/${id}/toggle-status`);
+            console.log(`Trạng thái cổ áo ${id} đã thay đổi:`, response.data);
+            return response.data; // Trả về dữ liệu sau khi thay đổi trạng thái
+        } catch (error) {
+            console.error(`❌ Lỗi khi thay đổi trạng thái cổ áo ${id}:`, error.response?.data || error.message);
+            throw error;
+        }
     },
 };
 

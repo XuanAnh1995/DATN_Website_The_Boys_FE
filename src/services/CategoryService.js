@@ -1,13 +1,14 @@
-import axios from "axios";
+import api from "../ultils/api" // Import instance Axios đã cấu hình từ api.js
 
-const API_URL = "http://localhost:8080/api/categories";
+const API_URL = "/api/categories"; // Đường dẫn tương đối vì baseURL đã được cấu hình trong api.js
 
 const CategoryService = {
-    async getAll(page = 0, size = 10, search = '', sortKey = 'id', sortDirection = 'asc') {
+    // Lấy danh sách danh mục
+    getAll: async (page = 0, size = 10, search = "", sortKey = "id", sortDirection = "asc") => {
         try {
             const validSortKeys = ["id", "name", "status"];
             if (!validSortKeys.includes(sortKey)) {
-                sortKey = "id";
+                sortKey = "id"; // Mặc định về "id" nếu sortKey không hợp lệ
             }
 
             const params = {
@@ -18,60 +19,71 @@ const CategoryService = {
                 sortDir: sortDirection,
             };
 
-            const response = await axios.get(API_URL, { params });
-            return response.data.data;
+            const response = await api.get(API_URL, { params });
+            console.log("Danh sách danh mục: ", response.data.data);
+            return response.data.data; // Trả về dữ liệu từ API
         } catch (error) {
-            console.error("Error fetching categories:", error);
+            console.error("❌ Lỗi khi lấy danh sách danh mục:", error.response?.data || error.message);
+            throw error; // Ném lỗi để phía gọi xử lý tiếp
+        }
+    },
+
+    // Lấy danh mục theo ID
+    getById: async (id) => {
+        try {
+            const response = await api.get(`${API_URL}/${id}`);
+            console.log(`Danh mục ${id}:`, response.data);
+            return response.data; // Trả về dữ liệu danh mục
+        } catch (error) {
+            console.error(`❌ Lỗi khi lấy danh mục ${id}:`, error.response?.data || error.message);
             throw error;
         }
     },
 
-    async getById(id) {
+    // Thêm danh mục mới
+    add: async (categoryCreateRequest) => {
         try {
-            const response = await axios.get(`${API_URL}/${id}`);
-            return response.data;
+            const response = await api.post(API_URL, categoryCreateRequest);
+            console.log("Danh mục đã tạo:", response.data);
+            return response.data; // Trả về dữ liệu danh mục vừa tạo
         } catch (error) {
-            console.error("Error fetching category data:", error);
+            console.error("❌ Lỗi khi tạo danh mục:", error.response?.data || error.message);
             throw error;
         }
     },
 
-    async add(categoryCreateRequest) {
+    // Cập nhật danh mục
+    update: async (id, categoryUpdateRequest) => {
         try {
-            const response = await axios.post(API_URL, categoryCreateRequest);
-            return response.data;
+            const response = await api.put(`${API_URL}/${id}`, categoryUpdateRequest);
+            console.log(`Danh mục ${id} đã cập nhật:`, response.data);
+            return response.data; // Trả về dữ liệu danh mục đã cập nhật
         } catch (error) {
-            console.error("Error creating category:", error);
+            console.error(`❌ Lỗi khi cập nhật danh mục ${id}:`, error.response?.data || error.message);
             throw error;
         }
     },
 
-    async update(id, categoryUpdateRequest) {
+    // Chuyển đổi trạng thái danh mục
+    toggleStatus: async (id) => {
         try {
-            const response = await axios.put(`${API_URL}/${id}`, categoryUpdateRequest);
-            return response.data;
+            const response = await api.put(`${API_URL}/${id}/toggle-status`);
+            console.log(`Trạng thái danh mục ${id} đã thay đổi:`, response.data);
+            return response.data; // Trả về dữ liệu sau khi thay đổi trạng thái
         } catch (error) {
-            console.error("Error updating category:", error);
+            console.error(`❌ Lỗi khi thay đổi trạng thái danh mục ${id}:`, error.response?.data || error.message);
             throw error;
         }
     },
 
-    async toggleStatus(id) {
+    // Xóa danh mục
+    delete: async (id) => {
         try {
-            const response = await axios.put(`${API_URL}/${id}/toggle-status`);
-            return response.data;
+            const response = await api.delete(`${API_URL}/${id}`);
+            console.log(`Danh mục ${id} đã xóa:`, response.data);
+            return response.data; // Trả về dữ liệu phản hồi từ server
         } catch (error) {
-            console.error("Error toggling category status:", error);
-            throw error;
-        }
-    },
-
-    async delete(id) {
-        try {
-            const response = await axios.delete(`${API_URL}/${id}`);
-            return response.data;
-        } catch (error) {
-            console.error("Error deleting category:", error);
+            console.error(`❌ Lỗi khi xóa danh mục ${id}:`, error.response?.data || error.message);
             throw error;
         }
     },
