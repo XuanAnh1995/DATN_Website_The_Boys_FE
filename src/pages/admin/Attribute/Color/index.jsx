@@ -105,14 +105,20 @@ export default function Color() {
             <tr key={item.id} className="bg-white hover:bg-gray-100">
               <td className="px-4 py-2">{index + 1}</td>
               <td className="px-4 py-2">{item.name}</td>
-              <td className={`px-4 py-2 ${item.status ? "text-green-500" : "text-red-500"}`}>
+              <td className={`px-4 py-2 ${item.status ? "text-blue-500" : "text-red-500"}`}>
                 {item.status ? "Kích hoạt" : "Không kích hoạt"}
               </td>
               <td className="px-4 py-2 flex justify-center gap-4">
                 <button className="text-blue-500" onClick={() => handleUpdateColor(item)}>
                   <AiOutlineEdit size={20} />
                 </button>
-                <Switch onChange={() => handleToggleStatus(item.id)} checked={item.status} height={20} width={40} />
+                <Switch
+                  onChange={() => handleToggleStatus(item.id)}
+                  checked={item.status}
+                  height={20}
+                  width={40}
+                  onColor="#1E90FF" // Sử dụng Dodger Blue làm ví dụ
+                />
               </td>
             </tr>
           ))}

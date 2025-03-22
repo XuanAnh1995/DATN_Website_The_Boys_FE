@@ -67,7 +67,7 @@ export default function Promotion() {
           onChange={handleSearch}
         />
         <button
-          className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600"
+          className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-green-600"
           onClick={() => setIsCreateModalOpen(true)}
         >
           Thêm Khuyến mãi
@@ -102,7 +102,7 @@ export default function Promotion() {
                 {new Date(item.endDate).toLocaleDateString()}
               </td>
               <td
-                className={`px-4 py-2 ${item.status ? "text-green-500" : "text-red-500"}`}
+                className={`px-4 py-2 ${item.status ? "text-blue-500" : "text-red-500"}`}
               >
                 {item.status ? "Kích hoạt" : "Không kích hoạt"}
               </td>
@@ -118,6 +118,7 @@ export default function Promotion() {
                   checked={item.status}
                   height={20}
                   width={40}
+                  onColor="#1E90FF" // Sử dụng Dodger Blue làm ví dụ
                 />
               </td>
             </tr>

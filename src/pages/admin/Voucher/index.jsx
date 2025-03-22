@@ -490,7 +490,7 @@ export default function Voucher() {
     if (invalidCustomers.length > 0) {
       toast.error(
         "Có khách hàng không có email: " +
-          invalidCustomers.map((c) => c.fullname).join(", ")
+        invalidCustomers.map((c) => c.fullname).join(", ")
       );
       return;
     }
@@ -595,7 +595,7 @@ export default function Voucher() {
                 {new Date(item.endDate).toLocaleDateString()}
               </td>
               <td
-                className={`px-4 py-2 ${item.status ? "text-green-500" : "text-red-500"}`}
+                className={`px-4 py-2 ${item.status ? "text-blue-500" : "text-red-500"}`}
               >
                 {item.status ? "Kích hoạt" : "Không kích hoạt"}
               </td>
@@ -612,6 +612,7 @@ export default function Voucher() {
                   height={20}
                   width={40}
                   disabled={false}
+                  onColor="#1E90FF" // Sử dụng Dodger Blue làm ví dụ
                 />
                 <button
                   className="text-green-500"

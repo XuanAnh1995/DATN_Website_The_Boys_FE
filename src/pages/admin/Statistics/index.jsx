@@ -5,6 +5,11 @@ import DailyRevenueChart from "./components/DailyRevenueChart";
 import WeeklyRevenueChart from "./components/WeeklyRevenueChart";
 import MonthlyRevenueChart from "./components/MonthlyRevenueChart";
 import YearlyRevenueChart from "./components/YearlyRevenueChart";
+import ChannelRevenueChart from "./components/ChannelRevenueChart";
+import OrderStatusDistributionChart from "./components/OrderStatusDistributionChart";
+import PaymentMethodDistributionChart from "./components/PaymentMethodDistributionChart";
+import TopCustomersChart from "./components/TopCustomersChart";
+import TopInventoryProductsChart from "./components/TopInventoryProductsChart";
 
 const StatisticsPage = () => {
     const [activeTab, setActiveTab] = useState("daily");
@@ -141,8 +146,22 @@ const StatisticsPage = () => {
                     {activeTab === "yearly" && <YearlyRevenueChart />}
                 </CardContent>
             </Card>
+            {/* Doanh thu theo kênh */}
+            <ChannelRevenueChart />
 
-            {/* Bộ lọc ngày */}
+            {/* Tỷ lệ đơn hàng theo trạng thái */}
+            <OrderStatusDistributionChart />
+
+            {/* Tỷ lệ thanh toán theo phương thức */}
+            <PaymentMethodDistributionChart />
+
+            {/* Top 5 khách hàng mua nhiều nhất */}
+            <TopCustomersChart />
+
+            {/* Top 5 sản phẩm tồn kho nhiều nhất */}
+            <TopInventoryProductsChart />
+
+            {/* Bộ lọc ngày và top sản phẩm bán chạy */}
             <Card className="col-span-3">
                 <CardContent>
                     <h2 className="text-xl font-bold">Top 5 sản phẩm bán chạy</h2>

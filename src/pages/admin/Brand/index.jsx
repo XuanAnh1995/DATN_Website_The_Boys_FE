@@ -69,7 +69,7 @@ export default function Brand() {
     try {
       await BrandService.toggleStatusBrand(id);
       setBrands((prev) => prev.map((item) =>
-       ( item.id === id ? { ...item, status: !item.status } : item)
+        (item.id === id ? { ...item, status: !item.status } : item)
       ));
       toast.success("Thay đổi trạng thái thương hiệu thành công!");
     } catch (error) {
@@ -123,7 +123,7 @@ export default function Brand() {
               <td className="px-4 py-2">{index + 1}</td>
               <td className="px-4 py-2">{item.brandName}</td>
               <td
-                className={`px-4 py-2 ${item.status ? "text-green-500" : "text-red-500"}`}
+                className={`px-4 py-2 ${item.status ? "text-blue-500" : "text-red-500"}`}
               >
                 {item.status ? "Kích hoạt" : "Không kích hoạt"}
               </td>
@@ -139,6 +139,7 @@ export default function Brand() {
                   checked={item.status}
                   height={20}
                   width={40}
+                  onColor="#1E90FF" // Sử dụng Dodger Blue làm ví dụ
                 />
               </td>
             </tr>

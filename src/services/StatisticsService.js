@@ -51,6 +51,90 @@ const StatisticsService = {
         }
     },
 
+    // Lấy doanh thu theo kênh (online vs tại quầy)
+    getChannelRevenue: async () => {
+        try {
+            const response = await api.get(`${API_BASE_URL}/channel-revenue`);
+            console.log("✅ Doanh thu theo kênh:", response.data.data);
+            return response.data.data; // Trả về dữ liệu doanh thu theo kênh
+        } catch (error) {
+            console.error("❌ Lỗi khi lấy doanh thu theo kênh:", error.response?.data || error.message);
+            throw error;
+        }
+    },
+
+    // Lấy tỷ lệ đơn hàng theo trạng thái
+    getOrderStatusDistribution: async () => {
+        try {
+            const response = await api.get(`${API_BASE_URL}/order-status-distribution`);
+            console.log("✅ Tỷ lệ đơn hàng theo trạng thái:", response.data.data);
+            return response.data.data; // Trả về dữ liệu tỷ lệ đơn hàng
+        } catch (error) {
+            console.error("❌ Lỗi khi lấy tỷ lệ đơn hàng theo trạng thái:", error.response?.data || error.message);
+            throw error;
+        }
+    },
+
+    // Lấy tỷ lệ thanh toán theo phương thức
+    getPaymentMethodDistribution: async () => {
+        try {
+            const response = await api.get(`${API_BASE_URL}/payment-method-distribution`);
+            console.log("✅ Tỷ lệ thanh toán theo phương thức:", response.data.data);
+            return response.data.data; // Trả về dữ liệu tỷ lệ thanh toán
+        } catch (error) {
+            console.error("❌ Lỗi khi lấy tỷ lệ thanh toán theo phương thức:", error.response?.data || error.message);
+            throw error;
+        }
+    },
+
+    // Lấy top 5 khách hàng mua nhiều nhất
+    getTop5Customers: async () => {
+        try {
+            const response = await api.get(`${API_BASE_URL}/top-5-customers`);
+            console.log("✅ Top 5 khách hàng:", response.data.data);
+            return response.data.data; // Trả về dữ liệu top 5 khách hàng
+        } catch (error) {
+            console.error("❌ Lỗi khi lấy top 5 khách hàng:", error.response?.data || error.message);
+            throw error;
+        }
+    },
+
+    // Lấy tỷ lệ sử dụng voucher
+    getVoucherUsage: async () => {
+        try {
+            const response = await api.get(`${API_BASE_URL}/voucher-usage`);
+            console.log("✅ Tỷ lệ sử dụng voucher:", response.data.data);
+            return response.data.data; // Trả về dữ liệu tỷ lệ sử dụng voucher
+        } catch (error) {
+            console.error("❌ Lỗi khi lấy tỷ lệ sử dụng voucher:", error.response?.data || error.message);
+            throw error;
+        }
+    },
+
+    // Lấy top 5 sản phẩm tồn kho nhiều nhất
+    getTop5InventoryProducts: async () => {
+        try {
+            const response = await api.get(`${API_BASE_URL}/top-5-inventory-products`);
+            console.log("✅ Top 5 sản phẩm tồn kho:", response.data.data);
+            return response.data.data; // Trả về dữ liệu top 5 sản phẩm tồn kho
+        } catch (error) {
+            console.error("❌ Lỗi khi lấy top 5 sản phẩm tồn kho:", error.response?.data || error.message);
+            throw error;
+        }
+    },
+
+    // Lấy tỷ lệ giỏ hàng bị bỏ quên
+    getCartAbandonmentRate: async () => {
+        try {
+            const response = await api.get(`${API_BASE_URL}/cart-abandonment-rate`);
+            console.log("✅ Tỷ lệ giỏ hàng bị bỏ quên:", response.data.data);
+            return response.data.data; // Trả về dữ liệu tỷ lệ giỏ hàng bị bỏ quên
+        } catch (error) {
+            console.error("❌ Lỗi khi lấy tỷ lệ giỏ hàng bị bỏ quên:", error.response?.data || error.message);
+            throw error;
+        }
+    },
+
     // Lấy tổng doanh thu
     getTotalRevenue: async () => {
         try {

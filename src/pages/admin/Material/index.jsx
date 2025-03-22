@@ -122,7 +122,7 @@ export default function Material() {
                             <td className="px-4 py-2">{index + 1}</td>
                             <td className="px-4 py-2">{item.materialName}</td>
                             <td
-                                className={`px-4 py-2 ${item.status ? "text-green-500" : "text-red-500"}`}
+                                className={`px-4 py-2 ${item.status ? "text-blue-500" : "text-red-500"}`}
                             >
                                 {item.status ? "Kích hoạt" : "Không kích hoạt"}
                             </td>
@@ -138,6 +138,7 @@ export default function Material() {
                                     checked={item.status}
                                     height={20}
                                     width={40}
+                                    onColor="#1E90FF" // Sử dụng Dodger Blue làm ví dụ
                                 />
                             </td>
                         </tr>
