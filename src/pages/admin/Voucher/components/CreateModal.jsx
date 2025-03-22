@@ -12,7 +12,7 @@ export default function CreateModal({
   fetchVouchers,
 }) {
   const [voucher, setVoucher] = useState({
-    voucherCode: "",
+    voucherCode: "Tự sinh",
     voucherName: "",
     description: "",
     minCondition: "",
@@ -32,10 +32,6 @@ export default function CreateModal({
   };
 
   const validateVoucher = () => {
-    if (!voucher.voucherCode.trim()) {
-      toast.error("Mã voucher không được để trống");
-      return false;
-    }
     if (!voucher.voucherName.trim()) {
       toast.error("Tên voucher không được để trống");
       return false;
