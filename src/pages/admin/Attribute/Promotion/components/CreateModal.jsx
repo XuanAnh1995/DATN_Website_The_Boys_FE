@@ -82,7 +82,7 @@ export default function CreateModal({ isOpen, onCancel, fetchPromotions }) {
           <input
             type="text"
             name="promotionName"
-            className="border p-2 rounded w-full"
+            className="border p-2 rounded w-full  bg-white"
             value={promotion.promotionName}
             onChange={handleChange}
           />
@@ -94,7 +94,7 @@ export default function CreateModal({ isOpen, onCancel, fetchPromotions }) {
           <input
             type="number"
             name="promotionPercent"
-            className="border p-2 rounded w-full"
+            className="border p-2 rounded w-full  bg-white"
             value={promotion.promotionPercent}
             onChange={handleChange}
             min="1"
@@ -105,7 +105,7 @@ export default function CreateModal({ isOpen, onCancel, fetchPromotions }) {
           <label className="block text-sm font-medium">Mô tả</label>
           <textarea
             name="description"
-            className="border p-2 rounded w-full"
+            className="border p-2 rounded w-full  bg-white"
             value={promotion.description}
             onChange={handleChange}
           />
@@ -115,7 +115,7 @@ export default function CreateModal({ isOpen, onCancel, fetchPromotions }) {
           <input
             type="date"
             name="startDate"
-            className="border p-2 rounded w-full"
+            className="border p-2 rounded w-full  bg-white"
             value={promotion.startDate}
             onChange={handleChange}
           />
@@ -125,7 +125,7 @@ export default function CreateModal({ isOpen, onCancel, fetchPromotions }) {
           <input
             type="date"
             name="endDate"
-            className="border p-2 rounded w-full"
+            className="border p-2 rounded w-full  bg-white"
             value={promotion.endDate}
             onChange={handleChange}
           />
