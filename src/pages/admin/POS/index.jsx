@@ -821,7 +821,7 @@ const SalePOSPage = () => {
                 </div>
             )}
 
-            <div className="flex items-center bg-red-600 p-3 text-white">
+            <div className="flex items-center bg-blue-600 p-3 text-white">
                 <input
                     type="text"
                     placeholder="F3) Tìm kiếm sản phẩm"
@@ -829,7 +829,7 @@ const SalePOSPage = () => {
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-1/2 p-2 border rounded text-black"
                 />
-                <button onClick={handleCreateOrder} className="ml-2 bg-white text-red-600 px-4 py-2 rounded">
+                <button onClick={handleCreateOrder} className="ml-2 bg-white text-blue-600 px-4 py-2 rounded">
                     Tạo hóa đơn mới
                 </button>
             </div>
@@ -850,7 +850,7 @@ const SalePOSPage = () => {
                                         e.stopPropagation();
                                         handleRemoveOrder(index);
                                     }}
-                                    className="text-red-500 hover:text-red-700"
+                                    className="text-blue-500 hover:text-blue-700"
                                 >
                                     <FaTrash size={12} />
                                 </button>
@@ -924,13 +924,13 @@ const SalePOSPage = () => {
                                                     className="w-16 p-1 text-center border rounded"
                                                 />
                                             </td>
-                                            <td className="p-2 text-red-600 font-bold">
+                                            <td className="p-2 text-blue-600 font-bold">
                                                 {(discountedPrice * item.quantity).toLocaleString()} VND
                                             </td>
                                             <td className="p-2">
                                                 <button
                                                     onClick={() => handleRemoveFromCart(item.id)}
-                                                    className="bg-red-500 hover:bg-red-700 text-white p-1 rounded"
+                                                    className="bg-blue-500 hover:bg-blue-700 text-white p-1 rounded"
                                                 >
                                                     <FaTrash />
                                                 </button>
@@ -1038,10 +1038,10 @@ const SalePOSPage = () => {
                                                 <td className="py-2 px-4 border-b">{product.color?.name || "Không xác định"}</td>
                                                 <td className="py-2 px-4 border-b">{product.size?.name || "Không xác định"}</td>
                                                 <td className="py-2 px-4 border-b text-center">{product.quantity || 0}</td>
-                                                <td className="py-2 px-4 border-b text-red-600 font-bold">
+                                                <td className="py-2 px-4 border-b text-blue-600 font-bold">
                                                     {product.salePrice?.toLocaleString()} VND
                                                 </td>
-                                                <td className="py-2 px-4 border-b text-green-600 font-bold">{discount}</td>
+                                                <td className="py-2 px-4 border-b text-blue-600 font-bold">{discount}</td>
                                                 <td className="py-2 px-4 border-b text-center">
                                                     <button
                                                         onClick={() => handleAddToCart(product)}
@@ -1198,7 +1198,7 @@ const SalePOSPage = () => {
 
                     <button
                         onClick={handlePayment}
-                        className="bg-green-600 text-white w-full py-2 mt-4 rounded"
+                        className="bg-blue-600 text-white w-full py-2 mt-4 rounded"
                         disabled={!activeOrderIndex && activeOrderIndex !== 0}
                     >
                         Thanh toán

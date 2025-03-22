@@ -490,7 +490,7 @@ export default function Voucher() {
     if (invalidCustomers.length > 0) {
       toast.error(
         "Có khách hàng không có email: " +
-          invalidCustomers.map((c) => c.fullname).join(", ")
+        invalidCustomers.map((c) => c.fullname).join(", ")
       );
       return;
     }
