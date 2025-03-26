@@ -1,195 +1,3 @@
-// import React, { useState, useEffect, useCallback } from "react";
-// import PromotionService from "../../../../services/PromotionServices";
-// import { toast } from "react-toastify";
-// import { AiOutlineEdit } from "react-icons/ai";
-// import Switch from "react-switch";
-// import CreatePromotionModal from "./components/CreateModal";
-// import UpdateModal from "./components/UpdateModal";
-
-// export default function Promotion() {
-//   const [promotions, setPromotions] = useState([]);
-//   const [currentPage, setCurrentPage] = useState(0);
-//   const [totalPages, setTotalPages] = useState(0);
-//   const [pageSize, setPageSize] = useState(10);
-//   const [search, setSearch] = useState("");
-//   const [sortConfig, setSortConfig] = useState({
-//     key: "id",
-//     direction: "desc",
-//   });
-//   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-//   const [updateModal, setUpdateModal] = useState(false);
-//   const [selectedPromotion, setSelectedPromotion] = useState(null);
-
-//   const fetchPromotions = useCallback(async () => {
-//     try {
-//       const { content, totalPages } = await PromotionService.getAllPromotions(
-//         search,
-//         currentPage,
-//         pageSize,
-//         sortConfig.key,
-//         sortConfig.direction
-//       );
-//       setPromotions(content);
-//       setTotalPages(totalPages);
-//     } catch (error) {
-//       console.error(error);
-//       toast.error("Lỗi khi tải dữ liệu khuyến mãi");
-//     }
-//   }, [search, currentPage, pageSize, sortConfig]);
-
-//   useEffect(() => {
-//     fetchPromotions();
-//   }, [fetchPromotions]);
-
-//   const handleSearch = (event) => {
-//     setSearch(event.target.value);
-//     setCurrentPage(0); // Reset về trang đầu khi tìm kiếm
-//   };
-
-//   const handleUpdatePromotion = (promotion) => {
-//     setSelectedPromotion(promotion);
-//     setUpdateModal(true);
-//   };
-
-//   return (
-//     <div className="p-6 bg-gray-50 min-h-screen">
-//       <h1 className="text-2xl font-bold mb-6 text-center">
-//         Quản lý Khuyến mãi
-//       </h1>
-
-//       {/* Thanh tìm kiếm tự động */}
-//       <div className="flex items-center justify-between mb-4">
-//         <input
-//           type="text"
-//           placeholder="Tìm kiếm khuyến mãi..."
-//           className="border rounded-lg px-4 py-2 w-64 focus:ring-blue-500"
-//           value={search}
-//           onChange={handleSearch}
-//         />
-//         <button
-//           className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600"
-//           onClick={() => setIsCreateModalOpen(true)}
-//         >
-//           Thêm Khuyến mãi
-//         </button>
-//       </div>
-
-//       {/* Bảng danh sách khuyến mãi */}
-//       <table className="table-auto w-full bg-white rounded-lg shadow-lg text-center text-sm">
-//         <thead>
-//           <tr className="bg-blue-100 text-gray-700">
-//             <th className="px-4 py-2">STT</th>
-//             <th className="px-4 py-2">Tên KM</th>
-//             <th className="px-4 py-2">Mô tả</th>
-//             <th className="px-4 py-2">Phần trăm giảm</th>
-//             <th className="px-4 py-2">Ngày bắt đầu</th>
-//             <th className="px-4 py-2">Ngày kết thúc</th>
-//             <th className="px-4 py-2">Trạng thái</th>
-//             <th className="px-4 py-2">Hành động</th>
-//           </tr>
-//         </thead>
-//         <tbody>
-//           {promotions.map((item, index) => (
-//             <tr key={item.id} className="bg-white hover:bg-gray-100 border-b">
-//               <td className="px-4 py-2">{index + 1}</td>
-//               <td className="px-4 py-2">{item.promotionName}</td>
-//               <td className="px-4 py-2">{item.description}</td>
-//               <td className="px-4 py-2">{item.promotionPercent}%</td>
-//               <td className="px-4 py-2">
-//                 {new Date(item.startDate).toLocaleDateString()}
-//               </td>
-//               <td className="px-4 py-2">
-//                 {new Date(item.endDate).toLocaleDateString()}
-//               </td>
-//               <td
-//                 className={`px-4 py-2 ${item.status ? "text-green-500" : "text-red-500"}`}
-//               >
-//                 {item.status ? "Kích hoạt" : "Không kích hoạt"}
-//               </td>
-//               <td className="px-4 py-2 flex justify-center gap-4">
-//                 <button
-//                   className="text-blue-500"
-//                   onClick={() => handleUpdatePromotion(item)}
-//                 >
-//                   <AiOutlineEdit size={20} />
-//                 </button>
-//                 <Switch
-//                   onChange={() => console.log("Toggling status for:", item.id)}
-//                   checked={item.status}
-//                   height={20}
-//                   width={40}
-//                 />
-//               </td>
-//             </tr>
-//           ))}
-//         </tbody>
-//       </table>
-
-//       {/* Phân trang */}
-//       <div className="flex items-center justify-between mt-6">
-//         <div className="flex items-center gap-2">
-//           <label htmlFor="entries" className="text-sm">
-//             Xem
-//           </label>
-//           <select
-//             id="entries"
-//             className="border rounded-lg px-2 py-1 focus:ring-blue-500"
-//             value={pageSize}
-//             onChange={(e) => {
-//               setPageSize(Number(e.target.value));
-//               setCurrentPage(0);
-//             }}
-//           >
-//             {[5, 10, 20].map((size) => (
-//               <option key={size} value={size}>
-//                 {size}
-//               </option>
-//             ))}
-//           </select>
-//           <span className="text-sm">Promotion</span>
-//         </div>
-
-//         <div className="flex items-center gap-2">
-//           <button
-//             className="px-3 py-1 border rounded-lg bg-gray-200 disabled:opacity-50"
-//             onClick={() => setCurrentPage((prev) => Math.max(0, prev - 1))}
-//             disabled={currentPage === 0}
-//           >
-//             {"<"}
-//           </button>
-
-//           <span className="text-sm font-semibold">
-//             {totalPages > 0
-//               ? `Trang ${currentPage + 1} / ${totalPages}`
-//               : "Không có dữ liệu"}
-//           </span>
-
-//           <button
-//             className="px-3 py-1 border rounded-lg bg-gray-200 disabled:opacity-50"
-//             onClick={() =>
-//               setCurrentPage((prev) => Math.min(prev + 1, totalPages - 1))
-//             }
-//             disabled={currentPage >= totalPages - 1 || totalPages === 0}
-//           >
-//             {">"}
-//           </button>
-//         </div>
-//       </div>
-
-//       <CreatePromotionModal
-//         isOpen={isCreateModalOpen}
-//         onCancel={() => setIsCreateModalOpen(false)}
-//         fetchPromotions={fetchPromotions}
-//       />
-//       <UpdateModal
-//         isOpen={updateModal}
-//         setUpdateModal={setUpdateModal}
-//         fetchPromotions={fetchPromotions}
-//         selectedPromotion={selectedPromotion}
-//       />
-//     </div>
-//   );
-// }
 import React, { useState, useEffect, useCallback } from "react";
 import PromotionService from "../../../../services/PromotionServices";
 import { toast } from "react-toastify";
@@ -210,6 +18,7 @@ export default function Promotion() {
   });
   const [dateRange, setDateRange] = useState({ start: "", end: "" });
   const [percentRange, setPercentRange] = useState({ min: "", max: "" });
+  const [statusFilter, setStatusFilter] = useState(""); // Thêm bộ lọc trạng thái
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [updateModal, setUpdateModal] = useState(false);
   const [selectedPromotion, setSelectedPromotion] = useState(null);
@@ -226,6 +35,7 @@ export default function Promotion() {
         endDate: dateRange.end,
         minPercent: percentRange.min,
         maxPercent: percentRange.max,
+        status: statusFilter,
       });
 
       const { content, totalPages } = await PromotionService.getAllPromotions(
@@ -278,13 +88,28 @@ export default function Promotion() {
         );
       }
 
+      // Lọc theo trạng thái
+      if (statusFilter) {
+        filteredPromotions = filteredPromotions.filter(
+          (promo) => promo.status === (statusFilter === "active")
+        );
+      }
+
       setPromotions(filteredPromotions);
       setTotalPages(Math.ceil(filteredPromotions.length / pageSize) || 1);
     } catch (error) {
       console.error("Error fetching promotions:", error);
       toast.error("Lỗi khi tải dữ liệu khuyến mãi");
     }
-  }, [search, currentPage, pageSize, sortConfig, dateRange, percentRange]);
+  }, [
+    search,
+    currentPage,
+    pageSize,
+    sortConfig,
+    dateRange,
+    percentRange,
+    statusFilter,
+  ]);
 
   useEffect(() => {
     fetchPromotions();
@@ -307,10 +132,16 @@ export default function Promotion() {
     setCurrentPage(0);
   };
 
+  const handleStatusFilter = (event) => {
+    setStatusFilter(event.target.value);
+    setCurrentPage(0);
+  };
+
   const handleResetFilters = () => {
     setSearch("");
     setDateRange({ start: "", end: "" });
     setPercentRange({ min: "", max: "" });
+    setStatusFilter("");
     setCurrentPage(0);
   };
 
@@ -321,127 +152,170 @@ export default function Promotion() {
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      <h1 className="text-2xl font-bold mb-6 text-center">
+      <h1 className="text-2xl font-bold mb-6 text-center text-gray-800">
         Quản lý Khuyến mãi
       </h1>
 
-      {/* Bộ lọc */}
-      <div className="flex items-center justify-between mb-4 gap-4 flex-wrap">
-        <div className="flex gap-4 flex-wrap items-center">
-          <input
-            type="text"
-            placeholder="Tìm kiếm khuyến mãi..."
-            className="border rounded-lg px-4 py-2 w-64 focus:ring-blue-500"
-            value={search}
-            onChange={handleSearch}
-          />
-
-          <div className="flex gap-2 items-center">
+      {/* Bộ lọc đẹp hơn */}
+      <div className="mb-6 bg-white p-4 rounded-lg shadow-md border border-gray-200">
+        <h2 className="text-lg font-semibold text-gray-700 mb-4">Bộ Lọc</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Tìm kiếm
+            </label>
+            <input
+              type="text"
+              placeholder="Tìm theo tên khuyến mãi"
+              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              value={search}
+              onChange={handleSearch}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Ngày bắt đầu từ
+            </label>
             <input
               type="date"
-              className="border rounded-lg px-2 py-1 focus:ring-blue-500"
+              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               value={dateRange.start}
               onChange={handleDateFilter("start")}
             />
-            <span>-</span>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Ngày kết thúc đến
+            </label>
             <input
               type="date"
-              className="border rounded-lg px-2 py-1 focus:ring-blue-500"
+              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               value={dateRange.end}
               onChange={handleDateFilter("end")}
             />
           </div>
-
-          <div className="flex gap-2 items-center">
-            <input
-              type="number"
-              placeholder="Min %"
-              className="border rounded-lg px-2 py-1 w-20 focus:ring-blue-500"
-              value={percentRange.min}
-              onChange={handlePercentFilter("min")}
-              min="0"
-              max="100"
-            />
-            <span>-</span>
-            <input
-              type="number"
-              placeholder="Max %"
-              className="border rounded-lg px-2 py-1 w-20 focus:ring-blue-500"
-              value={percentRange.max}
-              onChange={handlePercentFilter("max")}
-              min="0"
-              max="100"
-            />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Phần trăm giảm
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                placeholder="Min"
+                className="w-1/2 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                value={percentRange.min}
+                onChange={handlePercentFilter("min")}
+                min="0"
+                max="100"
+              />
+              <span>-</span>
+              <input
+                type="number"
+                placeholder="Max"
+                className="w-1/2 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                value={percentRange.max}
+                onChange={handlePercentFilter("max")}
+                min="0"
+                max="100"
+              />
+            </div>
           </div>
-
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Trạng thái
+            </label>
+            <select
+              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              value={statusFilter}
+              onChange={handleStatusFilter}
+            >
+              <option value="">Tất cả</option>
+              <option value="active">Kích hoạt</option>
+              <option value="inactive">Không kích hoạt</option>
+            </select>
+          </div>
+        </div>
+        <div className="mt-4 flex justify-between items-center">
           <button
-            className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
+            className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors duration-150"
             onClick={handleResetFilters}
           >
             Bỏ lọc
           </button>
+          <button
+            className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors duration-150"
+            onClick={() => setIsCreateModalOpen(true)}
+          >
+            Thêm Khuyến mãi
+          </button>
         </div>
-
-        <button
-          className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600"
-          onClick={() => setIsCreateModalOpen(true)}
-        >
-          Thêm Khuyến mãi
-        </button>
       </div>
 
       {/* Bảng danh sách khuyến mãi */}
-      <table className="table-auto w-full bg-white rounded-lg shadow-lg text-center text-sm">
+      <table className="table-auto w-full bg-white rounded-lg shadow-lg text-center text-sm border-separate border-spacing-0">
         <thead>
-          <tr className="bg-blue-100 text-gray-700">
-            <th className="px-4 py-2">STT</th>
-            <th className="px-4 py-2">Tên KM</th>
-            <th className="px-4 py-2">Mô tả</th>
-            <th className="px-4 py-2">Phần trăm giảm</th>
-            <th className="px-4 py-2">Ngày bắt đầu</th>
-            <th className="px-4 py-2">Ngày kết thúc</th>
-            <th className="px-4 py-2">Trạng thái</th>
-            <th className="px-4 py-2">Hành động</th>
+          <tr className="bg-blue-100 text-gray-700 text-xs uppercase tracking-wider">
+            <th className="px-4 py-3 rounded-tl-lg">STT</th>
+            <th className="px-4 py-3">Tên KM</th>
+            <th className="px-4 py-3">Mô tả</th>
+            <th className="px-4 py-3">Phần trăm giảm</th>
+            <th className="px-4 py-3">Ngày bắt đầu</th>
+            <th className="px-4 py-3">Ngày kết thúc</th>
+            <th className="px-4 py-3">Trạng thái</th>
+            <th className="px-4 py-3 rounded-tr-lg">Hành động</th>
           </tr>
         </thead>
         <tbody>
           {promotions
             .slice(currentPage * pageSize, (currentPage + 1) * pageSize)
             .map((item, index) => (
-              <tr key={item.id} className="bg-white hover:bg-gray-100 border-b">
-                <td className="px-4 py-2">
+              <tr
+                key={item.id}
+                className="bg-white hover:bg-gray-50 transition-colors duration-200 border-b border-gray-200 last:border-b-0"
+              >
+                <td className="px-4 py-3">
                   {currentPage * pageSize + index + 1}
                 </td>
-                <td className="px-4 py-2">{item.promotionName}</td>
-                <td className="px-4 py-2">{item.description}</td>
-                <td className="px-4 py-2">{item.promotionPercent}%</td>
-                <td className="px-4 py-2">
-                  {new Date(item.startDate).toLocaleDateString()}
+                <td className="px-4 py-3 font-medium text-gray-800">
+                  {item.promotionName}
                 </td>
-                <td className="px-4 py-2">
-                  {new Date(item.endDate).toLocaleDateString()}
+                <td className="px-4 py-3 text-gray-600 italic">
+                  {item.description}
+                </td>
+                <td className="px-4 py-3">{item.promotionPercent}%</td>
+                <td className="px-4 py-3 text-gray-600">
+                  {new Date(item.startDate).toLocaleDateString("vi-VN")}
+                </td>
+                <td className="px-4 py-3 text-gray-600">
+                  {new Date(item.endDate).toLocaleDateString("vi-VN")}
                 </td>
                 <td
-                  className={`px-4 py-2 ${item.status ? "text-green-500" : "text-red-500"}`}
+                  className={`px-4 py-3 font-semibold ${
+                    item.status ? "text-green-600" : "text-red-600"
+                  }`}
                 >
                   {item.status ? "Kích hoạt" : "Không kích hoạt"}
                 </td>
-                <td className="px-4 py-2 flex justify-center gap-4">
-                  <button
-                    className="text-blue-500"
-                    onClick={() => handleUpdatePromotion(item)}
-                  >
-                    <AiOutlineEdit size={20} />
-                  </button>
-                  <Switch
-                    onChange={() =>
-                      console.log("Toggling status for:", item.id)
-                    }
-                    checked={item.status}
-                    height={20}
-                    width={40}
-                    disabled
-                  />
+                <td className="px-4 py-3">
+                  <div className="flex justify-center gap-4">
+                    <button
+                      className="text-blue-600 hover:text-blue-800 transition-colors duration-150"
+                      onClick={() => handleUpdatePromotion(item)}
+                    >
+                      <AiOutlineEdit size={20} />
+                    </button>
+                    <Switch
+                      onChange={() =>
+                        console.log("Toggling status for:", item.id)
+                      }
+                      checked={item.status}
+                      height={20}
+                      width={40}
+                      onColor="#10B981"
+                      offColor="#EF4444"
+                      disabled
+                    />
+                  </div>
                 </td>
               </tr>
             ))}
@@ -451,12 +325,12 @@ export default function Promotion() {
       {/* Phân trang */}
       <div className="flex items-center justify-between mt-6">
         <div className="flex items-center gap-2">
-          <label htmlFor="entries" className="text-sm">
+          <label htmlFor="entries" className="text-sm text-gray-700">
             Xem
           </label>
           <select
             id="entries"
-            className="border rounded-lg px-2 py-1 focus:ring-blue-500"
+            className="border rounded-lg px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             value={pageSize}
             onChange={(e) => {
               setPageSize(Number(e.target.value));
@@ -469,26 +343,23 @@ export default function Promotion() {
               </option>
             ))}
           </select>
-          <span className="text-sm">Promotion</span>
+          <span className="text-sm text-gray-700">Khuyến mãi</span>
         </div>
-
         <div className="flex items-center gap-2">
           <button
-            className="px-3 py-1 border rounded-lg bg-gray-200 disabled:opacity-50"
+            className="px-3 py-1 border rounded-lg bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:opacity-50"
             onClick={() => setCurrentPage((prev) => Math.max(0, prev - 1))}
             disabled={currentPage === 0}
           >
             {"<"}
           </button>
-
-          <span className="text-sm font-semibold">
+          <span className="text-sm font-semibold text-gray-700">
             {totalPages > 0
               ? `Trang ${currentPage + 1} / ${totalPages}`
               : "Không có dữ liệu"}
           </span>
-
           <button
-            className="px-3 py-1 border rounded-lg bg-gray-200 disabled:opacity-50"
+            className="px-3 py-1 border rounded-lg bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:opacity-50"
             onClick={() =>
               setCurrentPage((prev) => Math.min(prev + 1, totalPages - 1))
             }

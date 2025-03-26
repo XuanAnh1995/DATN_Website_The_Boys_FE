@@ -20,8 +20,9 @@ export default function Voucher() {
     startDate: "",
     endDate: "",
   });
-  const [percentFilter, setPercentFilter] = useState(""); // Bộ lọc phần trăm giảm
-  const [minConditionFilter, setMinConditionFilter] = useState(""); // Bộ lọc điều kiện tối thiểu
+  const [percentFilter, setPercentFilter] = useState("");
+  const [minConditionFilter, setMinConditionFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState(""); // Thêm bộ lọc trạng thái
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [sortConfig, setSortConfig] = useState({
     key: "id",
@@ -33,6 +34,7 @@ export default function Voucher() {
   const [selectedVoucher, setSelectedVoucher] = useState(null);
   const [customers, setCustomers] = useState([]);
   const [selectedCustomerIds, setSelectedCustomerIds] = useState([]);
+  const [customerSearch, setCustomerSearch] = useState("");
 
   const updateVoucherStatus = useCallback(async (voucher) => {
     const currentDate = new Date();
@@ -64,7 +66,6 @@ export default function Voucher() {
 
       let filteredVouchers = response.content;
 
-      // Lọc theo ngày
       if (dateFilter.startDate || dateFilter.endDate) {
         filteredVouchers = filteredVouchers.filter((voucher) => {
           const startDate = new Date(voucher.startDate);
@@ -82,17 +83,21 @@ export default function Voucher() {
         });
       }
 
-      // Lọc theo phần trăm giảm
       if (percentFilter) {
         filteredVouchers = filteredVouchers.filter(
           (voucher) => voucher.reducedPercent >= Number(percentFilter)
         );
       }
 
-      // Lọc theo điều kiện tối thiểu
       if (minConditionFilter) {
         filteredVouchers = filteredVouchers.filter(
           (voucher) => voucher.minCondition >= Number(minConditionFilter)
+        );
+      }
+
+      if (statusFilter) {
+        filteredVouchers = filteredVouchers.filter(
+          (voucher) => voucher.status === (statusFilter === "active")
         );
       }
 
@@ -120,6 +125,8 @@ export default function Voucher() {
     dateFilter,
     percentFilter,
     minConditionFilter,
+    statusFilter,
+    updateVoucherStatus,
   ]);
 
   const fetchCustomers = async () => {
@@ -162,11 +169,17 @@ export default function Voucher() {
     setCurrentPage(0);
   };
 
+  const handleStatusFilter = (event) => {
+    setStatusFilter(event.target.value);
+    setCurrentPage(0);
+  };
+
   const handleResetFilters = () => {
     setSearch("");
     setDateFilter({ startDate: "", endDate: "" });
     setPercentFilter("");
     setMinConditionFilter("");
+    setStatusFilter("");
     setCurrentPage(0);
   };
 
@@ -205,6 +218,7 @@ export default function Voucher() {
   const handleOpenEmailModal = (voucher) => {
     setSelectedVoucher(voucher);
     setSelectedCustomerIds([]);
+    setCustomerSearch("");
     setEmailModalOpen(true);
   };
 
@@ -217,12 +231,25 @@ export default function Voucher() {
   };
 
   const handleSelectAllCustomers = () => {
-    const allCustomerIds = customers.map((customer) => customer.id);
+    const filteredCustomers = customers
+      .filter((customer) => customer.email)
+      .filter(
+        (customer) =>
+          customer.fullname
+            .toLowerCase()
+            .includes(customerSearch.toLowerCase()) ||
+          customer.email.toLowerCase().includes(customerSearch.toLowerCase())
+      );
+    const allCustomerIds = filteredCustomers.map((customer) => customer.id);
     setSelectedCustomerIds(allCustomerIds);
   };
 
   const handleDeselectAllCustomers = () => {
     setSelectedCustomerIds([]);
+  };
+
+  const handleCustomerSearch = (event) => {
+    setCustomerSearch(event.target.value);
   };
 
   const handleSendEmail = async () => {
@@ -279,60 +306,102 @@ export default function Voucher() {
       <h1 className="text-2xl font-bold mb-6 text-center text-gray-800">
         Quản lý Voucher
       </h1>
-      <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
-        <div className="flex flex-wrap items-center gap-4 w-full sm:w-auto">
-          <input
-            type="text"
-            placeholder="Tìm kiếm voucher"
-            className="border rounded-lg px-4 py-2 w-full sm:w-64 focus:ring-blue-500 focus:border-blue-500"
-            value={search}
-            onChange={handleSearch}
-          />
-          <div className="flex gap-2 w-full sm:w-auto">
+
+      {/* Bộ lọc đồng bộ theme với Promotion */}
+      <div className="mb-6 bg-white p-4 rounded-lg shadow-md border border-gray-200">
+        <h2 className="text-lg font-semibold text-gray-700 mb-4">Bộ Lọc</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Tìm kiếm
+            </label>
+            <input
+              type="text"
+              placeholder="Tìm theo mã hoặc tên"
+              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              value={search}
+              onChange={handleSearch}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Ngày bắt đầu từ
+            </label>
             <input
               type="date"
               name="startDate"
               value={dateFilter.startDate}
               onChange={handleDateFilter}
-              className="border rounded-lg px-4 py-2 w-full sm:w-40 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Ngày kết thúc đến
+            </label>
             <input
               type="date"
               name="endDate"
               value={dateFilter.endDate}
               onChange={handleDateFilter}
-              className="border rounded-lg px-4 py-2 w-full sm:w-40 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
-          <input
-            type="number"
-            placeholder="Phần trăm giảm từ"
-            min="0"
-            value={percentFilter}
-            onChange={handlePercentFilter}
-            className="border rounded-lg px-4 py-2 w-full sm:w-32 focus:ring-blue-500 focus:border-blue-500"
-          />
-          <input
-            type="number"
-            placeholder="Điều kiện từ"
-            min="0"
-            value={minConditionFilter}
-            onChange={handleMinConditionFilter}
-            className="border rounded-lg px-4 py-2 w-full sm:w-32 focus:ring-blue-500 focus:border-blue-500"
-          />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Phần trăm giảm từ
+            </label>
+            <input
+              type="number"
+              placeholder="0 - 100"
+              min="0"
+              value={percentFilter}
+              onChange={handlePercentFilter}
+              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Điều kiện tối thiểu từ
+            </label>
+            <input
+              type="number"
+              placeholder="Số tiền"
+              min="0"
+              value={minConditionFilter}
+              onChange={handleMinConditionFilter}
+              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Trạng thái
+            </label>
+            <select
+              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              value={statusFilter}
+              onChange={handleStatusFilter}
+            >
+              <option value="">Tất cả</option>
+              <option value="active">Kích hoạt</option>
+              <option value="inactive">Không kích hoạt</option>
+            </select>
+          </div>
+        </div>
+        <div className="mt-4 flex justify-between items-center">
           <button
-            className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors duration-150 w-full sm:w-auto"
+            className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors duration-150"
             onClick={handleResetFilters}
           >
-            Reset Bộ Lọc
+            Bỏ lọc
+          </button>
+          <button
+            className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors duration-150"
+            onClick={() => setIsCreateModalOpen(true)}
+          >
+            Thêm Voucher
           </button>
         </div>
-        <button
-          className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors duration-150 w-full sm:w-auto"
-          onClick={() => setIsCreateModalOpen(true)}
-        >
-          Thêm Voucher
-        </button>
       </div>
 
       <table className="table-auto w-full bg-white rounded-lg shadow-lg text-center text-sm border-separate border-spacing-0">
@@ -430,7 +499,7 @@ export default function Voucher() {
           </label>
           <select
             id="entries"
-            className="border rounded-lg px-2 py-1 focus:ring-blue-500 focus:border-blue-500"
+            className="border rounded-lg px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             value={pageSize}
             onChange={(e) => setPageSize(Number(e.target.value))}
           >
@@ -444,7 +513,7 @@ export default function Voucher() {
         </div>
         <div className="flex items-center gap-2">
           <button
-            className="px-3 py-1 border rounded-lg bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100"
+            className="px-3 py-1 border rounded-lg bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:opacity-50"
             onClick={() => handlePageChange(-1)}
             disabled={currentPage === 0}
           >
@@ -454,7 +523,7 @@ export default function Voucher() {
             Trang {currentPage + 1} / {totalPages}
           </span>
           <button
-            className="px-3 py-1 border rounded-lg bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100"
+            className="px-3 py-1 border rounded-lg bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:opacity-50"
             onClick={() => handlePageChange(1)}
             disabled={currentPage === totalPages - 1}
           >
@@ -509,6 +578,15 @@ export default function Voucher() {
               <label className="font-semibold block mb-1">
                 Chọn khách hàng:
               </label>
+              <div className="mb-2">
+                <input
+                  type="text"
+                  placeholder="Tìm theo tên hoặc email"
+                  value={customerSearch}
+                  onChange={handleCustomerSearch}
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
               <div className="flex gap-2 mb-2">
                 <button
                   className="bg-green-500 text-white px-3 py-1 rounded-lg hover:bg-green-600 transition-colors duration-150"
@@ -524,22 +602,33 @@ export default function Voucher() {
                 </button>
               </div>
               <div className="max-h-64 overflow-y-auto border rounded-lg p-2">
-                {customers.map((customer) => (
-                  <div
-                    key={customer.id}
-                    className="flex items-center gap-2 py-1"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedCustomerIds.includes(customer.id)}
-                      onChange={() => handleCustomerSelect(customer.id)}
-                      className="h-4 w-4"
-                    />
-                    <span>
-                      {customer.fullname} ({customer.email || "Không có email"})
-                    </span>
-                  </div>
-                ))}
+                {customers
+                  .filter((customer) => customer.email)
+                  .filter(
+                    (customer) =>
+                      customer.fullname
+                        .toLowerCase()
+                        .includes(customerSearch.toLowerCase()) ||
+                      customer.email
+                        .toLowerCase()
+                        .includes(customerSearch.toLowerCase())
+                  )
+                  .map((customer) => (
+                    <div
+                      key={customer.id}
+                      className="flex items-center gap-2 py-1"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedCustomerIds.includes(customer.id)}
+                        onChange={() => handleCustomerSelect(customer.id)}
+                        className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <span>
+                        {customer.fullname} ({customer.email})
+                      </span>
+                    </div>
+                  ))}
               </div>
               <p className="text-sm text-gray-600 mt-1">
                 Đã chọn: {selectedCustomerIds.length} khách hàng
