@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+import { logout } from "../../store/userSlice";
 import {
   FaSearch,
   FaUser,
@@ -7,9 +9,8 @@ import {
   FaMapMarkerAlt,
   FaHeart,
   FaClipboardCheck,
-  FaTag,
-  FaFire,
   FaStar,
+  FaSignOutAlt,
 } from "react-icons/fa";
 import ProductService from "../../services/ProductService";
 
@@ -17,7 +18,12 @@ const Header = () => {
   const [search, setSearch] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
+  // Lấy trạng thái user từ Redux
+  const { isLoggedIn, name } = useSelector((state) => state.user);
+
+  // Xử lý tìm kiếm sản phẩm
   const fetchSuggestions = useCallback(async () => {
     if (!search.trim()) {
       setSuggestions([]);
@@ -41,6 +47,12 @@ const Header = () => {
     return () => clearTimeout(delayDebounceFn);
   }, [fetchSuggestions]);
 
+  // Xử lý đăng xuất
+  const handleLogout = () => {
+    dispatch(logout());
+    navigate("/login");
+  };
+
   return (
     <header className="border-b border-red-400 p-3 shadow-md bg-white">
       {/* Thanh trên cùng */}
@@ -48,7 +60,7 @@ const Header = () => {
         {/* Bên trái - Chào mừng */}
         <div className="flex items-center gap-4">
           <span className="text-sm font-medium text-red-500">
-            The Boys xin chào!
+            {isLoggedIn ? `Xin chào, ${name}!` : "The Boys xin chào!"}
           </span>
           <Link to="/" className="flex items-center gap-3">
             <img
@@ -66,20 +78,39 @@ const Header = () => {
           </h1>
         </div>
 
-        {/* Bên phải - Đăng nhập, Đăng ký, Cửa hàng */}
+        {/* Bên phải - Hiển thị tuỳ theo trạng thái đăng nhập */}
         <div className="flex items-center gap-3">
-          <Link
-            to="/login"
-            className="bg-red-600 text-white px-4 py-1 rounded text-sm flex items-center gap-1 hover:bg-red-700 transition"
-          >
-            <FaUser /> Đăng nhập
-          </Link>
-          <Link
-            to="/register"
-            className="bg-gray-200 text-black px-4 py-1 rounded text-sm flex items-center gap-1 hover:bg-gray-300 transition"
-          >
-            + Đăng ký
-          </Link>
+          {isLoggedIn ? (
+            <>
+              <Link
+                to="/personal"
+                className="bg-green-600 text-white px-4 py-1 rounded text-sm flex items-center gap-1 hover:bg-green-700 transition"
+              >
+                <FaUser /> {name}
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="bg-gray-600 text-white px-4 py-1 rounded text-sm flex items-center gap-1 hover:bg-gray-700 transition"
+              >
+                <FaSignOutAlt /> Đăng xuất
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                to="/login"
+                className="bg-red-600 text-white px-4 py-1 rounded text-sm flex items-center gap-1 hover:bg-red-700 transition"
+              >
+                <FaUser /> Đăng nhập
+              </Link>
+              <Link
+                to="/register"
+                className="bg-gray-200 text-black px-4 py-1 rounded text-sm flex items-center gap-1 hover:bg-gray-300 transition"
+              >
+                + Đăng ký
+              </Link>
+            </>
+          )}
           <Link
             to="/stores"
             className="bg-blue-600 text-white px-4 py-1 rounded text-sm flex items-center gap-1 hover:bg-blue-700 transition"
@@ -143,9 +174,6 @@ const Header = () => {
         >
           <FaHeart size={20} />
           <span>Yêu thích</span>
-          <span className="absolute -top-1 -right-2 bg-red-500 text-white text-xs px-1 rounded-full">
-            0
-          </span>
         </Link>
         <Link
           to="/cart"
@@ -153,9 +181,6 @@ const Header = () => {
         >
           <FaShoppingCart size={20} />
           <span>Giỏ hàng</span>
-          <span className="absolute -top-1 -right-2 bg-red-500 text-white text-xs px-1 rounded-full">
-            0
-          </span>
         </Link>
         <Link
           to="/Products"
@@ -164,13 +189,15 @@ const Header = () => {
           <FaStar size={20} />
           <span>Sản Phẩm</span>
         </Link>
-        <Link
-          to="/personal"
-          className="relative flex flex-col items-center cursor-pointer hover:text-red-600"
-        >
-          <FaUser size={20} />
-          <span>Cá nhân</span>
-        </Link>
+        {isLoggedIn && (
+          <Link
+            to="/personal"
+            className="relative flex flex-col items-center cursor-pointer hover:text-red-600"
+          >
+            <FaUser size={20} />
+            <span>Cá nhân</span>
+          </Link>
+        )}
       </div>
     </header>
   );

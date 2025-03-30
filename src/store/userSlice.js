@@ -1,14 +1,33 @@
 import { createSlice } from "@reduxjs/toolkit";
-import AuthService from "../services/AuthService";
 
-const initialState = {
+// ✅ Lấy state từ LocalStorage
+const loadState = () => {
+  try {
+    const serializedState = localStorage.getItem("user");
+    return serializedState ? JSON.parse(serializedState) : null;
+  } catch (error) {
+    console.error("Lỗi khi lấy user từ LocalStorage", error);
+    return null;
+  }
+};
+
+// ✅ Lưu state vào LocalStorage
+const saveState = (state) => {
+  try {
+    localStorage.setItem("user", JSON.stringify(state));
+  } catch (error) {
+    console.error("Lỗi khi lưu user vào LocalStorage", error);
+  }
+};
+
+// ✅ Khởi tạo từ LocalStorage nếu có
+const initialState = loadState() || {
   name: "",
   email: "",
-  role: AuthService.getRole() || "",  // Lấy role từ AuthService
-  token: AuthService.getToken() || "", // Lấy token từ AuthService
-  isLoggedIn: !!AuthService.getToken(), // Kiểm tra có token không
+  role: "",
+  token: "",
+  isLoggedIn: false,
 };
- 
 
 const userSlice = createSlice({
   name: "user",
@@ -20,6 +39,7 @@ const userSlice = createSlice({
       state.role = action.payload.role;
       state.token = action.payload.token;
       state.isLoggedIn = true;
+      saveState(state); // 🔥 Lưu vào LocalStorage
     },
     logout(state) {
       state.name = "";
@@ -27,6 +47,7 @@ const userSlice = createSlice({
       state.role = "";
       state.token = null;
       state.isLoggedIn = false;
+      localStorage.removeItem("user"); // 🔥 Xóa khỏi LocalStorage
     },
   },
 });
