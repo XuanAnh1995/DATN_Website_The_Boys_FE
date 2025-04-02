@@ -8,8 +8,7 @@ const API_URL_ORDERS = "/api/orders";
 
 const paymentMethodMapping = {
     "cash": 1,
-    "card": 2,
-    "transfer": 3,
+    "vnpay": 4
 };
 
 const SalePOS = {
@@ -88,6 +87,21 @@ const SalePOS = {
         }
     },
 
+    /** 💳 Tạo URL thanh toán VNPay */
+    async createVNPayPaymentUrl(orderId) {
+        console.log(`📌 Tạo URL thanh toán VNPay cho đơn hàng #${orderId}`);
+        try {
+            const response = await api.post(`/payment/create-payment-url/${orderId}`, {}, {
+                params: { isPOS: true } // Chỉ định đơn hàng POS
+            });
+            console.log("✅ URL thanh toán:", response.data);
+            return response.data;
+        } catch (error) {
+            console.error("❌ Lỗi khi tạo URL thanh toán:", error.response?.data || error.message);
+            throw error;
+        }
+    },
+
     /** 🎟️ Lấy danh sách voucher */
     getVouchers: async () => {
         console.log("📌 Lấy danh sách voucher hợp lệ");
@@ -106,6 +120,8 @@ const SalePOS = {
         console.log("📌 Bắt đầu luồng thanh toán với đơn hàng:", orderData);
         try {
             let orderId = orderData.orderId ?? null;
+
+            // Nếu không có orderId, tạo đơn hàng mới
             if (!orderId) {
                 console.log("📌 Không có orderId, tiến hành tạo đơn hàng mới.");
                 const orderResponse = await SalePOS.createOrder(orderData);
@@ -114,21 +130,29 @@ const SalePOS = {
                 console.log("✅ Sử dụng orderId đã có:", orderId);
             }
 
-            // Thêm sản phẩm vào đơn hàng
-            for (let item of orderData.orderDetails) {
-                await SalePOS.addProductToCart(orderId, item);
+            // Thêm sản phẩm vào đơn hàng nếu có orderDetails
+            if (orderData.orderDetails && orderData.orderDetails.length > 0) {
+                for (let item of orderData.orderDetails) {
+                    await SalePOS.addProductToCart(orderId, item);
+                }
+                console.log("✅ Tất cả sản phẩm đã được thêm vào đơn hàng.");
             }
-            console.log("✅ Tất cả sản phẩm đã được thêm vào đơn hàng.");
 
-            // Thanh toán đơn hàng
-            const paymentData = {
-                customerId: orderData.customerId,
-                voucherId: orderData.voucherId,
-            };
-            const paymentResponse = await SalePOS.completePayment(orderId, paymentData);
-            console.log("✅ Thanh toán thành công:", paymentResponse);
+            // Nếu không phải VNPay, hoàn tất thanh toán ngay
+            if (orderData.paymentMethod !== "vnpay") {
+                const paymentData = {
+                    customerId: orderData.customerId,
+                    voucherId: orderData.voucherId,
+                };
+                const paymentResponse = await SalePOS.completePayment(orderId, paymentData);
+                console.log("✅ Thanh toán thành công:", paymentResponse);
+                return { orderId, paymentResponse };
+            }
 
-            return { orderId, paymentResponse };
+            // Nếu là VNPay, chỉ trả về orderId để frontend xử lý tiếp
+            console.log("✅ Đơn hàng sẵn sàng cho VNPay:", orderId);
+            return { orderId };
+            
         } catch (error) {
             console.error("❌ Lỗi khi checkout:", error.response?.data || error.message);
             throw error;
