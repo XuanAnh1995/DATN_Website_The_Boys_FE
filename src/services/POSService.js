@@ -7,8 +7,8 @@ const API_URL_VOUCHERS = "/api/vouchers";
 const API_URL_ORDERS = "/api/orders";
 
 const paymentMethodMapping = {
-    "cash": 1,
-    "vnpay": 4
+    "cash": 0, // Tiền mặt
+    "vnpay": 1 // VNPay
 };
 
 const SalePOS = {
@@ -43,7 +43,7 @@ const SalePOS = {
         console.log("📌 Tạo đơn hàng:", orderData);
         try {
             // ✅ Chuyển paymentMethod từ String -> Integer
-            orderData.paymentMethod = paymentMethodMapping[orderData.paymentMethod] || 1;
+            orderData.paymentMethod = paymentMethodMapping[orderData.paymentMethod] ?? 0; // Mặc định là 0 (Tiền mặt)
 
             console.log("🔍 Dữ liệu thực sự gửi đi:", JSON.stringify(orderData, null, 2));
 
@@ -115,6 +115,23 @@ const SalePOS = {
         }
     },
 
+    // để gọi API /api/sale-pos/checkout
+    updateOrderInfo: async (orderId, updateData) => {
+        console.log(`📌 Cập nhật thông tin đơn hàng #${orderId}:`, updateData);
+        try {
+            const response = await api.post(`${API_URL_CHECKOUT}/checkout`, {
+                orderId: orderId,
+                customerId: updateData.customerId,
+                voucherId: updateData.voucherId,
+            });
+            console.log("✅ Cập nhật thông tin đơn hàng thành công:", response.data);
+            return response.data;
+        } catch (error) {
+            console.error("❌ Lỗi khi cập nhật thông tin đơn hàng:", error.response?.data || error.message);
+            throw error;
+        }
+    },
+
     /** ✅ **Checkout - Luồng chuẩn** */
     checkout: async (orderData) => {
         console.log("📌 Bắt đầu luồng thanh toán với đơn hàng:", orderData);
@@ -138,12 +155,17 @@ const SalePOS = {
                 console.log("✅ Tất cả sản phẩm đã được thêm vào đơn hàng.");
             }
 
+            // Cập nhật customerId và voucherId
+            const paymentData = {
+                customerId: orderData.customerId,
+                voucherId: orderData.voucherId,
+            };
+            await SalePOS.updateOrderInfo(orderId, paymentData); 
+            console.log("✅ Đã cập nhật customerId và voucherId");
+
             // Nếu không phải VNPay, hoàn tất thanh toán ngay
             if (orderData.paymentMethod !== "vnpay") {
-                const paymentData = {
-                    customerId: orderData.customerId,
-                    voucherId: orderData.voucherId,
-                };
+                console.log("🔍 Xử lý thanh toán tiền mặt cho đơn hàng:", orderId); 
                 const paymentResponse = await SalePOS.completePayment(orderId, paymentData);
                 console.log("✅ Thanh toán thành công:", paymentResponse);
                 return { orderId, paymentResponse };
@@ -152,7 +174,7 @@ const SalePOS = {
             // Nếu là VNPay, chỉ trả về orderId để frontend xử lý tiếp
             console.log("✅ Đơn hàng sẵn sàng cho VNPay:", orderId);
             return { orderId };
-            
+
         } catch (error) {
             console.error("❌ Lỗi khi checkout:", error.response?.data || error.message);
             throw error;

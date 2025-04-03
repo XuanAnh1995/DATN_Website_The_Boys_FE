@@ -27,7 +27,14 @@ const VNPayCallback = () => {
             try {
                 // Kiểm tra trạng thái giao dịch
                 if (vnpResponseCode === "00") {
-                    console.log(`✅ Thanh toán thành công cho đơn hàng #${vnpTxnRef}`);
+                    // Gọi API để hoàn tất thanh toán
+                    const paymentData = {
+                        customerId: parseInt(localStorage.getItem("pendingCustomerId")) || -1,
+                        voucherId: parseInt(localStorage.getItem("pendingVoucherId")) || null,
+                    };
+                    await SalePOS.completePayment(vnpTxnRef, paymentData);
+                    console.log("✅ Đã hoàn tất thanh toán sau khi VNPay xác nhận");
+
                     alert("Thanh toán thành công! Đơn hàng của bạn đã được xử lý.");
                 } else {
                     console.log(`❌ Thanh toán thất bại cho đơn hàng #${vnpTxnRef}, mã lỗi: ${vnpResponseCode}`);
@@ -37,8 +44,10 @@ const VNPayCallback = () => {
                 console.error("❌ Lỗi khi xử lý callback:", error);
                 alert("Có lỗi xảy ra khi xử lý thanh toán!");
             } finally {
-                // Xóa pendingOrderId khỏi localStorage
+                // Xóa các giá trị khỏi localStorage
                 localStorage.removeItem("pendingOrderId");
+                localStorage.removeItem("pendingCustomerId");
+                localStorage.removeItem("pendingVoucherId");
                 // Chuyển hướng về trang POS
                 navigate("/pos");
             }

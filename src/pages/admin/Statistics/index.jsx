@@ -7,7 +7,7 @@ import MonthlyRevenueChart from "./components/MonthlyRevenueChart";
 import YearlyRevenueChart from "./components/YearlyRevenueChart";
 import ChannelRevenueChart from "./components/ChannelRevenueChart";
 import OrderStatusDistributionChart from "./components/OrderStatusDistributionChart";
-import PaymentMethodDistributionChart from "./components/PaymentMethodDistributionChart";
+// import PaymentMethodDistributionChart from "./components/PaymentMethodDistributionChart";
 import TopCustomersChart from "./components/TopCustomersChart";
 import TopInventoryProductsChart from "./components/TopInventoryProductsChart";
 
@@ -152,8 +152,8 @@ const StatisticsPage = () => {
             {/* Tỷ lệ đơn hàng theo trạng thái */}
             <OrderStatusDistributionChart />
 
-            {/* Tỷ lệ thanh toán theo phương thức */}
-            <PaymentMethodDistributionChart />
+            {/* Tỷ lệ thanh toán theo phương thức
+            <PaymentMethodDistributionChart /> */}
 
             {/* Top 5 khách hàng mua nhiều nhất */}
             <TopCustomersChart />
