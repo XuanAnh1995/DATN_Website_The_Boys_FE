@@ -126,34 +126,50 @@ const ViewProductDetail = () => {
       <div className="w-full md:w-2/5 flex flex-col">
         <div className="relative mb-4">
           <img
-            src={selectedImage}
+            src={selectedImage || "https://via.placeholder.com/400x500"}
             alt={selectedDetail.product?.productName || "Sản phẩm"}
-            className="w-full object-cover rounded-lg"
+            className="w-full h-[400px] object-cover rounded-lg"
           />
-          <div className="absolute bottom-0 left-0 bg-red-600 text-white px-4 py-2 rounded-tr-lg">
-            <p className="text-sm font-bold">KHUYẾN MÃI ĐẶC BIỆT</p>
-            <p className="text-lg font-bold">40% OFF</p>
+          <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold py-1 px-2 rounded">
+            -
+            {Math.round(
+              ((selectedDetail.importPrice - selectedDetail.salePrice) /
+                selectedDetail.importPrice) *
+                100
+            )}
+            %
           </div>
+          <button className="absolute top-2 right-2 text-gray-500 hover:text-red-500 transition">
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+              ></path>
+            </svg>
+          </button>
         </div>
         {/* Danh sách ảnh phụ */}
         <div className="flex flex-wrap gap-2">
           {productDetails.map((detail, index) => (
             <div key={index} className="relative">
               <img
-                src={detail.photo}
+                src={detail.photo || "https://via.placeholder.com/80x80"}
                 alt={`Ảnh ${index + 1}`}
                 className={`w-20 h-20 object-cover rounded-md cursor-pointer border-2 ${
                   selectedDetail.id === detail.id
-                    ? "border-blue-500"
+                    ? "border-[#1E3A8A]"
                     : "border-gray-200"
-                } hover:border-blue-500`}
+                } hover:border-[#1E3A8A]`}
                 onClick={() => handleSelectDetail(detail)}
               />
-              {index === 0 && (
-                <div className="absolute top-0 left-0 bg-red-600 text-white px-2 py-1 rounded-br-lg text-xs">
-                  XEM VIDEO
-                </div>
-              )}
             </div>
           ))}
         </div>
@@ -198,15 +214,43 @@ const ViewProductDetail = () => {
           </p>
           <p>
             Mã sản phẩm:{" "}
-            <span className="text-red-600">
+            <span className="text-[#1E3A8A]">
               {selectedDetail.productDetailCode || "N/A"}
             </span>
           </p>
         </div>
 
+        {/* Đánh giá và nhãn */}
+        <div className="flex items-center gap-2 mb-4">
+          <div className="flex">
+            {[...Array(5)].map((_, i) => (
+              <svg
+                key={i}
+                className="w-4 h-4 text-yellow-400"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+              </svg>
+            ))}
+          </div>
+          <span className="text-gray-500 text-sm">
+            ({selectedDetail.quantitySaled || 0})
+          </span>
+          <div className="flex gap-1 ml-4">
+            <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded">
+              new
+            </span>
+            <span className="bg-green-100 text-green-800 text-xs font-semibold px-2 py-0.5 rounded">
+              freeship
+            </span>
+          </div>
+        </div>
+
         {/* Giá và khuyến mãi */}
         <div className="flex items-center gap-2 mb-4">
-          <p className="text-red-600 font-bold text-2xl">
+          <p className="text-[#1E3A8A] font-bold text-2xl">
             {(selectedDetail.salePrice || 0).toLocaleString("vi-VN")}đ
           </p>
           {selectedDetail.importPrice &&
@@ -219,8 +263,8 @@ const ViewProductDetail = () => {
 
         {/* Khuyến mãi */}
         {selectedDetail.promotion && (
-          <div className="mb-4 bg-red-100 p-4 rounded-lg border border-red-500">
-            <h3 className="text-red-600 font-bold text-lg mb-2">
+          <div className="mb-4 bg-gray-50 p-4 rounded-lg border border-[#1E3A8A]/30">
+            <h3 className="text-[#1E3A8A] font-bold text-lg mb-2">
               🎁 Danh sách khuyến mãi
             </h3>
             <p className="text-gray-700 flex items-center gap-2">
@@ -239,17 +283,25 @@ const ViewProductDetail = () => {
               khi mua Online tại Hà Nội & Hồ Chí Minh từ 1/5/2025 đến 1/6/2025.
             </p>
             <div className="flex gap-2 mt-2">
-              <button className="text-red-600 font-semibold">DOLA10</button>
-              <button className="text-red-600 font-semibold">FREESHIP</button>
-              <button className="text-red-600 font-semibold">DOLA20</button>
-              <button className="text-red-600 font-semibold">DOLA50</button>
+              <button className="text-[#1E3A8A] font-semibold border border-[#1E3A8A] px-2 py-1 rounded hover:bg-[#1E3A8A] hover:text-white transition">
+                DOLA10
+              </button>
+              <button className="text-[#1E3A8A] font-semibold border border-[#1E3A8A] px-2 py-1 rounded hover:bg-[#1E3A8A] hover:text-white transition">
+                FREESHIP
+              </button>
+              <button className="text-[#1E3A8A] font-semibold border border-[#1E3A8A] px-2 py-1 rounded hover:bg-[#1E3A8A] hover:text-white transition">
+                DOLA20
+              </button>
+              <button className="text-[#1E3A8A] font-semibold border border-[#1E3A8A] px-2 py-1 rounded hover:bg-[#1E3A8A] hover:text-white transition">
+                DOLA50
+              </button>
             </div>
           </div>
         )}
 
         {/* Thuộc tính sản phẩm */}
         <div className="mb-4">
-          <p className="text-lg font-semibold mb-2">Màu sắc:</p>
+          <p className="text-lg font-semibold mb-2 text-[#1E3A8A]">Màu sắc:</p>
           {uniqueColors.length > 0 ? (
             <div className="flex gap-2 flex-wrap">
               {uniqueColors.map((color, index) => {
@@ -262,9 +314,9 @@ const ViewProductDetail = () => {
                     onClick={() => detail && handleSelectDetail(detail)}
                     className={`px-4 py-2 rounded-lg border ${
                       selectedDetail.color?.colorName === color
-                        ? "border-blue-500 bg-blue-100"
+                        ? "border-[#1E3A8A] bg-[#1E3A8A]/10 text-[#1E3A8A]"
                         : "border-gray-300"
-                    } hover:border-blue-500`}
+                    } hover:border-[#1E3A8A] hover:bg-[#1E3A8A]/10 transition`}
                     disabled={!detail}
                   >
                     {color}
@@ -278,7 +330,7 @@ const ViewProductDetail = () => {
         </div>
 
         <div className="mb-4">
-          <p className="text-lg font-semibold mb-2">Size:</p>
+          <p className="text-lg font-semibold mb-2 text-[#1E3A8A]">Size:</p>
           {uniqueSizes.length > 0 ? (
             <div className="flex gap-2 flex-wrap">
               {uniqueSizes.map((size, index) => {
@@ -291,9 +343,9 @@ const ViewProductDetail = () => {
                     onClick={() => detail && handleSelectDetail(detail)}
                     className={`px-4 py-2 rounded-lg border ${
                       selectedDetail.size?.sizeName === size
-                        ? "border-blue-500 bg-blue-100"
+                        ? "border-[#1E3A8A] bg-[#1E3A8A]/10 text-[#1E3A8A]"
                         : "border-gray-300"
-                    } hover:border-blue-500`}
+                    } hover:border-[#1E3A8A] hover:bg-[#1E3A8A]/10 transition`}
                     disabled={!detail}
                   >
                     {size}
@@ -304,23 +356,25 @@ const ViewProductDetail = () => {
           ) : (
             <p className="text-gray-500">Không có size nào khả dụng.</p>
           )}
-          <button className="text-blue-600 text-sm mt-2">Gợi ý tìm size</button>
+          <button className="text-[#1E3A8A] text-sm mt-2 hover:underline">
+            Gợi ý tìm size
+          </button>
         </div>
 
         {/* Số lượng */}
         <div className="mb-4 flex items-center gap-4">
-          <p className="text-lg font-semibold">Số lượng:</p>
+          <p className="text-lg font-semibold text-[#1E3A8A]">Số lượng:</p>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setQuantity(Math.max(1, quantity - 1))}
               disabled={quantity <= 1}
-              className="px-4 py-2 bg-red-600 text-white font-bold rounded-lg disabled:opacity-50"
+              className="px-4 py-2 bg-[#1E3A8A] text-white font-bold rounded-lg disabled:opacity-50 hover:bg-[#163172] transition"
             >
               -
             </button>
             <input
               type="number"
-              className="w-16 text-center text-xl border border-gray-300 rounded-lg"
+              className="w-16 text-center text-xl border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
               value={quantity}
               onChange={(e) =>
                 setQuantity(Math.max(1, parseInt(e.target.value) || 1))
@@ -329,7 +383,7 @@ const ViewProductDetail = () => {
             <button
               onClick={() => setQuantity(quantity + 1)}
               disabled={quantity >= selectedDetail.quantity}
-              className="px-4 py-2 bg-red-600 text-white font-bold rounded-lg disabled:opacity-50"
+              className="px-4 py-2 bg-[#1E3A8A] text-white font-bold rounded-lg disabled:opacity-50 hover:bg-[#163172] transition"
             >
               +
             </button>
@@ -344,48 +398,50 @@ const ViewProductDetail = () => {
           <button
             onClick={handleAddToCart}
             disabled={isLoadingCart}
-            className={`flex-1 bg-yellow-500 text-white py-4 rounded-lg text-lg font-bold transition ${
+            className={`flex-1 bg-gray-300 text-black py-4 rounded-lg text-lg font-bold transition ${
               isLoadingCart
                 ? "opacity-50 cursor-not-allowed"
-                : "hover:bg-yellow-600"
+                : "hover:bg-gray-400"
             }`}
           >
             {isLoadingCart ? "ĐANG THÊM..." : "THÊM VÀO GIỎ"}
           </button>
           <button
             onClick={handleBuyNow}
-            className="flex-1 bg-red-600 text-white py-4 rounded-lg text-lg font-bold hover:bg-red-700 transition"
+            className="flex-1 bg-[#1E3A8A] text-white py-4 rounded-lg text-lg font-bold hover:bg-[#163172] transition"
           >
             MUA NGAY
           </button>
         </div>
 
-        <button className="w-full bg-gray-800 text-white py-3 rounded-lg text-lg font-bold hover:bg-gray-900 transition mb-4">
+        <button className="w-full bg-[#1E3A8A] text-white py-3 rounded-lg text-lg font-bold hover:bg-[#163172] transition mb-4">
           Liên hệ 1900 6750
         </button>
 
         {/* Chính sách */}
         <div className="mt-6">
-          <p className="text-lg font-semibold mb-2">Cam kết của chúng tôi:</p>
+          <p className="text-lg font-semibold mb-2 text-[#1E3A8A]">
+            Cam kết của chúng tôi:
+          </p>
           <div className="grid grid-cols-2 gap-4 text-gray-700">
             <p className="flex items-center gap-2">
-              <span className="text-pink-500">✔</span> Cam kết 100% chính hãng
+              <span className="text-[#1E3A8A]">✔</span> Cam kết 100% chính hãng
             </p>
             <p className="flex items-center gap-2">
-              <span className="text-pink-500">✔</span> Giao tận tay khách hàng
+              <span className="text-[#1E3A8A]">✔</span> Giao tận tay khách hàng
             </p>
             <p className="flex items-center gap-2">
-              <span className="text-pink-500">✔</span> Hỗ trợ 24/7
+              <span className="text-[#1E3A8A]">✔</span> Hỗ trợ 24/7
             </p>
             <p className="flex items-center gap-2">
-              <span className="text-pink-500">✔</span> Hoàn tiền 111% nếu hàng
+              <span className="text-[#1E3A8A]">✔</span> Hoàn tiền 111% nếu hàng
               kém chất lượng
             </p>
             <p className="flex items-center gap-2">
-              <span className="text-pink-500">✔</span> Mở kiện trả miễn phí
+              <span className="text-[#1E3A8A]">✔</span> Mở kiện trả miễn phí
             </p>
             <p className="flex items-center gap-2">
-              <span className="text-pink-500">✔</span> Đổi trả trong 7 ngày
+              <span className="text-[#1E3A8A]">✔</span> Điều khoản bảo hành
             </p>
           </div>
         </div>
