@@ -16,7 +16,9 @@ const Footer = () => {
       <footer className="bg-gray-100 py-8 mt-12 border-t border-gray-300">
         <div className="container mx-auto grid grid-cols-1 md:grid-cols-4 gap-6 px-6">
           <div>
-            <h3 className="text-lg font-bold text-red-600 mb-3">Chính sách</h3>
+            <h3 className="text-lg font-bold text-[#1E3A8A] mb-3">
+              Chính sách
+            </h3>
             <ul className="text-gray-700">
               <li>Chính sách thành viên</li>
               <li>Chính sách thanh toán</li>
@@ -25,7 +27,7 @@ const Footer = () => {
             </ul>
           </div>
           <div>
-            <h3 className="text-lg font-bold text-red-600 mb-3">Hướng dẫn</h3>
+            <h3 className="text-lg font-bold text-[#1E3A8A] mb-3">Hướng dẫn</h3>
             <ul className="text-gray-700">
               <li>Hướng dẫn mua hàng</li>
               <li>Hướng dẫn thanh toán</li>
@@ -35,7 +37,7 @@ const Footer = () => {
             </ul>
           </div>
           <div>
-            <h3 className="text-lg font-bold text-red-600 mb-3">
+            <h3 className="text-lg font-bold text-[#1E3A8A] mb-3">
               Thông tin liên hệ
             </h3>
             <p className="text-gray-700">
@@ -49,16 +51,16 @@ const Footer = () => {
             <p className="text-gray-700">Email: support@fpt.vn</p>
           </div>
           <div>
-            <h3 className="text-lg font-bold text-red-600 mb-3">
+            <h3 className="text-lg font-bold text-[#1E3A8A] mb-3">
               Nhận tin khuyến mãi
             </h3>
             <div className="flex">
               <input
                 type="email"
                 placeholder="Nhập email nhận tin khuyến mãi"
-                className="border p-2 flex-grow rounded-l-md"
+                className="border p-2 flex-grow rounded-l-md focus:outline-none focus:ring-2 focus:ring-[#1E3A8A] transition"
               />
-              <button className="bg-red-600 text-white px-4 py-2 rounded-r-md">
+              <button className="bg-[#1E3A8A] text-white px-4 py-2 rounded-r-md hover:bg-[#163172] transition">
                 ĐĂNG KÝ
               </button>
             </div>
@@ -67,18 +69,30 @@ const Footer = () => {
 
         {/* Mạng xã hội */}
         <div className="mt-6 text-center">
-          <h3 className="text-lg font-bold text-red-600 mb-3">Mạng xã hội</h3>
+          <h3 className="text-lg font-bold text-[#1E3A8A] mb-3">Mạng xã hội</h3>
           <div className="flex justify-center space-x-4 text-2xl">
-            <a href="#" className="text-blue-600">
+            <a
+              href="#"
+              className="text-[#1E3A8A] hover:text-[#163172] transition"
+            >
               <FaFacebook />
             </a>
-            <a href="#" className="text-red-600">
+            <a
+              href="#"
+              className="text-[#1E3A8A] hover:text-[#163172] transition"
+            >
               <FaYoutube />
             </a>
-            <a href="#" className="text-black">
+            <a
+              href="#"
+              className="text-[#1E3A8A] hover:text-[#163172] transition"
+            >
               <FaTiktok />
             </a>
-            <a href="#" className="text-pink-500">
+            <a
+              href="#"
+              className="text-[#1E3A8A] hover:text-[#163172] transition"
+            >
               <FaInstagram />
             </a>
           </div>
@@ -86,7 +100,7 @@ const Footer = () => {
 
         {/* Tên thương hiệu */}
         <div className="text-center mt-6 text-2xl font-bold text-black">
-          The<span className="text-red-600">Boys</span>
+          The<span className="text-[#1E3A8A]">Boys</span>
         </div>
       </footer>
     </section>

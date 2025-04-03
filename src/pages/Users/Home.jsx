@@ -13,12 +13,15 @@ const Layout = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [brands, setBrands] = useState([]);
-  const pageSize = 8;
+  const pageSize = 10; // Giữ pageSize là 10 cho Sản Phẩm Hot
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
-  const [latestProducts, setLatestProducts] = useState([]); // State for latest products
+  const [latestProducts, setLatestProducts] = useState([]);
+  const [bestSellingProducts, setBestSellingProducts] = useState([]);
   const [showText, setShowText] = useState(false);
   const [currentImage, setCurrentImage] = useState(0);
+  const [selectedProducts, setSelectedProducts] = useState([]);
+  const [showCompareModal, setShowCompareModal] = useState(false);
   const images = [
     "/src/assets/banner-thoi-trang-nam-dep-tm-luxury.jpg",
     "/src/assets/banner-thoi-trang-nam-tinh.jpg",
@@ -35,8 +38,9 @@ const Layout = () => {
   useEffect(() => {
     fetchVouchers();
     fetchBrands();
-    fetchProducts({});
-    fetchLatestProducts(); // Fetch latest products on mount
+    fetchProducts({}); // Sản phẩm Hot
+    fetchBestSellingProducts(); // Sản phẩm Bán Chạy
+    fetchLatestProducts(); // Sản phẩm Mới Nhất
   }, [currentPage]);
 
   const fetchVouchers = async () => {
@@ -62,18 +66,29 @@ const Layout = () => {
       const params = {
         page: currentPage,
         size: pageSize,
-        brandIds: filters.selectedBrands?.length
-          ? filters.selectedBrands
-          : undefined,
-        minPrice: filters.minPrice || undefined,
-        maxPrice: filters.maxPrice || undefined,
+        sort: "createdDate,desc", // Sắp xếp theo ngày tạo cho sản phẩm Hot
       };
       const response = await ProductService.getFilteredProducts(params);
-      console.log("Danh sách sản phẩm từ API (Layout):", response);
+      console.log("Danh sách sản phẩm Hot từ API:", response);
       setProducts(response?.content || response?.data || []);
       setTotalPages(response?.totalPages || 1);
     } catch (error) {
-      console.error("Lỗi khi lấy danh sách sản phẩm:", error);
+      console.error("Lỗi khi lấy danh sách sản phẩm Hot:", error);
+    }
+  };
+
+  const fetchBestSellingProducts = async () => {
+    try {
+      const params = {
+        page: 0,
+        size: 5, // Lấy 5 sản phẩm bán chạy nhất
+        sort: "quantitySaled,desc", // Sắp xếp theo số lượng bán giảm dần
+      };
+      const response = await ProductService.getFilteredProducts(params);
+      console.log("Danh sách sản phẩm Bán Chạy từ API:", response);
+      setBestSellingProducts(response?.content || response?.data || []);
+    } catch (error) {
+      console.error("Lỗi khi lấy danh sách sản phẩm Bán Chạy:", error);
     }
   };
 
@@ -81,8 +96,8 @@ const Layout = () => {
     try {
       const params = {
         page: 0,
-        size: 3, // Fetch 3 latest products
-        sort: "createdDate,desc", // Sort by creation date descending
+        size: 3,
+        sort: "createdDate,desc",
       };
       const response = await ProductService.getFilteredProducts(params);
       console.log("Danh sách sản phẩm mới nhất từ API:", response);
@@ -91,9 +106,6 @@ const Layout = () => {
       console.error("Lỗi khi lấy danh sách sản phẩm mới nhất:", error);
     }
   };
-
-  const [selectedProducts, setSelectedProducts] = useState([]);
-  const [showCompareModal, setShowCompareModal] = useState(false);
 
   const toggleSelectProduct = (product) => {
     setSelectedProducts((prevSelected) => {
@@ -132,7 +144,10 @@ const Layout = () => {
   const handleBuyNow = (productId) => {
     console.log(`Mua ngay sản phẩm ${productId}`);
     alert(`Đã chuyển đến trang thanh toán cho sản phẩm ${productId}!`);
-    // Add logic to redirect to checkout page if needed
+  };
+
+  const removeSelectedProduct = (productId) => {
+    setSelectedProducts((prev) => prev.filter((p) => p.id !== productId));
   };
 
   return (
@@ -144,7 +159,7 @@ const Layout = () => {
           alt="Banner"
           className="w-full h-full object-cover transition-opacity duration-500 ease-in-out"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#1E90FF]/50 to-transparent flex items-center justify-center">
+        <div className="absolute inset-0 bg-gradient-to-t from-[#1E3A8A]/50 to-transparent flex items-center justify-center">
           <h1 className="text-4xl font-extrabold text-white drop-shadow-lg">
             Chào mừng đến với TheBoys!
           </h1>
@@ -153,42 +168,153 @@ const Layout = () => {
 
       {/* Vouchers Section */}
       <section className="p-6 max-w-7xl mx-auto">
-        <h2 className="text-3xl font-bold text-[#1E90FF] mb-6 text-center">
-          ƯU ĐÃI DÀNH CHO BẠN
+        <h2 className="text-3xl font-bold text-[#1E3A8A] mb-6 text-center">
+          Ưu Đãi Dành Cho Bạn
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
           {vouchers.map((voucher) => (
             <div
               key={voucher.id}
-              className="relative bg-white p-5 rounded-xl shadow-lg flex flex-col justify-between items-center border border-[#1E90FF]/30 hover:shadow-xl hover:border-[#1E90FF] transition-transform transform hover:-translate-y-1 w-full max-w-xs mx-auto"
+              className="relative bg-white p-5 rounded-xl shadow-lg flex flex-col justify-between items-center border border-[#1E3A8A]/30 hover:shadow-xl hover:border-[#1E3A8A] transition-transform transform hover:-translate-y-1 w-full max-w-xs mx-auto"
             >
-              <div className="bg-[#1E90FF] px-5 py-4 text-lg font-bold text-white rounded-t-lg w-full text-center border-b-2 border-dashed border-white">
+              <div className="bg-[#1E3A8A] px-5 py-4 text-lg font-bold text-white rounded-t-lg w-full text-center border-b-2 border-dashed border-white">
                 {voucher.voucherCode}
               </div>
               <div className="text-center py-4 px-2">
-                <h3 className="font-bold text-md text-[#1E90FF]">
+                <h3 className="font-bold text-md text-[#1E3A8A]">
                   {voucher.voucherName}
                 </h3>
                 <p className="text-gray-600 text-sm">
                   Giảm {voucher.reducedPercent}%
                 </p>
                 <p className="text-gray-600 text-sm">
-                  Đơn từ {voucher.minCondition} VND
+                  Đơn từ {formatCurrency(voucher.minCondition)}
                 </p>
                 <p className="text-xs text-gray-500">
                   HSD: {new Date(voucher.endDate).toLocaleDateString()}
                 </p>
+                <button className="mt-2 px-4 py-2 bg-[#1E3A8A] text-white text-sm font-semibold rounded-md hover:bg-[#163172] transition">
+                  Sử dụng ngay
+                </button>
               </div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* About Us Section */}
-      <section className="p-6 mt-4 bg-[#1E90FF]/5 rounded-lg shadow-lg max-w-7xl mx-auto">
+      {/* Hot Products Section */}
+      <section className="p-6 max-w-7xl mx-auto">
+        <h1 className="text-4xl font-extrabold text-center text-[#1E3A8A] mb-6">
+          Sản Phẩm Hot
+        </h1>
+        <div className="relative w-full overflow-x-auto whitespace-nowrap scrollbar-hide">
+          <div className="inline-flex gap-6">
+            {products.length > 0 ? (
+              products.slice(0, 10).map((product) => (
+                <div
+                  key={product.id}
+                  className="inline-block bg-white w-[220px] h-[400px] p-4 rounded-lg shadow-md border border-gray-200 transform transition-all duration-300 hover:scale-105 hover:shadow-xl hover:border-[#1E3A8A] group relative"
+                >
+                  <div className="relative">
+                    <img
+                      src={
+                        product.photo || "https://via.placeholder.com/200x250"
+                      }
+                      alt={product.productName || product.nameProduct}
+                      className="w-full h-48 object-cover rounded-t-lg"
+                    />
+                    {product.importPrice &&
+                      product.importPrice > product.salePrice && (
+                        <div className="absolute top-2 left-2 bg-[#1E3A8A] text-white text-xs font-bold py-1 px-2 rounded-full">
+                          Giảm{" "}
+                          {Math.round(
+                            ((product.importPrice - product.salePrice) /
+                              product.importPrice) *
+                              100
+                          )}
+                          %
+                        </div>
+                      )}
+                    <div className="absolute top-2 right-2 text-[#1E3A8A] hover:text-[#163172]">
+                      ♥
+                    </div>
+                  </div>
+                  <h3 className="text-md font-semibold text-center text-gray-800 mt-2 truncate">
+                    {product.productName ||
+                      product.nameProduct ||
+                      "Tên sản phẩm"}
+                  </h3>
+                  <div className="text-center mt-2">
+                    <span className="text-[#1E3A8A] font-bold text-lg">
+                      {formatCurrency(product.salePrice || 0)}
+                    </span>
+                    {product.importPrice &&
+                      product.importPrice > product.salePrice && (
+                        <span className="text-gray-500 line-through text-sm ml-2">
+                          {formatCurrency(product.importPrice)}
+                        </span>
+                      )}
+                  </div>
+                  {/* Nút sẽ ẩn và chỉ hiện khi hover */}
+                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex gap-2">
+                    <button
+                      onClick={() => handleViewProduct(product.id)}
+                      className="bg-[#1E3A8A] text-white text-sm font-semibold py-2 px-3 rounded-md shadow-md transition-all duration-300 hover:bg-[#163172] hover:scale-105"
+                    >
+                      📋 Xem
+                    </button>
+                    <button
+                      onClick={() => toggleSelectProduct(product)}
+                      className={`px-3 py-2 rounded-md text-sm font-semibold shadow-md transition-all duration-300 hover:scale-105 ${
+                        selectedProducts.some((p) => p.id === product.id)
+                          ? "bg-green-600 text-white hover:bg-green-700"
+                          : "bg-gray-300 text-black hover:bg-gray-400"
+                      }`}
+                    >
+                      {selectedProducts.some((p) => p.id === product.id)
+                        ? "✔ Chọn"
+                        : "🔍 So sánh"}
+                    </button>
+                  </div>
+                  <div className="mt-2 mx-auto w-4/5 h-2 bg-gray-200 rounded relative">
+                    <div
+                      className="h-full bg-[#1E3A8A] rounded"
+                      style={{
+                        width: `${Math.min(
+                          (product.quantitySaled / product.quantity) * 100 || 0,
+                          100
+                        )}%`,
+                      }}
+                    />
+                  </div>
+                  <p className="text-center text-gray-500 text-xs mt-1">
+                    Đã bán: {product.quantitySaled || 0}
+                  </p>
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-500 text-center w-full">
+                Không có sản phẩm nào.
+              </p>
+            )}
+          </div>
+          <button
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-[#1E3A8A] text-white p-2 rounded-full hover:bg-[#163172] transition"
+            onClick={() => {
+              const container = document.querySelector(
+                ".Layout section:nth-child(4) .overflow-x-auto"
+              );
+              container.scrollLeft += 500;
+            }}
+          >
+            ›
+          </button>
+        </div>
+      </section>
+      <section className="p-6 mt-4 bg-[#1E3A8A]/5 rounded-lg shadow-lg max-w-7xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
           <div>
-            <h1 className="text-3xl font-bold text-[#1E90FF] mb-4">
+            <h1 className="text-3xl font-bold text-[#1E3A8A] mb-4">
               Về chúng tôi
             </h1>
             <p className="text-gray-700 text-lg">
@@ -202,13 +328,13 @@ const Layout = () => {
               cường và tinh thần chiến đấu, The Boys chính là nơi dành cho bạn.
             </p>
             {showText && (
-              <p className="mt-4 text-lg font-bold text-[#1E90FF]">
+              <p className="mt-4 text-lg font-bold text-[#1E3A8A]">
                 TheBoys là thương hiệu shop đẳng cấp, The Boys chính là nơi dành
                 cho bạn.
               </p>
             )}
             <button
-              className="mt-4 px-6 py-2 bg-[#1E90FF] text-white font-semibold rounded-lg shadow-md hover:bg-[#1C86EE] transition"
+              className="mt-4 px-6 py-2 bg-[#1E3A8A] text-white font-semibold rounded-lg shadow-md hover:bg-[#163172] transition"
               onClick={() => setShowText(!showText)}
             >
               {showText ? "Thu gọn" : "Xem thêm"}
@@ -216,136 +342,117 @@ const Layout = () => {
           </div>
           <div className="flex justify-center">
             <h1 className="text-5xl font-extrabold text-gray-800">
-              The<span className="text-[#1E90FF]">Boys</span>
+              The<span className="text-[#1E3A8A]">Boys</span>
             </h1>
           </div>
         </div>
       </section>
-
-      {/* Hot Products Section */}
-      <section className="p-6 max-w-7xl mx-auto">
-        <h1 className="text-4xl font-extrabold text-center text-[#1E90FF] mb-6">
-          Sản Phẩm Hot
+      {/* Best Selling Products Section */}
+      <section className="p-6 max-w-7xl mx-auto mt-8">
+        <h1 className="text-4xl font-extrabold text-center text-[#1E3A8A] mb-6">
+          Sản Phẩm Bán Chạy
         </h1>
-        <div className="grid gap-y-5 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {products.length > 0 ? (
-            products.map((product) => (
-              <div
-                key={product.id}
-                className="relative bg-white w-[280px] h-[480px] p-4 rounded-xl shadow-lg border border-gray-200 transform transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:border-[#1E90FF] flex flex-col group mx-auto overflow-hidden"
-              >
-                <div className="relative">
-                  <img
-                    src={product.photo || "/path/to/default-image.jpg"}
-                    alt={product.productName || product.nameProduct}
-                    className="w-full h-64 object-cover rounded-lg transition-transform duration-300 group-hover:scale-110"
-                  />
-                  <div className="absolute top-0 left-0 bg-[#1E90FF] text-white text-xs font-bold py-1 px-2 rounded-br-lg">
-                    HOT
+        <div className="relative w-full overflow-x-auto whitespace-nowrap scrollbar-hide">
+          <div className="inline-flex gap-6">
+            {bestSellingProducts.length > 0 ? (
+              bestSellingProducts.slice(0, 5).map((product) => (
+                <div
+                  key={product.id}
+                  className="inline-block bg-white w-[220px] h-[400px] p-4 rounded-lg shadow-md border border-gray-200 transform transition-all duration-300 hover:scale-105 hover:shadow-xl hover:border-[#1E3A8A] group relative"
+                >
+                  <div className="relative">
+                    <img
+                      src={
+                        product.photo || "https://via.placeholder.com/200x250"
+                      }
+                      alt={product.productName || product.nameProduct}
+                      className="w-full h-48 object-cover rounded-t-lg"
+                    />
+                    {product.importPrice &&
+                      product.importPrice > product.salePrice && (
+                        <div className="absolute top-2 left-2 bg-[#1E3A8A] text-white text-xs font-bold py-1 px-2 rounded-full">
+                          Giảm{" "}
+                          {Math.round(
+                            ((product.importPrice - product.salePrice) /
+                              product.importPrice) *
+                              100
+                          )}
+                          %
+                        </div>
+                      )}
+                    <div className="absolute top-2 right-2 text-[#1E3A8A] hover:text-[#163172]">
+                      ♥
+                    </div>
                   </div>
+                  <h3 className="text-md font-semibold text-center text-gray-800 mt-2 truncate">
+                    {product.productName ||
+                      product.nameProduct ||
+                      "Tên sản phẩm"}
+                  </h3>
+                  <div className="text-center mt-2">
+                    <span className="text-[#1E3A8A] font-bold text-lg">
+                      {formatCurrency(product.salePrice || 0)}
+                    </span>
+                    {product.importPrice &&
+                      product.importPrice > product.salePrice && (
+                        <span className="text-gray-500 line-through text-sm ml-2">
+                          {formatCurrency(product.importPrice)}
+                        </span>
+                      )}
+                  </div>
+                  {/* Nút sẽ ẩn và chỉ hiện khi hover */}
+                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex gap-2">
+                    <button
+                      onClick={() => handleViewProduct(product.id)}
+                      className="bg-[#1E3A8A] text-white text-sm font-semibold py-2 px-3 rounded-md shadow-md transition-all duration-300 hover:bg-[#163172] hover:scale-105"
+                    >
+                      📋 Xem
+                    </button>
+                    <button
+                      onClick={() => toggleSelectProduct(product)}
+                      className={`px-3 py-2 rounded-md text-sm font-semibold shadow-md transition-all duration-300 hover:scale-105 ${
+                        selectedProducts.some((p) => p.id === product.id)
+                          ? "bg-green-600 text-white hover:bg-green-700"
+                          : "bg-gray-300 text-black hover:bg-gray-400"
+                      }`}
+                    >
+                      {selectedProducts.some((p) => p.id === product.id)
+                        ? "✔ Chọn"
+                        : "🔍 So sánh"}
+                    </button>
+                  </div>
+                  <div className="mt-2 mx-auto w-4/5 h-2 bg-gray-200 rounded relative">
+                    <div
+                      className="h-full bg-[#1E3A8A] rounded"
+                      style={{
+                        width: `${Math.min(
+                          (product.quantitySaled / product.quantity) * 100 || 0,
+                          100
+                        )}%`,
+                      }}
+                    />
+                  </div>
+                  <p className="text-center text-gray-500 text-xs mt-1">
+                    Đã bán: {product.quantitySaled || 0}
+                  </p>
                 </div>
-
-                <h3 className="text-lg font-semibold mt-3 text-center text-gray-800 group-hover:text-[#1E90FF] transition-colors duration-300">
-                  {product.productName || product.nameProduct || "Tên sản phẩm"}
-                </h3>
-
-                <div className="text-center mt-2">
-                  <span className="text-[#1E90FF] font-bold text-lg">
-                    {formatCurrency(product.salePrice || 0)}
-                  </span>
-                  {product.importPrice &&
-                    product.importPrice > product.salePrice && (
-                      <span className="text-gray-500 line-through text-sm ml-2">
-                        {formatCurrency(product.importPrice)}
-                      </span>
-                    )}
-                </div>
-
-                <p className="text-center text-gray-600 text-sm mt-1">
-                  Thương hiệu:{" "}
-                  {product.brand?.brandName || product.brand || "Không rõ"}
-                </p>
-
-                <div className="mt-2 mx-auto w-5/6 h-1 bg-gray-200 rounded relative">
-                  <div
-                    className="h-full bg-[#1E90FF] rounded transition-all duration-300"
-                    style={{
-                      width: `${Math.min((product.quantitySaled / product.quantity) * 100 || 0, 100)}%`,
-                    }}
-                  />
-                </div>
-                <p className="text-center text-gray-500 text-sm mt-1">
-                  Đã bán: {product.quantitySaled || 0} / {product.quantity || 0}
-                </p>
-
-                <div className="absolute bottom-4 left-0 right-0 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-4 group-hover:translate-y-0 flex-wrap">
-                  <button
-                    onClick={() => handleViewProduct(product.id)}
-                    className="bg-[#1E90FF] text-white text-sm font-semibold py-2 px-4 rounded-md shadow-md transition-all duration-300 hover:bg-[#1C86EE] hover:scale-105 hover:shadow-lg"
-                  >
-                    📋 Xem chi tiết
-                  </button>
-                  {/* <button
-                    onClick={() => handleAddToCart(product.id)}
-                    className="bg-[#1E90FF] text-white text-sm font-semibold py-2 px-4 rounded-md shadow-md transition-all duration-300 hover:bg-[#1C86EE] hover:scale-105 hover:shadow-lg"
-                  >
-                    ➕ Giỏ hàng
-                  </button>
-                  <button
-                    onClick={() => handleBuyNow(product.id)}
-                    className="bg-green-500 text-white text-sm font-semibold py-2 px-4 rounded-md shadow-md transition-all duration-300 hover:bg-green-600 hover:scale-105 hover:shadow-lg"
-                  >
-                    🛒 Mua Ngay
-                  </button> */}
-                  <button
-                    onClick={() => toggleSelectProduct(product)}
-                    className={`px-4 py-2 rounded-md text-sm font-semibold shadow-md transition-all duration-300 hover:scale-105 hover:shadow-lg ${
-                      selectedProducts.some((p) => p.id === product.id)
-                        ? "bg-green-600 text-white hover:bg-green-700"
-                        : "bg-gray-300 text-black hover:bg-gray-400"
-                    }`}
-                  >
-                    {selectedProducts.some((p) => p.id === product.id)
-                      ? "✔ Đã chọn"
-                      : "🔍 So sánh"}
-                  </button>
-                </div>
-              </div>
-            ))
-          ) : (
-            <p className="text-gray-500 text-center w-full col-span-full">
-              Không có sản phẩm nào được tìm thấy.
-            </p>
-          )}
-        </div>
-
-        <div className="flex justify-center mt-6">
+              ))
+            ) : (
+              <p className="text-gray-500 text-center w-full">
+                Không có sản phẩm nào.
+              </p>
+            )}
+          </div>
           <button
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 0))}
-            disabled={currentPage === 0}
-            className={`px-4 py-2 mx-2 rounded-lg shadow-md text-white font-semibold transition-all duration-300 ${
-              currentPage === 0
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-[#1E90FF] hover:bg-[#1C86EE] hover:scale-105"
-            }`}
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-[#1E3A8A] text-white p-2 rounded-full hover:bg-[#163172] transition"
+            onClick={() => {
+              const container = document.querySelector(
+                ".Layout section:nth-child(5) .overflow-x-auto"
+              );
+              container.scrollLeft += 500;
+            }}
           >
-            Trước
-          </button>
-          <span className="px-4 py-2 mx-2 text-lg font-semibold text-[#1E90FF]">
-            {currentPage + 1} / {totalPages}
-          </span>
-          <button
-            onClick={() =>
-              setCurrentPage((prev) => Math.min(prev + 1, totalPages - 1))
-            }
-            disabled={currentPage >= totalPages - 1}
-            className={`px-4 py-2 mx-2 rounded-lg shadow-md text-white font-semibold transition-all duration-300 ${
-              currentPage >= totalPages - 1
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-[#1E90FF] hover:bg-[#1C86EE] hover:scale-105"
-            }`}
-          >
-            Tiếp
+            ›
           </button>
         </div>
       </section>
@@ -359,49 +466,52 @@ const Layout = () => {
           </button>
         </div>
       )}
-
-      {/* Latest Products Section (Inspired by the Image) */}
       <section className="p-6 max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row gap-6 items-center">
+        <div className="flex flex-col md:flex-row gap-6 items-start">
           {/* Left Banner */}
-          <div className="md:w-1/2">
-            <div className="relative w-full h-[400px] rounded-lg overflow-hidden shadow-lg">
+          <div className="w-full md:w-1/2">
+            <div className="relative w-full h-[400px] rounded-lg overflow-hidden shadow-lg border border-gray-200">
               <img
-                src="https://via.placeholder.com/600x400?text=The+Boys+Latest+Collection"
+                src="https://via.placeholder.com/600x400?text=Bộ+Sưu+Tập+Mới+Nhất"
                 alt="Latest Collection Banner"
                 className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#1E90FF]/50 to-transparent flex items-center justify-center">
-                <h2 className="text-4xl font-extrabold text-white drop-shadow-lg">
+              <div className="absolute inset-0 bg-gradient-to-t from-[#1E3A8A]/50 to-transparent flex items-center justify-center">
+                <h2 className="text-4xl font-extrabold text-white drop-shadow-lg text-center">
                   Bộ Sưu Tập Mới Nhất
                 </h2>
               </div>
+              <button className="absolute bottom-4 right-4 bg-[#1E3A8A] text-white px-4 py-2 rounded-md hover:bg-[#163172] transition">
+                Xem ngay
+              </button>
             </div>
           </div>
 
           {/* Right Product Grid */}
-          <div className="md:w-1/2">
-            <h2 className="text-3xl font-bold text-[#1E90FF] mb-4">
+          <div className="w-full md:w-1/2">
+            <h2 className="text-3xl font-bold text-[#1E3A8A] mb-4 text-center md:text-left">
               Sản Phẩm Mới Nhất
             </h2>
-            <p className="text-gray-600 mb-6">
-              Khám phá bộ sưu tập áo sơ mi mới nhất từ The Boys, phong cách hiện
-              đại, phù hợp với mọi dịp.
+            <p className="text-gray-600 mb-6 text-center md:text-left">
+              Khám phá bộ sưu tập thời trang mới nhất từ The Boys, phong cách
+              hiện đại, phù hợp với mọi dịp.
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-              {latestProducts.map((product) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 justify-items-center">
+              {latestProducts.slice(0, 3).map((product) => (
                 <div
                   key={product.id}
-                  className="relative bg-white p-4 rounded-lg shadow-md border border-gray-200 transform transition-all duration-300 hover:scale-105 hover:shadow-xl hover:border-[#1E90FF] group"
+                  className="bg-white w-full max-w-[180px] p-3 rounded-lg shadow-md border border-gray-200 transform transition-all duration-300 hover:scale-105 hover:shadow-xl hover:border-[#1E3A8A] group relative"
                 >
                   <div className="relative">
                     <img
-                      src={product.photo || "/path/to/default-image.jpg"}
+                      src={
+                        product.photo || "https://via.placeholder.com/200x250"
+                      }
                       alt={product.productName || product.nameProduct}
-                      className="w-full h-48 object-cover rounded-lg transition-transform duration-300 group-hover:scale-110"
+                      className="w-full h-48 object-cover rounded-t-lg"
                     />
                     {product.salePrice < product.importPrice && (
-                      <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold py-1 px-2 rounded-full">
+                      <div className="absolute top-2 left-2 bg-[#1E3A8A] text-white text-xs font-bold py-1 px-2 rounded-full">
                         Giảm{" "}
                         {Math.round(
                           ((product.importPrice - product.salePrice) /
@@ -412,65 +522,68 @@ const Layout = () => {
                       </div>
                     )}
                   </div>
-                  <h3 className="text-lg font-semibold mt-3 text-gray-800 group-hover:text-[#1E90FF] transition-colors duration-300">
+                  <h3 className="text-md font-semibold text-center text-gray-800 mt-2 truncate">
                     {product.productName ||
                       product.nameProduct ||
                       "Tên sản phẩm"}
                   </h3>
-                  <div className="mt-2">
-                    <span className="text-[#1E90FF] font-bold text-lg">
+                  <div className="text-center mt-1">
+                    <span className="text-[#1E3A8A] font-bold text-md">
                       {formatCurrency(product.salePrice || 0)}
                     </span>
                     {product.importPrice &&
                       product.importPrice > product.salePrice && (
-                        <span className="text-gray-500 line-through text-sm ml-2">
+                        <span className="text-gray-500 line-through text-xs ml-1">
                           {formatCurrency(product.importPrice)}
                         </span>
                       )}
                   </div>
-                  <div className="flex justify-center gap-2 mt-4 flex-wrap">
+                  {/* Nút hover */}
+                  <div className="absolute bottom-3 left-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex justify-center gap-1 px-2">
                     <button
                       onClick={() => handleViewProduct(product.id)}
-                      className="bg-[#1E90FF] text-white text-sm font-semibold py-2 px-4 rounded-md shadow-md transition-all duration-300 hover:bg-[#1C86EE] hover:scale-105 hover:shadow-lg"
+                      className="bg-[#1E3A8A] text-white text-xs font-semibold py-1 px-2 rounded-md shadow-md transition-all duration-300 hover:bg-[#163172] hover:scale-105"
                     >
-                      📋 Xem chi tiết
-                    </button>
-                    {/* <button
-                      onClick={() => handleAddToCart(product.id)}
-                      className="bg-[#1E90FF] text-white text-sm font-semibold py-2 px-4 rounded-md shadow-md transition-all duration-300 hover:bg-[#1C86EE] hover:scale-105 hover:shadow-lg"
-                    >
-                      ➕ Giỏ hàng
+                      📋 Xem
                     </button>
                     <button
-                      onClick={() => handleBuyNow(product.id)}
-                      className="bg-green-500 text-white text-sm font-semibold py-2 px-4 rounded-md shadow-md transition-all duration-300 hover:bg-green-600 hover:scale-105 hover:shadow-lg"
+                      onClick={() => toggleSelectProduct(product)}
+                      className={`px-2 py-1 rounded-md text-xs font-semibold shadow-md transition-all duration-300 hover:scale-105 ${
+                        selectedProducts.some((p) => p.id === product.id)
+                          ? "bg-green-600 text-white hover:bg-green-700"
+                          : "bg-gray-300 text-black hover:bg-gray-400"
+                      }`}
                     >
-                      🛒 Mua Ngay
-                    </button> */}
-                  </div>
-                  <div className="flex justify-center gap-2 mt-2">
-                    {["white", "black", "green", "pink"].map((color) => (
-                      <div
-                        key={color}
-                        className="w-6 h-6 rounded-full border border-gray-300"
-                        style={{ backgroundColor: color }}
-                      />
-                    ))}
+                      {selectedProducts.some((p) => p.id === product.id)
+                        ? "✔ Đã chọn"
+                        : "🔍 So sánh"}
+                    </button>
                   </div>
                 </div>
               ))}
             </div>
-            <div className="mt-4 text-right">
+            <div className="mt-6 text-center md:text-right">
               <a
                 href="#"
-                className="text-[#1E90FF] font-semibold hover:text-[#1C86EE] transition-colors duration-200"
+                className="text-[#1E3A8A] font-semibold hover:text-[#163172] transition-colors duration-200"
               >
-                Xem ngay
+                Xem tất cả
               </a>
             </div>
           </div>
         </div>
       </section>
+
+      {selectedProducts.length > 1 && (
+        <div className="flex justify-center mt-6">
+          <button
+            onClick={() => setShowCompareModal(true)}
+            className="px-6 py-3 bg-green-500 text-white font-semibold rounded-lg shadow-md transition-all duration-300 hover:bg-green-600 hover:scale-105"
+          >
+            🔍 So Sánh {selectedProducts.length} Sản Phẩm
+          </button>
+        </div>
+      )}
 
       {showCompareModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -487,7 +600,7 @@ const Layout = () => {
             <div className="overflow-x-auto">
               <table className="min-w-full border border-gray-300">
                 <thead>
-                  <tr className="bg-[#1E90FF]/10 text-gray-700 text-left">
+                  <tr className="bg-[#1E90FF]/10 text-gray-700">
                     <th className="p-3 border">Ảnh</th>
                     <th className="p-3 border">Tên Sản Phẩm</th>
                     <th className="p-3 border">Giá Bán</th>
@@ -540,19 +653,19 @@ const Layout = () => {
       )}
 
       {/* Customer Reviews Section */}
-      <div className="max-w-screen-xl mx-auto p-4">
-        <div className="flex flex-col md:flex-row items-center gap-6 mb-12">
+      <div className="max-w-screen-xl mx-auto p-6 bg-gray-50">
+        <div className="flex flex-col md:flex-row items-center gap-8 mb-12">
           <div className="md:w-1/2 text-center md:text-left">
-            <div className="text-5xl text-blue-600 mb-4">“</div>
-            <h1 className="text-4xl font-bold text-blue-600 mb-4">
-              Khách Hàng Nói Gì Về The Boy
+            <div className="text-5xl text-[#1E3A8A] mb-4">“</div>
+            <h1 className="text-4xl font-bold text-[#1E3A8A] mb-4">
+              Khách Hàng Nói Gì Về The Boys
             </h1>
             <p className="text-gray-600">Cảm ơn sự tin tưởng của quý khách</p>
           </div>
           <div className="md:w-1/2">
-            <div className="bg-blue-600 text-white p-6 rounded-lg shadow-lg">
+            <div className="bg-[#1E3A8A] text-white p-6 rounded-lg shadow-lg">
               <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-4">
                   <img
                     src="https://via.placeholder.com/50"
                     alt="Ảnh đại diện khách hàng"
@@ -560,7 +673,9 @@ const Layout = () => {
                   />
                   <div>
                     <h3 className="font-bold">Hoàng Dung</h3>
-                    <p className="text-sm">Khách hàng thân thiết</p>
+                    <p className="text-sm text-gray-200">
+                      Khách hàng thân thiết
+                    </p>
                   </div>
                 </div>
                 <div className="flex gap-1">
@@ -584,125 +699,127 @@ const Layout = () => {
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Latest News Section */}
-        <div>
-          <h2 className="text-3xl font-bold text-center mb-8">
-            Tin Tức Mới Nhất
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="bg-white shadow-md rounded-lg overflow-hidden">
-              <div className="relative">
-                <img
-                  src="https://via.placeholder.com/300x200"
-                  alt="Tin tức 1"
-                  className="w-full h-48 object-cover"
-                />
-                <div className="absolute top-2 left-2 bg-blue-600 text-white px-3 py-1 rounded-full text-sm">
-                  21/02/2024
-                </div>
-              </div>
-              <div className="p-4">
-                <h3 className="text-lg font-semibold mb-2">
-                  7 Kiểu Áo Sơ Mi Nam Không Bao Giờ Lỗi Thời, Mặc Quanh Năm Vẫn
-                  Đẹp
-                </h3>
-                <p className="text-gray-600 text-sm mb-4">
-                  Những món đồ kinh điển như sơ mi cài nút, polo, và flannel
-                  không bao giờ lỗi mốt, giúp bạn luôn lịch lãm...
-                </p>
-                <a
-                  href="#"
-                  className="text-blue-600 font-semibold hover:text-blue-800 transition-colors duration-200"
-                >
-                  Đọc Tiếp
-                </a>
+      {/* Latest News Section */}
+      <div className="max-w-screen-xl mx-auto p-6">
+        <h2 className="text-3xl font-bold text-center text-[#1E3A8A] mb-8">
+          Tin Tức Mới Nhất
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="bg-white shadow-md rounded-lg overflow-hidden">
+            <div className="relative">
+              <img
+                src="https://via.placeholder.com/300x200"
+                alt="Tin tức 1"
+                className="w-full h-48 object-cover"
+              />
+              <div className="absolute top-2 left-2 bg-[#1E3A8A] text-white px-3 py-1 rounded-full text-sm">
+                21/02/2024
               </div>
             </div>
-            <div className="bg-white shadow-md rounded-lg overflow-hidden">
-              <div className="relative">
-                <img
-                  src="https://via.placeholder.com/300x200"
-                  alt="Tin tức 2"
-                  className="w-full h-48 object-cover"
-                />
-                <div className="absolute top-2 left-2 bg-blue-600 text-white px-3 py-1 rounded-full text-sm">
-                  21/02/2024
-                </div>
-              </div>
-              <div className="p-4">
-                <h3 className="text-lg font-semibold mb-2">
-                  Áo “The Boy” Xuất Hiện Trong Bộ Phim Thời Trang Mới Nhất
-                </h3>
-                <p className="text-gray-600 text-sm mb-4">
-                  Áo đặc trưng của chúng tôi gây chú ý trong một bộ phim gần
-                  đây, được khen ngợi vì form dáng đẹp và hiện đại...
-                </p>
-                <a
-                  href="#"
-                  className="text-blue-600 font-semibold hover:text-blue-800 transition-colors duration-200"
-                >
-                  Đọc Tiếp
-                </a>
+            <div className="p-4">
+              <h3 className="text-lg font-semibold mb-2">
+                7 Kiểu Áo Sơ Mi Nam Không Bao Giờ Lỗi Thời, Mặc Quanh Năm Vẫn
+                Đẹp
+              </h3>
+              <p className="text-gray-600 text-sm mb-4">
+                Những món đồ kinh điển như sơ mi cài nút, polo, và flannel không
+                bao giờ lỗi mốt, giúp bạn luôn lịch lãm...
+              </p>
+              <a
+                href="#"
+                className="text-[#1E3A8A] font-semibold hover:text-[#163172] transition-colors duration-200"
+              >
+                Đọc Tiếp
+              </a>
+            </div>
+          </div>
+          <div className="bg-white shadow-md rounded-lg overflow-hidden">
+            <div className="relative">
+              <img
+                src="https://via.placeholder.com/300x200"
+                alt="Tin tức 2"
+                className="w-full h-48 object-cover"
+              />
+              <div className="absolute top-2 left-2 bg-[#1E3A8A] text-white px-3 py-1 rounded-full text-sm">
+                21/02/2024
               </div>
             </div>
-            <div className="bg-white shadow-md rounded-lg overflow-hidden">
-              <div className="relative">
-                <img
-                  src="https://via.placeholder.com/300x200"
-                  alt="Tin tức 3"
-                  className="w-full h-48 object-cover"
-                />
-                <div className="absolute top-2 left-2 bg-blue-600 text-white px-3 py-1 rounded-full text-sm">
-                  21/02/2024
-                </div>
-              </div>
-              <div className="p-4">
-                <h3 className="text-lg font-semibold mb-2">
-                  Mẹo Tủ Đồ: Phong Cách Anh Quốc Thanh Lịch Với Áo The Boy
-                </h3>
-                <p className="text-gray-600 text-sm mb-4">
-                  Sự tinh tế nhẹ nhàng với áo may đo của chúng tôi, lấy cảm hứng
-                  từ phong cách Anh Quốc vượt thời gian...
-                </p>
-                <a
-                  href="#"
-                  className="text-blue-600 font-semibold hover:text-blue-800 transition-colors duration-200"
-                >
-                  Đọc Tiếp
-                </a>
+            <div className="p-4">
+              <h3 className="text-lg font-semibold mb-2">
+                Áo “The Boy” Xuất Hiện Trong Bộ Phim Thời Trang Mới Nhất
+              </h3>
+              <p className="text-gray-600 text-sm mb-4">
+                Áo đặc trưng của chúng tôi gây chú ý trong một bộ phim gần đây,
+                được khen ngợi vì form dáng đẹp và hiện đại...
+              </p>
+              <a
+                href="#"
+                className="text-[#1E3A8A] font-semibold hover:text-[#163172] transition-colors duration-200"
+              >
+                Đọc Tiếp
+              </a>
+            </div>
+          </div>
+          <div className="bg-white shadow-md rounded-lg overflow-hidden">
+            <div className="relative">
+              <img
+                src="https://via.placeholder.com/300x200"
+                alt="Tin tức 3"
+                className="w-full h-48 object-cover"
+              />
+              <div className="absolute top-2 left-2 bg-[#1E3A8A] text-white px-3 py-1 rounded-full text-sm">
+                21/02/2024
               </div>
             </div>
-            <div className="bg-white shadow-md rounded-lg overflow-hidden">
-              <div className="relative">
-                <img
-                  src="https://via.placeholder.com/300x200"
-                  alt="Tin tức 4"
-                  className="w-full h-48 object-cover"
-                />
-                <div className="absolute top-2 left-2 bg-blue-600 text-white px-3 py-1 rounded-full text-sm">
-                  21/02/2024
-                </div>
+            <div className="p-4">
+              <h3 className="text-lg font-semibold mb-2">
+                Mẹo Tủ Đồ: Phong Cách Anh Quốc Thanh Lịch Với Áo The Boy
+              </h3>
+              <p className="text-gray-600 text-sm mb-4">
+                Sự tinh tế nhẹ nhàng với áo may đo của chúng tôi, lấy cảm hứng
+                từ phong cách Anh Quốc vượt thời gian...
+              </p>
+              <a
+                href="#"
+                className="text-[#1E3A8A] font-semibold hover:text-[#163172] transition-colors duration-200"
+              >
+                Đọc Tiếp
+              </a>
+            </div>
+          </div>
+          <div className="bg-white shadow-md rounded-lg overflow-hidden">
+            <div className="relative">
+              <img
+                src="https://via.placeholder.com/300x200"
+                alt="Tin tức 4"
+                className="w-full h-48 object-cover"
+              />
+              <div className="absolute top-2 left-2 bg-[#1E3A8A] text-white px-3 py-1 rounded-full text-sm">
+                21/02/2024
               </div>
-              <div className="p-4">
-                <h3 className="text-lg font-semibold mb-2">
-                  Tủ Đồ Tối Giản Là Gì? Chìa Khóa Chọn Áo Thông Minh
-                </h3>
-                <p className="text-gray-600 text-sm mb-4">
-                  Xây dựng bộ sưu tập áo đa năng với The Boy—phong cách, tiết
-                  kiệm, phù hợp mọi dịp...
-                </p>
-                <a
-                  href="#"
-                  className="text-blue-600 font-semibold hover:text-blue-800 transition-colors duration-200"
-                >
-                  Đọc Tiếp
-                </a>
-              </div>
+            </div>
+            <div className="p-4">
+              <h3 className="text-lg font-semibold mb-2">
+                Tủ Đồ Tối Giản Là Gì? Chìa Khóa Chọn Áo Thông Minh
+              </h3>
+              <p className="text-gray-600 text-sm mb-4">
+                Xây dựng bộ sưu tập áo đa năng với The Boy—phong cách, tiết
+                kiệm, phù hợp mọi dịp...
+              </p>
+              <a
+                href="#"
+                className="text-[#1E3A8A] font-semibold hover:text-[#163172] transition-colors duration-200"
+              >
+                Đọc Tiếp
+              </a>
             </div>
           </div>
         </div>
       </div>
+
+      <Outlet />
     </main>
   );
 };
