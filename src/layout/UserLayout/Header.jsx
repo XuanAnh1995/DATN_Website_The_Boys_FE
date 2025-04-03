@@ -53,6 +53,21 @@ const Header = () => {
     navigate("/login");
   };
 
+  // Xử lý xem chi tiết sản phẩm
+  const handleViewProduct = async (productId) => {
+    try {
+      const productDetails = await ProductService.getProductById(productId); // Giả sử có phương thức này
+      if (productDetails && productDetails.productCode) {
+        navigate(`/view-product/${productDetails.productCode}`);
+      } else {
+        alert("Không thể tìm thấy mã sản phẩm.");
+      }
+    } catch (error) {
+      console.error("Lỗi khi lấy chi tiết sản phẩm:", error);
+      alert("Không thể xem chi tiết sản phẩm. Vui lòng thử lại.");
+    }
+  };
+
   return (
     <header className="border-b border-red-400 p-3 shadow-md bg-white">
       {/* Thanh trên cùng */}
@@ -74,7 +89,7 @@ const Header = () => {
         {/* Logo chính giữa */}
         <div className="flex justify-center flex-1">
           <h1 className="text-5xl font-extrabold text-black">
-            The<span className="text-red-600">Boys</span>
+            The<span className="text-sky-800">Boys</span>
           </h1>
         </div>
 
@@ -136,24 +151,28 @@ const Header = () => {
               {suggestions.map((product) => (
                 <div
                   key={product.id}
-                  className="flex items-center p-2 hover:bg-gray-100 border-b cursor-pointer"
-                  onClick={() => {
-                    navigate(`/view-product/${product.id}`);
-                    setSuggestions([]);
-                  }}
+                  className="flex items-center p-2 hover:bg-gray-100 border-b"
                 >
                   <img
                     src={product.photo}
                     alt={product.nameProduct}
                     className="w-14 h-14 object-cover mr-3 rounded-md"
                   />
-                  <div>
+                  <div className="flex-1">
                     <p className="text-sm font-semibold">
                       {product.nameProduct}
                     </p>
                     <p className="text-xs text-red-500 font-bold">
                       {product.salePrice}đ
                     </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleViewProduct(product.id)} // Sử dụng id để lấy chi tiết, sau đó điều hướng bằng productCode
+                      className="bg-[#1E90FF] text-white text-sm font-semibold py-2 px-4 rounded-md shadow-md transition-all duration-300 hover:bg-[#1C86EE] hover:scale-105 hover:shadow-lg"
+                    >
+                      📋 Xem chi tiết
+                    </button>
                   </div>
                 </div>
               ))}

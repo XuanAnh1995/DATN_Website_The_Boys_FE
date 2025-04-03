@@ -3,9 +3,13 @@ import api from "../ultils/api"; // Sử dụng api từ api.js
 const ProductDetailService = {
   async createProductDetail(productDetailData) {
     try {
-      const response = await api.post(`/api/product-details`, productDetailData, {
-        headers: { "Content-Type": "application/json" },
-      });
+      const response = await api.post(
+        `/api/product-details`,
+        productDetailData,
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
       return response.data.data;
     } catch (error) {
       console.error("Error creating product detail:", error);
@@ -15,9 +19,13 @@ const ProductDetailService = {
 
   async generateProductDetails(generateModel) {
     try {
-      const response = await api.post(`/api/product-details/generate`, generateModel, {
-        headers: { "Content-Type": "application/json" },
-      });
+      const response = await api.post(
+        `/api/product-details/generate`,
+        generateModel,
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
       return response.data.data;
     } catch (error) {
       console.error("Error generating product details:", error);
@@ -36,7 +44,9 @@ const ProductDetailService = {
         sleeveIds: params.sleeveIds ? params.sleeveIds.join(",") : undefined,
       };
 
-      const response = await api.get(`/api/product-details`, { params: formattedParams });
+      const response = await api.get(`/api/product-details`, {
+        params: formattedParams,
+      });
       return response.data.data;
     } catch (error) {
       console.error("Error fetching product details:", error);
@@ -68,10 +78,23 @@ const ProductDetailService = {
 
   async toggleProductDetailStatus(id) {
     try {
-      const response = await api.patch(`/api/product-details/${id}/toggle-status`);
+      const response = await api.patch(
+        `/api/product-details/${id}/toggle-status`
+      );
       return response.data.data;
     } catch (error) {
       console.error("Error toggling product detail status:", error);
+      throw error;
+    }
+  },
+  async getProductVariants(productCode) {
+    try {
+      const response = await api.get(
+        `/api/v1/product-details/${productCode}/variants`
+      );
+      return response.data || []; // Trả về mảng rỗng nếu response.data là null
+    } catch (error) {
+      console.error("Error fetching product variants:", error);
       throw error;
     }
   },

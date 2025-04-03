@@ -118,6 +118,15 @@ const ProductService = {
       throw error;
     }
   },
+  async getProductDetailsByProductCode(productCode) {
+    try {
+      const response = await api.get(`/api/products/details/${productCode}`);
+      return response.data.data;
+    } catch (error) {
+      console.error("Error fetching product details by product code:", error);
+      throw error;
+    }
+  },
 };
 
 export default ProductService;
