@@ -24,6 +24,7 @@ const SalePOSPage = () => {
         maxPrice: ""
     });
 
+
     // State mới cho danh sách màu sắc và kích thước
     const [colors, setColors] = useState([]);
     const [sizes, setSizes] = useState([]);
@@ -68,6 +69,8 @@ const SalePOSPage = () => {
     // Nhân viên hiện tại (giả định)
     const [currentEmployee] = useState({ id: 1, name: "Nhân viên mặc định" });
 
+    
+
     useEffect(() => {
         fetchProductDetails();
         fetchCustomers();
@@ -94,28 +97,59 @@ const SalePOSPage = () => {
 
     useEffect(() => {
         let filtered = allProducts;
-        // Lọc theo searchTerm (tìm kiếm chung)
+    
         if (searchTerm) {
-            filtered = filtered.filter(product =>
-                product.product?.productName?.toLowerCase().includes(searchTerm.toLowerCase())
-            );
+            const searchLower = searchTerm.toLowerCase();
+            filtered = filtered.filter(product => {
+                // Tính giá bán thực tế (có khuyến mãi)
+                const now = new Date();
+                const startDate = product.promotion?.startDate ? new Date(product.promotion.startDate) : null;
+                const endDate = product.promotion?.endDate ? new Date(product.promotion.endDate) : null;
+                const isPromotionActive = startDate && endDate && now >= startDate && now <= endDate;
+                const discountPercent = isPromotionActive ? product.promotion?.promotionPercent || 0 : 0;
+                const effectivePrice = discountPercent > 0
+                    ? product.salePrice * (1 - discountPercent / 100)
+                    : product.salePrice;
+    
+                // Các trường từ ProductDetail để tìm kiếm
+                const fields = [
+                    product.id?.toString() || "",                            // ID
+                    product.product?.productName?.toLowerCase() || "",       // Tên sản phẩm
+                    product.size?.name?.toLowerCase() || "",                 // Kích thước
+                    product.color?.name?.toLowerCase() || "",                // Màu sắc
+                    product.promotion?.promotionPercent?.toString() || "",   // Phần trăm giảm giá
+                    product.collar?.name?.toLowerCase() || "",               // Cổ áo (nếu có)
+                    product.sleeve?.name?.toLowerCase() || "",               // Tay áo (nếu có)
+                    product.photo?.toLowerCase() || "",                      // Ảnh (chuỗi đường dẫn)
+                    product.productDetailCode?.toLowerCase() || "",          // Mã chi tiết sản phẩm
+                    product.importPrice?.toString() || "",                   // Giá nhập
+                    product.salePrice?.toString() || "",                     // Giá bán gốc
+                    effectivePrice?.toString() || "",                        // Giá bán thực tế
+                    product.quantity?.toString() || "",                      // Số lượng
+                    product.description?.toLowerCase() || "",                // Mô tả
+                    product.status?.toString() || ""                         // Trạng thái (true/false)
+                ];
+    
+                // Kiểm tra xem bất kỳ trường nào chứa searchTerm không
+                return fields.some(field => field.includes(searchLower));
+            });
         }
-
-        // Lọc theo màu sắc
+    
+        // Lọc theo màu sắc (nếu có filter.color)
         if (filter.color) {
             filtered = filtered.filter(product =>
                 product.color?.name?.toLowerCase().includes(filter.color.toLowerCase())
             );
         }
-
-        // Lọc theo kích thước
+    
+        // Lọc theo kích thước (nếu có filter.size)
         if (filter.size) {
             filtered = filtered.filter(product =>
                 product.size?.name?.toLowerCase().includes(filter.size.toLowerCase())
             );
         }
-
-        // Lọc theo khoảng giá
+    
+        // Lọc theo khoảng giá (nếu có filter.minPrice/maxPrice)
         const minPrice = Number(filter.minPrice) || 0;
         const maxPrice = Number(filter.maxPrice) || Infinity;
         filtered = filtered.filter(product => {
@@ -123,18 +157,18 @@ const SalePOSPage = () => {
             const startDate = product.promotion?.startDate ? new Date(product.promotion.startDate) : null;
             const endDate = product.promotion?.endDate ? new Date(product.promotion.endDate) : null;
             const isPromotionActive = startDate && endDate && now >= startDate && now <= endDate;
-            const discountPercent = isPromotionActive ? product.promotion.promotionPercent : 0;
+            const discountPercent = isPromotionActive ? product.promotion?.promotionPercent || 0 : 0;
             const effectivePrice = discountPercent > 0
                 ? product.salePrice * (1 - discountPercent / 100)
                 : product.salePrice;
-
+    
             return effectivePrice >= minPrice && effectivePrice <= maxPrice;
         });
-
+    
         setFilteredProducts(filtered);
         setCurrentPage(1); // Reset về trang đầu tiên khi áp dụng bộ lọc
     }, [searchTerm, allProducts, filter]);
-
+    
     // Tìm voucher tối ưu mỗi khi totalAmount thay đổi
     useEffect(() => {
         if (currentOrder?.totalAmount > 0) {
@@ -364,13 +398,13 @@ const SalePOSPage = () => {
         try {
             const orderData = {
                 customerId: selectedCustomer && selectedCustomer !== "walk-in" ? selectedCustomer : -1,
-                employeeId: 1, // Tạm thời set cứng ID nhân viên là 1
+                employeeId: 1, // ID nhân viên
                 voucherId: selectedVoucher ? vouchers.find(v => v.voucherCode === selectedVoucher)?.id : null,
                 paymentMethod: "cash",
             };
-
+    
             const newOrder = await SalePOS.createOrder(orderData);
-
+    
             setOrders(prevOrders => [...prevOrders, {
                 id: newOrder.id,
                 items: [],
@@ -380,14 +414,68 @@ const SalePOSPage = () => {
                 voucherId: orderData.voucherId,
                 paymentMethod: orderData.paymentMethod
             }]);
-
-            console.log("🔍 Kiểm tra giá trị customerId trước khi gửi:", selectedCustomer);
+    
             setActiveOrderIndex(orders.length);
             console.log("✅ Đơn hàng mới đã được tạo:", newOrder);
         } catch (error) {
             console.error("❌ Lỗi khi tạo đơn hàng:", error);
         }
     };
+    
+
+
+    // Trong phần useEffect xử lý barcode
+    useEffect(() => {
+        let barcode = "";
+        let timer = null;
+    
+        const handleKeyDown = (event) => {
+            // Không chặn sự kiện mặc định để ô tìm kiếm vẫn hoạt động khi cần
+            const currentTime = Date.now();
+    
+            if (event.key === "Enter" && barcode.trim() !== "") {
+                handleBarcodeScan(barcode);
+                barcode = ""; // Xóa sau khi xử lý
+            } else if (event.key.length === 1) {  
+                barcode += event.key;
+                clearTimeout(timer);
+                timer = setTimeout(() => {
+                    barcode = ""; // Reset nếu không nhận thêm ký tự trong 500ms
+                }, 500);
+            }
+        };
+    
+        document.addEventListener("keydown", handleKeyDown);
+        return () => {
+            document.removeEventListener("keydown", handleKeyDown);
+            clearTimeout(timer);
+        };
+    }, [activeOrderIndex, allProducts]); // Thêm dependencies để cập nhật khi danh sách sản phẩm hoặc hóa đơn thay đổi
+    
+    const handleBarcodeScan = (scannedBarcode) => {
+        if (!scannedBarcode) return;
+    
+        console.log("📌 Nhận mã vạch:", scannedBarcode);
+        console.log("📌 [CHECK] activeOrderIndex:", activeOrderIndex, "orders.length:", orders.length);
+    
+        // Kiểm tra xem có hóa đơn nào được chọn không
+        if (activeOrderIndex === null || activeOrderIndex >= orders.length) {
+            alert("⚠ Bạn cần chọn hóa đơn trước khi quét mã vạch!");
+            return; // Ngừng quét nếu không có hóa đơn
+        }
+    
+        const product = allProducts.find(p => p.productDetailCode === scannedBarcode);
+    
+        if (product) {
+            console.log("✅ Tìm thấy sản phẩm:", product);
+            handleAddToCart(product);
+        } else {
+            alert("⚠ Không tìm thấy sản phẩm với mã vạch này!");
+        }
+    };
+    
+    
+    
 
 
     // thêm sản phẩm vào giỏ hàng

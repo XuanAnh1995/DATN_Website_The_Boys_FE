@@ -4,7 +4,7 @@ const API_URL_CHECKOUT = "/api/sale-pos";
 const API_URL_PRODUCT_DETAIL = "/api/product-details";
 const API_URL_CUSTOMERS = "/api/customers";
 const API_URL_VOUCHERS = "/api/vouchers";
-const API_URL_ORDERS = "/api/orders";
+const API_Barcode = "/api/barcode/barcode";
 
 const paymentMethodMapping = {
     "cash": 1,
@@ -134,6 +134,19 @@ const SalePOS = {
             throw error;
         }
     },
+
+    /** 🖨️ Lấy sản phẩm theo mã vạch */
+  getProductByBarcode: async (barcode) => {
+    console.log("📌 Lấy sản phẩm theo mã vạch:", barcode);
+    try {
+        const response = await api.get(API_Barcode);
+      console.log("✅ Sản phẩm từ mã vạch:", response.data);
+      return response.data; // Giả sử backend trả về dữ liệu sản phẩm
+    } catch (error) {
+      console.error("❌ Lỗi khi lấy sản phẩm theo mã vạch:", error.response?.data || error.message);
+      throw error;
+    }
+  },
 };
 
 export default SalePOS;
