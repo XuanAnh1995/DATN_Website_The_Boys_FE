@@ -1,5 +1,10 @@
 import { Suspense } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import { useSelector } from "react-redux";
 import LayoutAdmin from "../layout/AdminLayout/Layout";
 import adminRoutes from "./AdminRouter";
@@ -29,11 +34,22 @@ function AppRouter() {
           <Route
             path="/admin/*"
             element={
-              isLoggedIn && role === "ADMIN" ? <LayoutAdmin /> : <Navigate to={isLoggedIn ? "/unauthorized" : "/login"} replace />
+              isLoggedIn && role === "ADMIN" ? (
+                <LayoutAdmin />
+              ) : (
+                <Navigate
+                  to={isLoggedIn ? "/unauthorized" : "/login"}
+                  replace
+                />
+              )
             }
           >
             {adminRoutes.map((route, index) => (
-              <Route key={index} path={route.path} element={<route.component />} />
+              <Route
+                key={index}
+                path={route.path}
+                element={<route.component />}
+              />
             ))}
           </Route>
 
@@ -41,11 +57,22 @@ function AppRouter() {
           <Route
             path="/"
             element={
-              isLoggedIn && (role === "CUSTOMER" || role === "ADMIN") ? <UserMain /> : <Navigate to={isLoggedIn ? "/unauthorized" : "/login"} replace />
+              isLoggedIn && (role === "CUSTOMER" || role === "ADMIN") ? (
+                <UserMain />
+              ) : (
+                <Navigate
+                  to={isLoggedIn ? "/unauthorized" : "/login"}
+                  replace
+                />
+              )
             }
           >
             {UserRouter.map((route, index) => (
-              <Route key={index} path={route.path} element={<route.component />} />
+              <Route
+                key={index}
+                path={route.path}
+                element={<route.component />}
+              />
             ))}
           </Route>
 

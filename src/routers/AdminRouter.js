@@ -33,10 +33,9 @@ const Voucher = lazy(() => import("../pages/admin/Voucher"));
 const Category = lazy(() => import("../pages/admin/Category"));
 const Statistic = lazy(() => import("../pages/admin/Statistics"));
 
-
 const adminRoutes = [
   { path: "dashboard", component: Dashboard, role: "ADMIN" },
-  {path: "salePOS", component: POS, role: "ADMIN"},
+  { path: "salePOS", component: POS, role: "ADMIN" },
   { path: "customer", component: Customer, role: "ADMIN" },
   { path: "employee", component: Employee, role: "ADMIN" },
   { path: "product", component: Product, role: "ADMIN" },
@@ -53,7 +52,7 @@ const adminRoutes = [
   { path: "order", component: Order, role: "ADMIN" },
   { path: "order/:id/details", component: OrderDetail, role: "ADMIN" },
   { path: "voucher", component: Voucher, role: "ADMIN" },
-  { path: "statistics", component: Statistic, role: "ADMIN" }
+  { path: "statistics", component: Statistic, role: "ADMIN" },
 ];
 
 export default adminRoutes;

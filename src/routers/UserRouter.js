@@ -13,11 +13,15 @@ const Payment = lazy(() => import("../pages/Users/Payment.jsx"));
 const userRouter = [
   { path: "home", component: Home, role: "CUSTOMER" },
   { path: "products", component: Products, role: "CUSTOMER" },
-  { path: "view-product/:id", component: ViewProductDetail, role: "CUSTOMER" },
+  {
+    path: "view-product/:productCode",
+    component: ViewProductDetail,
+    role: "CUSTOMER",
+  }, // Giữ nguyên nhưng sẽ công khai ở AppRouter
   { path: "personal", component: PersonalPage, role: "CUSTOMER" },
   { path: "search", component: SearchPage, role: "CUSTOMER" },
   { path: "cart", component: Cart, role: "CUSTOMER" },
-  { path: "pay", component: Payment , role:"CUSTOMER" },
+  { path: "pay", component: Payment, role: "CUSTOMER" },
 ];
 
 export default userRouter;

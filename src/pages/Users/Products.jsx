@@ -1,283 +1,6 @@
-// import { useState, useEffect } from "react";
-// import { useNavigate } from "react-router-dom";
-// import ProductService from "../../services/ProductService";
-
-// const formatCurrency = (amount) => {
-//   return amount ? amount.toLocaleString("vi-VN") + "₫" : "Giá không có sẵn";
-// };
-
-// const ProductList = () => {
-//   const [selectedProducts, setSelectedProducts] = useState([]); // Danh sách sản phẩm được chọn để so sánh
-//   const [showCompareModal, setShowCompareModal] = useState(false);
-//   const [products, setProducts] = useState([]);
-//   const [filters, setFilters] = useState({
-//     minPrice: null,
-//     maxPrice: null,
-//     category: "",
-//     brand: "",
-//     material: "",
-//     collar: "",
-//     sleeve: "",
-//   });
-//   const [currentPage, setCurrentPage] = useState(0);
-//   const [totalPages, setTotalPages] = useState(1);
-//   const pageSize = 8;
-//   const navigate = useNavigate();
-
-//   useEffect(() => {
-//     fetchProducts();
-//   }, [currentPage, filters]);
-
-//   const fetchProducts = async () => {
-//     try {
-//       const response = await ProductService.getFilteredProducts({
-//         page: currentPage,
-//         size: pageSize,
-//         minPrice: filters.minPrice,
-//         maxPrice: filters.maxPrice,
-//         categoryIds: filters.category ? [filters.category] : [],
-//         brandIds: filters.brand ? [filters.brand] : [],
-//         materialIds: filters.material ? [filters.material] : [],
-//         collarIds: filters.collar ? [filters.collar] : [],
-//         sleeveIds: filters.sleeve ? [filters.sleeve] : [],
-//       });
-//       setProducts(response?.content || []);
-//       setTotalPages(response?.totalPages || 1);
-//     } catch (error) {
-//       console.error("Lỗi khi lấy danh sách sản phẩm:", error);
-//     }
-//   };
-
-//   const handleFilterChange = (e) => {
-//     setFilters({ ...filters, [e.target.name]: e.target.value });
-//   };
-//   // Chọn hoặc bỏ chọn sản phẩm để so sánh
-//   const toggleCompare = (product) => {
-//     setSelectedProducts((prev) => {
-//       if (prev.some((p) => p.id === product.id)) {
-//         return prev.filter((p) => p.id !== product.id);
-//       }
-//       return prev.length < 3 ? [...prev, product] : prev;
-//     });
-//   };
-
-//   return (
-//     <section className="p-6 max-w-6xl mx-auto">
-//       <h1 className="text-4xl font-extrabold text-center text-red-600 mb-6">
-//         Sản Phẩm Mới
-//       </h1>
-//       <div className="flex flex-wrap justify-center gap-4 p-4 border border-gray-300 rounded-lg mb-6">
-//         <select
-//           name="category"
-//           onChange={handleFilterChange}
-//           className="p-2 border rounded"
-//         >
-//           <option value="">Loại</option>
-//           <option value="1">Áo thun</option>
-//           <option value="2">Áo sơ mi</option>
-//           <option value="3">Áo khoác</option>
-//           <option value="4">Áo hoodie</option>
-//           <option value="5">Áo len</option>
-//           <option value="6">Áo polo</option>
-//         </select>
-//         <select
-//           name="brand"
-//           onChange={handleFilterChange}
-//           className="p-2 border rounded"
-//         >
-//           <option value="">Thương hiệu</option>
-//           <option value="1">Nike</option>
-//           <option value="2">Adidas</option>
-//           <option value="3">Puma</option>
-//           <option value="4">Reebok</option>
-//           <option value="5">Under Armour</option>
-//           <option value="6">New Balance</option>
-//         </select>
-//         <select
-//           name="material"
-//           onChange={handleFilterChange}
-//           className="p-2 border rounded"
-//         >
-//           <option value="">Chất liệu</option>
-//           <option value="1">Cotton</option>
-//           <option value="2">Polyester</option>
-//           <option value="3">Len</option>
-//           <option value="4">Jean</option>
-//           <option value="5">Nỉ</option>
-//           <option value="6">Vải thun lạnh</option>
-//         </select>
-//         <select
-//           name="collar"
-//           onChange={handleFilterChange}
-//           className="p-2 border rounded"
-//         >
-//           <option value="">Cổ áo</option>
-//           <option value="1">Cổ tròn</option>
-//           <option value="2">Cổ bẻ</option>
-//           <option value="3">Cổ tim</option>
-//         </select>
-//         <select
-//           name="sleeve"
-//           onChange={handleFilterChange}
-//           className="p-2 border rounded"
-//         >
-//           <option value="">Tay áo</option>
-//           <option value="1">Tay ngắn</option>
-//           <option value="2">Tay dài</option>
-//           <option value="3">Sát nách</option>
-//         </select>
-//         <input
-//           type="number"
-//           name="minPrice"
-//           placeholder="Giá từ"
-//           onChange={handleFilterChange}
-//           className="p-2 border rounded"
-//         />
-//         <input
-//           type="number"
-//           name="maxPrice"
-//           placeholder="Đến"
-//           onChange={handleFilterChange}
-//           className="p-2 border rounded"
-//         />
-//       </div>
-//       <div className="grid gap-y-5 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-//         {products.length > 0 ? (
-//           products.map((product) => (
-//             <div
-//               key={product.id}
-//               className={`relative bg-white w-[280px] h-[520px] p-4 rounded-xl shadow-lg border border-gray-200 transition transform hover:scale-105 flex flex-col group mx-auto ${
-//                 selectedProducts.some((p) => p.id === product.id)
-//                   ? "border-2 border-blue-500"
-//                   : ""
-//               }`}
-//             >
-//               <input
-//                 type="checkbox"
-//                 checked={selectedProducts.some((p) => p.id === product.id)}
-//                 onChange={() => toggleCompare(product)}
-//                 className="absolute top-3 right-3 w-5 h-5"
-//               />
-//               <img
-//                 src={product.photo || "/path/to/default-image.jpg"}
-//                 alt={product.nameProduct}
-//                 className="w-full h-64 object-cover rounded-lg"
-//               />
-//               <h3 className="text-lg font-semibold mt-3 text-center">
-//                 {product.nameProduct}
-//               </h3>
-//               <p className="text-red-600 font-bold text-lg text-center">
-//                 {formatCurrency(product.salePrice || 0)}
-//               </p>
-//               <button
-//                 onClick={() => navigate(`/view-product/${product.id}`)}
-//                 className="bg-red-500 text-white text-sm font-semibold py-2 px-4 rounded-md shadow-md hover:bg-red-600 transition mx-auto mt-auto"
-//               >
-//                 🛒 Mua Ngay
-//               </button>
-//             </div>
-//           ))
-//         ) : (
-//           <p className="text-gray-500 text-center w-full">
-//             Không có sản phẩm nào.
-//           </p>
-//         )}
-//       </div>
-//       {selectedProducts.length > 1 && (
-//         <div className="flex justify-center mt-6">
-//           <button
-//             onClick={() => setShowCompareModal(true)}
-//             className="px-6 py-3 bg-green-500 text-white font-semibold rounded-lg shadow-md hover:bg-green-600 transition"
-//           >
-//             🔍 So Sánh {selectedProducts.length} Sản Phẩm
-//           </button>
-//         </div>
-//       )}
-//       <div className="flex justify-center mt-6">
-//         <button
-//           onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 0))}
-//           disabled={currentPage === 0}
-//           className={`px-4 py-2 mx-2 rounded-lg shadow-md text-white font-semibold transition ${currentPage === 0 ? "bg-gray-400 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600"}`}
-//         >
-//           Trước
-//         </button>
-//         <span className="px-4 py-2 mx-2 text-lg font-semibold">
-//           {currentPage + 1} / {totalPages}
-//         </span>
-//         <button
-//           onClick={() =>
-//             setCurrentPage((prev) => Math.min(prev + 1, totalPages - 1))
-//           }
-//           disabled={currentPage >= totalPages - 1}
-//           className={`px-4 py-2 mx-2 rounded-lg shadow-md text-white font-semibold transition ${currentPage >= totalPages - 1 ? "bg-gray-400 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600"}`}
-//         >
-//           Tiếp
-//         </button>
-//       </div>
-//       {showCompareModal && (
-//         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-//           <div className="bg-white p-6 rounded-lg shadow-lg max-w-5xl w-full relative">
-//             {/* Nút Đóng */}
-//             <button
-//               onClick={() => setShowCompareModal(false)}
-//               className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-2xl"
-//             >
-//               ✖
-//             </button>
-//             <h2 className="text-3xl font-bold text-center text-red-600 mb-6">
-//               🏆 So Sánh Sản Phẩm
-//             </h2>
-
-//             {/* Bảng So Sánh */}
-//             <div className="overflow-x-auto">
-//               <table className="min-w-full border border-gray-300">
-//                 <thead>
-//                   <tr className="bg-gray-200 text-gray-700">
-//                     <th className="p-3 border">Ảnh</th>
-//                     <th className="p-3 border">Tên</th>
-//                     <th className="p-3 border">Giá</th>
-//                     <th className="p-3 border">Đã Bán</th>
-//                     <th className="p-3 border">Thương Hiệu</th>
-//                     <th className="p-3 border">Đánh Giá ⭐</th>
-//                   </tr>
-//                 </thead>
-//                 <tbody>
-//                   {selectedProducts.map((product) => (
-//                     <tr key={product.id} className="text-center">
-//                       <td className="p-3 border">
-//                         <img
-//                           src={product.photo || "/path/to/default-image.jpg"}
-//                           alt={product.nameProduct}
-//                           className="w-20 h-20 object-cover rounded-md"
-//                         />
-//                       </td>
-//                       <td className="p-3 border">{product.nameProduct}</td>
-//                       <td className="p-3 border text-red-600 font-bold">
-//                         {formatCurrency(product.salePrice)}
-//                       </td>
-//                       <td className="p-3 border">{product.quantitySaled}</td>
-//                       <td className="p-3 border text-blue-600">
-//                         {product.brand || "N/A"}
-//                       </td>
-//                       <td className="p-3 border text-yellow-500 font-semibold">
-//                         {product.rating || "Chưa có"}
-//                       </td>
-//                     </tr>
-//                   ))}
-//                 </tbody>
-//               </table>
-//             </div>
-//           </div>
-//         </div>
-//       )}
-//     </section>
-//   );
-// };
-
-// export default ProductList;
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import debounce from "lodash/debounce"; // Cần cài đặt lodash: npm install lodash
+import debounce from "lodash/debounce";
 import BrandService from "../../services/BrandService";
 import CategoryService from "../../services/CategoryService";
 import CollarService from "../../services/CollarService";
@@ -309,7 +32,6 @@ const ProductList = () => {
   const pageSize = 8;
   const navigate = useNavigate();
 
-  // State cho dữ liệu bộ lọc
   const [categories, setCategories] = useState([]);
   const [brands, setBrands] = useState([]);
   const [collars, setCollars] = useState([]);
@@ -320,7 +42,6 @@ const ProductList = () => {
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [errorFilters, setErrorFilters] = useState(null);
 
-  // Fetch dữ liệu bộ lọc chỉ 1 lần khi mount
   useEffect(() => {
     const fetchFilterData = async () => {
       setLoadingFilters(true);
@@ -360,12 +81,17 @@ const ProductList = () => {
               : []
         );
         setBrands(
-          Array.isArray(brandData)
-            ? brandData.map((item) => ({
+          Array.isArray(brandData?.content)
+            ? brandData.content.map((item) => ({
                 id: item.id,
-                name: item.brandName,
+                name: item.brandName || item.name,
               }))
-            : []
+            : Array.isArray(brandData?.data)
+              ? brandData.data.map((item) => ({
+                  id: item.id,
+                  name: item.brandName || item.name,
+                }))
+              : []
         );
         setCollars(
           Array.isArray(collarData?.content)
@@ -428,9 +154,8 @@ const ProductList = () => {
     };
 
     fetchFilterData();
-  }, []); // Chỉ gọi 1 lần khi component mount
+  }, []);
 
-  // Fetch sản phẩm với debounce
   const fetchProducts = useCallback(
     debounce(async (page, filterState) => {
       setLoadingProducts(true);
@@ -454,7 +179,7 @@ const ProductList = () => {
       } finally {
         setLoadingProducts(false);
       }
-    }, 500), // Debounce 500ms
+    }, 500),
     []
   );
 
@@ -490,15 +215,29 @@ const ProductList = () => {
     });
   };
 
+  const handleViewProduct = async (productId) => {
+    try {
+      const productDetails = await ProductService.getProductById(productId);
+      if (productDetails && productDetails.productCode) {
+        navigate(`/view-product/${productDetails.productCode}`);
+      } else {
+        alert("Không thể tìm thấy mã sản phẩm.");
+      }
+    } catch (error) {
+      console.error("Lỗi khi lấy chi tiết sản phẩm:", error);
+      alert("Không thể xem chi tiết sản phẩm. Vui lòng thử lại.");
+    }
+  };
+
   return (
-    <section className="p-6 max-w-6xl mx-auto">
-      <h1 className="text-4xl font-extrabold text-center text-red-600 mb-6">
+    <section className="p-6 max-w-7xl mx-auto">
+      <h1 className="text-4xl font-extrabold text-center text-[#1E90FF] mb-6">
         Sản Phẩm Mới
       </h1>
 
       {/* Bộ lọc */}
-      <div className="bg-white p-4 rounded-lg shadow-md mb-6 border border-gray-200">
-        <h2 className="text-xl font-semibold text-gray-700 mb-4">
+      <div className="bg-white p-4 rounded-lg shadow-md mb-6 border border-[#1E90FF]/30">
+        <h2 className="text-xl font-semibold text-[#1E90FF] mb-4">
           🔍 Bộ Lọc Sản Phẩm
         </h2>
         {loadingFilters && (
@@ -516,7 +255,7 @@ const ProductList = () => {
               <select
                 name="category"
                 onChange={handleFilterChange}
-                className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#1E90FF] transition"
                 value={filters.category}
               >
                 <option value="">Tất cả danh mục</option>
@@ -534,7 +273,7 @@ const ProductList = () => {
               <select
                 name="brand"
                 onChange={handleFilterChange}
-                className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#1E90FF] transition"
                 value={filters.brand}
               >
                 <option value="">Tất cả thương hiệu</option>
@@ -552,7 +291,7 @@ const ProductList = () => {
               <select
                 name="collar"
                 onChange={handleFilterChange}
-                className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#1E90FF] transition"
                 value={filters.collar}
               >
                 <option value="">Tất cả cổ áo</option>
@@ -570,7 +309,7 @@ const ProductList = () => {
               <select
                 name="color"
                 onChange={handleFilterChange}
-                className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#1E90FF] transition"
                 value={filters.color}
               >
                 <option value="">Tất cả màu sắc</option>
@@ -588,7 +327,7 @@ const ProductList = () => {
               <select
                 name="size"
                 onChange={handleFilterChange}
-                className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#1E90FF] transition"
                 value={filters.size}
               >
                 <option value="">Tất cả kích thước</option>
@@ -606,7 +345,7 @@ const ProductList = () => {
               <select
                 name="sleeve"
                 onChange={handleFilterChange}
-                className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#1E90FF] transition"
                 value={filters.sleeve}
               >
                 <option value="">Tất cả tay áo</option>
@@ -626,7 +365,7 @@ const ProductList = () => {
                 name="minPrice"
                 placeholder="Nhập giá tối thiểu"
                 onChange={handleFilterChange}
-                className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#1E90FF] transition"
                 value={filters.minPrice || ""}
               />
             </div>
@@ -639,7 +378,7 @@ const ProductList = () => {
                 name="maxPrice"
                 placeholder="Nhập giá tối đa"
                 onChange={handleFilterChange}
-                className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#1E90FF] transition"
                 value={filters.maxPrice || ""}
               />
             </div>
@@ -648,7 +387,7 @@ const ProductList = () => {
         <div className="mt-4 flex justify-end">
           <button
             onClick={handleResetFilters}
-            className="px-4 py-2 bg-red-500 text-white rounded-md shadow-md hover:bg-red-600 transition flex items-center gap-1"
+            className="px-4 py-2 bg-[#1E90FF] text-white rounded-md shadow-md hover:bg-[#1C86EE] transition flex items-center gap-1"
           >
             🔄 Reset Bộ Lọc
           </button>
@@ -667,34 +406,31 @@ const ProductList = () => {
             products.map((product) => (
               <div
                 key={product.id}
-                className="relative bg-white w-[280px] h-[520px] p-4 rounded-xl shadow-lg border border-gray-200 transform transition-transform hover:scale-105 hover:shadow-2xl flex flex-col group mx-auto"
+                className="relative bg-white w-[280px] h-[520px] p-4 rounded-xl shadow-lg border border-gray-200 transform transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:border-[#1E90FF] flex flex-col group mx-auto overflow-hidden"
               >
                 <div className="relative">
                   <img
                     src={product.photo || "/path/to/default-image.jpg"}
                     alt={product.nameProduct}
-                    className="w-full h-64 object-cover rounded-lg"
+                    className="w-full h-64 object-cover rounded-lg transition-transform duration-300 group-hover:scale-110"
                   />
                 </div>
-                <div className="absolute top-[245px] left-0 right-0 bg-red-600 text-white text-center text-xs font-bold py-1">
+                <div className="absolute top-[245px] left-0 right-0 bg-[#1E90FF] text-white text-center text-xs font-bold py-1">
                   KHUYẾN MÃI ĐẶC BIỆT
                 </div>
-                <h3 className="text-lg font-semibold mt-3 text-center">
-                  {product.nameProduct}
+                <h3 className="text-lg font-semibold mt-3 text-center text-gray-800 group-hover:text-[#1E90FF] transition-colors duration-300">
+                  {product.nameProduct || "Tên sản phẩm"}
                 </h3>
                 <div className="text-center flex justify-center gap-2 mt-1">
-                  <span className="text-red-600 font-bold text-lg">
+                  <span className="text-[#1E90FF] font-bold text-lg">
                     {formatCurrency(product.salePrice || 0)}
                   </span>
                 </div>
                 <div className="mt-3 mx-auto w-5/6 h-1 bg-gray-200 relative rounded">
                   <div
-                    className="h-full bg-red-500 rounded"
+                    className="h-full bg-[#1E90FF] rounded transition-all duration-300"
                     style={{
-                      width: `${Math.min(
-                        (product.quantitySaled / product.quantity) * 100 || 0,
-                        100
-                      )}%`,
+                      width: `${Math.min((product.quantitySaled / product.quantity) * 100 || 0, 100)}%`,
                     }}
                   ></div>
                 </div>
@@ -704,22 +440,19 @@ const ProductList = () => {
                 <p className="text-center text-gray-500 text-sm mt-1">
                   Số lượng {product.quantity || 0}
                 </p>
-                <div className="absolute bottom-4 left-0 right-0 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="absolute bottom-4 left-0 right-0 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-4 group-hover:translate-y-0">
                   <button
-                    onClick={() => navigate(`/view-product/${product.id}`)}
-                    className="bg-red-500 text-white text-sm font-semibold py-2 px-4 rounded-md shadow-md hover:bg-red-600 transition"
+                    onClick={() => handleViewProduct(product.id)}
+                    className="bg-[#1E90FF] text-white text-sm font-semibold py-2 px-4 rounded-md shadow-md transition-all duration-300 hover:bg-[#1C86EE] hover:scale-105 hover:shadow-lg"
                   >
                     🛒 Mua Ngay
                   </button>
-                  <button className="bg-blue-500 text-white text-sm font-semibold py-2 px-4 rounded-md shadow-md hover:bg-blue-600 transition">
-                    ➕ Giỏ hàng
-                  </button>
                   <button
                     onClick={() => toggleSelectProduct(product)}
-                    className={`px-4 py-2 rounded-lg text-sm font-semibold shadow-md transition ${
+                    className={`px-4 py-2 rounded-md text-sm font-semibold shadow-md transition-all duration-300 hover:scale-105 hover:shadow-lg ${
                       selectedProducts.some((p) => p.id === product.id)
-                        ? "bg-green-600 text-white"
-                        : "bg-gray-300 text-black"
+                        ? "bg-green-600 text-white hover:bg-green-700"
+                        : "bg-gray-300 text-black hover:bg-gray-400"
                     }`}
                   >
                     {selectedProducts.some((p) => p.id === product.id)
@@ -730,7 +463,7 @@ const ProductList = () => {
               </div>
             ))
           ) : (
-            <p className="text-gray-500 text-center w-full">
+            <p className="text-gray-500 text-center w-full col-span-full">
               Không có sản phẩm nào.
             </p>
           )}
@@ -752,15 +485,15 @@ const ProductList = () => {
         <button
           onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 0))}
           disabled={currentPage === 0 || loadingProducts}
-          className={`px-4 py-2 mx-2 rounded-lg shadow-md text-white font-semibold transition ${
+          className={`px-4 py-2 mx-2 rounded-lg shadow-md text-white font-semibold transition-all duration-300 ${
             currentPage === 0 || loadingProducts
               ? "bg-gray-400 cursor-not-allowed"
-              : "bg-blue-500 hover:bg-blue-600"
+              : "bg-[#1E90FF] hover:bg-[#1C86EE] hover:scale-105"
           }`}
         >
           Trước
         </button>
-        <span className="px-4 py-2 mx-2 text-lg font-semibold">
+        <span className="px-4 py-2 mx-2 text-lg font-semibold text-[#1E90FF]">
           {currentPage + 1} / {totalPages}
         </span>
         <button
@@ -768,10 +501,10 @@ const ProductList = () => {
             setCurrentPage((prev) => Math.min(prev + 1, totalPages - 1))
           }
           disabled={currentPage >= totalPages - 1 || loadingProducts}
-          className={`px-4 py-2 mx-2 rounded-lg shadow-md text-white font-semibold transition ${
+          className={`px-4 py-2 mx-2 rounded-lg shadow-md text-white font-semibold transition-all duration-300 ${
             currentPage >= totalPages - 1 || loadingProducts
               ? "bg-gray-400 cursor-not-allowed"
-              : "bg-blue-500 hover:bg-blue-600"
+              : "bg-[#1E90FF] hover:bg-[#1C86EE] hover:scale-105"
           }`}
         >
           Tiếp
@@ -780,20 +513,20 @@ const ProductList = () => {
 
       {showCompareModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-5xl w-full relative">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-5xl w-full relative overflow-y-auto max-h-[90vh]">
             <button
               onClick={() => setShowCompareModal(false)}
-              className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-2xl"
+              className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-2xl transition-colors duration-300"
             >
               ✖
             </button>
-            <h2 className="text-3xl font-bold text-center text-red-600 mb-6">
+            <h2 className="text-3xl font-bold text-center text-[#1E90FF] mb-6">
               🏆 So Sánh Sản Phẩm
             </h2>
             <div className="overflow-x-auto">
               <table className="min-w-full border border-gray-300">
                 <thead>
-                  <tr className="bg-gray-200 text-gray-700">
+                  <tr className="bg-[#1E90FF]/10 text-gray-700">
                     <th className="p-3 border">Ảnh</th>
                     <th className="p-3 border">Tên</th>
                     <th className="p-3 border">Giá</th>
@@ -803,7 +536,10 @@ const ProductList = () => {
                 </thead>
                 <tbody>
                   {selectedProducts.map((product) => (
-                    <tr key={product.id} className="text-center">
+                    <tr
+                      key={product.id}
+                      className="text-center bg-gray-50 hover:bg-[#1E90FF]/5 transition-colors duration-200"
+                    >
                       <td className="p-3 border">
                         <img
                           src={product.photo || "/path/to/default-image.jpg"}
@@ -811,8 +547,10 @@ const ProductList = () => {
                           className="w-20 h-20 object-cover rounded-md"
                         />
                       </td>
-                      <td className="p-3 border">{product.nameProduct}</td>
-                      <td className="p-3 border text-red-600 font-bold">
+                      <td className="p-3 border font-semibold">
+                        {product.nameProduct}
+                      </td>
+                      <td className="p-3 border text-[#1E90FF] font-bold">
                         {formatCurrency(product.salePrice)}
                       </td>
                       <td className="p-3 border">
