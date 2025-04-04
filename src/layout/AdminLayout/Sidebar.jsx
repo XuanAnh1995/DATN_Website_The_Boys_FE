@@ -18,7 +18,7 @@ import {
   FaChevronDown,
   FaChartBar,
   FaCashRegister,
-  FaRegPlusSquare 
+  FaRegPlusSquare,
 } from "react-icons/fa";
 
 function Sidebar() {
@@ -26,15 +26,17 @@ function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [showProductMenu, setShowProductMenu] = useState(false);
   const [showAccountMenu, setShowAccountMenu] = useState(false);
+  const [showOrderMenu, setShowOrderMenu] = useState(false); // Thêm state cho menu Quản lý hóa đơn
 
   const toggleMenu = (menu) => {
     if (menu === "product") setShowProductMenu(!showProductMenu);
     if (menu === "account") setShowAccountMenu(!showAccountMenu);
+    if (menu === "order") setShowOrderMenu(!showOrderMenu); // Toggle menu Quản lý hóa đơn
   };
 
   const productItems = [
     { label: "Sản phẩm", icon: <FaTshirt />, path: "/admin/product" },
-    { label: "Thêm sản phẩm", icon: <FaRegPlusSquare  />, path: "/admin/product/create" },
+    { label: "Thêm sản phẩm", icon: <FaRegPlusSquare />, path: "/admin/product/create" },
     { label: "Thương hiệu", icon: <FaTrademark />, path: "/admin/brand" },
     { label: "Chất liệu", icon: <FaCubes />, path: "/admin/material" },
     { label: "Cổ áo", icon: <FaThLarge />, path: "/admin/attribute/collar" },
@@ -49,6 +51,11 @@ function Sidebar() {
     { label: "Khách hàng", icon: <FaUsers />, path: "/admin/customer" },
   ];
 
+  const orderItems = [
+    { label: "Hóa đơn POS", icon: <FaCashRegister />, path: "/admin/order/pos" },
+    { label: "Đơn hàng Online", icon: <FaClipboardList />, path: "/admin/order/online" },
+  ];
+
   return (
     <div className={`bg-white text-dark min-h-screen transition-all ${collapsed ? "w-16" : "w-60"} flex flex-col shadow-lg px-3 py-2 overflow-y-auto`}>
       {/* Logo */}
@@ -61,8 +68,7 @@ function Sidebar() {
         <li>
           <Link
             to="/admin/dashboard"
-            className={`flex items-center gap-3 p-3 rounded-lg transition ${location.pathname === "/admin/dashboard" ? "bg-blue-500 text-white" : "hover:bg-gray-200"
-              }`}
+            className={`flex items-center gap-3 p-3 rounded-lg transition ${location.pathname === "/admin/dashboard" ? "bg-blue-500 text-white" : "hover:bg-gray-200"}`}
           >
             <FaChartPie /> {!collapsed && <span>Tổng quan</span>}
           </Link>
@@ -71,20 +77,37 @@ function Sidebar() {
         <li>
           <Link
             to="/admin/salePOS"
-            className={`flex items-center gap-3 p-3 rounded-lg transition ${location.pathname === "/admin/salePOS" ? "bg-blue-500 text-white" : "hover:bg-gray-200"
-              }`}
+            className={`flex items-center gap-3 p-3 rounded-lg transition ${location.pathname === "/admin/salePOS" ? "bg-blue-500 text-white" : "hover:bg-gray-200"}`}
           >
             <FaCashRegister /> {!collapsed && <span>Bán hàng POS</span>}
           </Link>
         </li>
 
+        {/* Quản lý hóa đơn */}
         <li>
-          <Link
-            to="/admin/order" className={`flex items-center gap-3 p-3 rounded-lg transition ${location.pathname === "/admin/order" ? "bg-blue-500 text-white" : "hover:bg-gray-200"
-              }`}
+          <div
+            className="flex items-center justify-between p-3 hover:bg-gray-200 transition rounded-lg cursor-pointer"
+            onClick={() => toggleMenu("order")}
           >
-            <FaClipboardList /> {!collapsed && <span>Quản lý đơn hàng</span>}
-          </Link>
+            <span className="flex items-center gap-3">
+              <FaClipboardList /> {!collapsed && <span>Quản lý hóa đơn</span>}
+            </span>
+            {!collapsed && <FaChevronDown className={`transition-transform ${showOrderMenu ? "rotate-180" : ""}`} />}
+          </div>
+          {!collapsed && showOrderMenu && (
+            <ul className="pl-6 space-y-2">
+              {orderItems.map((item) => (
+                <li key={item.path}>
+                  <Link
+                    to={item.path}
+                    className={`flex items-center gap-3 p-2 rounded-lg transition ${location.pathname === item.path ? "bg-blue-500 text-white" : "hover:bg-gray-200"}`}
+                  >
+                    {item.icon} {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
         </li>
 
         {/* Quản lý sản phẩm */}
@@ -104,8 +127,7 @@ function Sidebar() {
                 <li key={item.path}>
                   <Link
                     to={item.path}
-                    className={`flex items-center gap-3 p-2 rounded-lg transition ${location.pathname === item.path ? "bg-blue-500 text-white" : "hover:bg-gray-200"
-                      }`}
+                    className={`flex items-center gap-3 p-2 rounded-lg transition ${location.pathname === item.path ? "bg-blue-500 text-white" : "hover:bg-gray-200"}`}
                   >
                     {item.icon} {item.label}
                   </Link>
@@ -132,8 +154,7 @@ function Sidebar() {
                 <li key={item.path}>
                   <Link
                     to={item.path}
-                    className={`flex items-center gap-3 p-2 rounded-lg transition ${location.pathname === item.path ? "bg-blue-500 text-white" : "hover:bg-gray-200"
-                      }`}
+                    className={`flex items-center gap-3 p-2 rounded-lg transition ${location.pathname === item.path ? "bg-blue-500 text-white" : "hover:bg-gray-200"}`}
                   >
                     {item.icon} {item.label}
                   </Link>
@@ -146,15 +167,16 @@ function Sidebar() {
         <li>
           <Link
             to="/admin/voucher"
-            className={`flex items-center gap-3 p-3 rounded-lg transition ${location.pathname === "/admin/voucher" ? "bg-blue-500 text-white" : "hover:bg-gray-200"
-              }`}
+            className={`flex items-center gap-3 p-3 rounded-lg transition ${location.pathname === "/admin/voucher" ? "bg-blue-500 text-white" : "hover:bg-gray-200"}`}
           >
             <FaMoneyBillWave /> {!collapsed && <span>Quản lý voucher</span>}
           </Link>
         </li>
         <li>
           <Link
-            to="/admin/statistics" className={`flex items-center gap-3 p-3 rounded-lg transition ${location.pathname === "/admin/statistics" ? "bg-blue-500 text-white" : "hover:bg-gray-200"}`}>
+            to="/admin/statistics"
+            className={`flex items-center gap-3 p-3 rounded-lg transition ${location.pathname === "/admin/statistics" ? "bg-blue-500 text-white" : "hover:bg-gray-200"}`}
+          >
             <FaChartBar /> {!collapsed && <span>Thống kê</span>}
           </Link>
         </li>

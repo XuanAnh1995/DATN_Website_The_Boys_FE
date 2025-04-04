@@ -1,4 +1,3 @@
-// src/pages/admin/Order/index.jsx
 import React, { useState, useEffect } from "react";
 import {
   AiOutlineEye,
@@ -8,25 +7,40 @@ import {
   AiOutlineFilter,
   AiOutlineReload,
 } from "react-icons/ai";
-import { FaPrint } from "react-icons/fa";
 import OrderService from "../../../services/OrderService";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 
-// Chỉ giữ hai trạng thái cho hóa đơn POS
+// Các trạng thái đơn hàng
 const orderStatusMap = {
+  "-1": "Đã hủy",
+  "0": "Chờ xác nhận",
   "1": "Chờ thanh toán",
+  "2": "Đã xác nhận",
+  "3": "Đang giao hàng",
+  "4": "Giao hàng không thành công",
   "5": "Hoàn thành",
 };
 
+// Tạo lớp CSS cho từng trạng thái
 const getStatusClass = (status) => {
   const baseClasses = "px-2 py-1 rounded-full text-xs font-medium";
-  return status === 1
+  return status === -1
+    ? `${baseClasses} bg-red-100 text-red-800`
+    : status === 0
+    ? `${baseClasses} bg-yellow-100 text-yellow-800`
+    : status === 1
     ? `${baseClasses} bg-blue-100 text-blue-800`
-    : `${baseClasses} bg-green-100 text-green-800`;
+    : status === 2
+    ? `${baseClasses} bg-green-100 text-green-800`
+    : status === 3
+    ? `${baseClasses} bg-purple-100 text-purple-800`
+    : status === 4
+    ? `${baseClasses} bg-orange-100 text-orange-800`
+    : `${baseClasses} bg-gray-100 text-gray-800`;
 };
 
-export default function OrderPOS() {
+export default function OnlineOrder() {
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -50,7 +64,7 @@ export default function OrderPOS() {
   const fetchOrders = async () => {
     setIsLoading(true);
     try {
-      const data = await OrderService.getPOSOrders("", currentPage - 1, pageSize);
+      const data = await OrderService.getOnlineOrders("", currentPage - 1, pageSize);
       let sortedOrders = data?.content || [];
       if (sortConfig.key) {
         sortedOrders.sort((a, b) => {
@@ -63,7 +77,8 @@ export default function OrderPOS() {
       setTotalPages(data?.totalPages || 1);
       setFilteredOrders(sortedOrders);
     } catch (error) {
-      toast.error("Lỗi khi tải dữ liệu hóa đơn POS");
+      toast.error("Lỗi khi tải dữ liệu đơn hàng Online");
+      console.error("Error fetching orders:", error);
     } finally {
       setIsLoading(false);
     }
@@ -135,17 +150,13 @@ export default function OrderPOS() {
     return pageNumbers;
   };
 
-  const handlePrint = (orderId) => {
-    toast.info(`In hóa đơn ${orderId}`);
-  };
-
   return (
     <div className="p-6 bg-green-50 min-h-screen">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-green-800">Quản lý hóa đơn POS</h1>
-            <p className="text-sm text-gray-500 mt-1">Quản lý và theo dõi tất cả hóa đơn tại quầy</p>
+            <h1 className="text-2xl font-bold text-green-800">Quản lý đơn hàng Online</h1>
+            <p className="text-sm text-gray-500 mt-1">Quản lý và theo dõi tất cả đơn hàng Online</p>
           </div>
           <div className="mt-4 md:mt-0">
             <button
@@ -178,7 +189,7 @@ export default function OrderPOS() {
               >
                 <AiOutlineFilter className="mr-2" /> Bộ lọc
               </button>
-              {selectedStatus !== null && (
+              {(selectedStatus !== null || search.trim() !== "") && (
                 <button
                   onClick={handleClearFilters}
                   className="ml-2 px-4 py-3 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
@@ -218,7 +229,7 @@ export default function OrderPOS() {
             </div>
           ) : filteredOrders.length === 0 ? (
             <div className="p-12 text-center text-gray-500">
-              <p>Không tìm thấy hóa đơn POS nào</p>
+              <p>Không tìm thấy đơn hàng Online nào</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -233,7 +244,11 @@ export default function OrderPOS() {
                       <div className="flex items-center space-x-1">
                         <span>STT</span>
                         {sortConfig.key === "id" && (
-                          sortConfig.direction === "asc" ? <AiFillCaretUp className="text-green-500" /> : <AiFillCaretDown className="text-green-500" />
+                          sortConfig.direction === "asc" ? (
+                            <AiFillCaretUp className="text-green-500" />
+                          ) : (
+                            <AiFillCaretDown className="text-green-500" />
+                          )
                         )}
                       </div>
                     </th>
@@ -243,9 +258,13 @@ export default function OrderPOS() {
                       onClick={() => handleSort("orderCode")}
                     >
                       <div className="flex items-center space-x-1">
-                        <span>Mã hóa đơn</span>
+                        <span>Mã đơn hàng</span>
                         {sortConfig.key === "orderCode" && (
-                          sortConfig.direction === "asc" ? <AiFillCaretUp className="text-green-500" /> : <AiFillCaretDown className="text-green-500" />
+                          sortConfig.direction === "asc" ? (
+                            <AiFillCaretUp className="text-green-500" />
+                          ) : (
+                            <AiFillCaretDown className="text-green-500" />
+                          )
                         )}
                       </div>
                     </th>
@@ -262,7 +281,7 @@ export default function OrderPOS() {
                       Tổng tiền sau giảm
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Phương thức thanh toán
+                      Tên Voucher
                     </th>
                     <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Số lượng SP
@@ -276,54 +295,47 @@ export default function OrderPOS() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredOrders.map((item, index) => (
-                    <tr key={item.id} className="hover:bg-green-50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{index + 1}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{item.orderCode}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{item.customer?.fullname || "N/A"}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{item.employee?.fullname || "N/A"}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-700 font-medium">
-                        {formatCurrency(item.originalTotal)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-700 font-medium">
-                        {formatCurrency(item.totalBill)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{item.paymentMethod || "Tiền mặt"}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <div className="text-sm font-medium">{item.totalAmount}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <span className={getStatusClass(item.statusOrder)}>
-                          {orderStatusMap[item.statusOrder.toString()] || "Không xác định"}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <div className="flex justify-center space-x-2">
-                          <button
-                            className="text-green-500 hover:text-green-700 p-1 rounded-full hover:bg-green-100 transition-colors"
-                            onClick={() => navigate(`/admin/order/${item.id}/details`)}
-                          >
-                            <AiOutlineEye size={20} />
-                          </button>
-                          <button
-                            className="text-green-500 hover:text-green-700 p-1 rounded-full hover:bg-green-100 transition-colors"
-                            onClick={() => handlePrint(item.orderCode)}
-                          >
-                            <FaPrint size={20} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
+  {filteredOrders.map((item, index) => {
+    // Tính số tiền giảm
+    const discount = item.originalTotal - item.totalBill;
+
+    return (
+      <tr key={item.id} className="hover:bg-green-50 transition-colors">
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{index + 1}</td>
+        <td className="px-6 py-4 whitespace-nowrap">
+          <div className="text-sm font-medium text-gray-900">{item.orderCode}</div>
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap">
+          <div className="text-sm text-gray-900">{item.customer?.fullname || "N/A"}</div>
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap">
+          <div className="text-sm text-gray-900">{item.employee?.fullname || "N/A"}</div>
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-700 font-medium">
+          {formatCurrency(item.originalTotal)}
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-700 font-medium">
+          {formatCurrency(item.totalBill)}
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap">
+          <div className="text-sm text-gray-900">{item.voucher?.voucherName || "Không Có Voucher"}</div>
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-center">
+          <div className="text-sm font-medium">{item.totalAmount}</div>
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-center">
+          <span className={getStatusClass(item.statusOrder)}>
+            {orderStatusMap[item.statusOrder.toString()] || "Không xác định"}
+          </span>
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-700 font-medium">
+          {formatCurrency(discount)} {/* Hiển thị số tiền giảm */}
+        </td>
+      </tr>
+    );  
+  })}
+</tbody>
+
               </table>
             </div>
           )}

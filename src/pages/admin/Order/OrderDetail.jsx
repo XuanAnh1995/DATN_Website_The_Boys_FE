@@ -300,82 +300,83 @@ const OrderDetail = () => {
             </div>
           </div>
 
-                      {/* Order Details */}
-                      <div className="p-6">
-            <h3 className="text-lg font-semibold text-gray-700 mb-4">Các sản phẩm</h3>
-            <div className="overflow-x-auto border rounded-lg shadow-md">
-              <table className="w-full border-collapse text-sm">
-                <thead>
-                  <tr className="bg-gray-200 text-gray-700 text-sm font-semibold border-b">
-                    <th className="py-3 px-4 text-left">Sản phẩm</th>
-                    <th className="py-3 px-4 text-center">Số lượng</th>
-                    <th className="py-3 px-4 text-center">Màu Sắc</th>
-                    <th className="py-3 px-4 text-center">Size</th>
-                    <th className="py-3 px-4 text-center">Giá trước giảm</th>
-                    <th className="py-3 px-4 text-center">Giá sau giảm</th>
-                    <th className="py-3 px-4 text-right">Đơn giá</th>
-                    <th className="py-3 px-4 text-right">Thành tiền</th>
-                  </tr>
-                </thead>
-                <tbody className="text-gray-600 divide-y divide-gray-300">
-                  {orderDetails.orderDetails.map((detail, index) => {
-                    const product = detail.productDetail?.product;
-                    const price = detail.productDetail?.salePrice ?? detail.productDetail?.product?.salePrice ?? 0;
-                    const quantity = detail.quantity ?? 0;
-                    const colorName = detail.productDetail?.color?.name ?? "Không có màu";
-                    const sizeName = detail.productDetail?.size?.name ?? "Không có kích thước";
-                    const originalTotal = detail.originalTotal ?? 0;
-                    const totalBill = detail.totalBill ?? 0;
-                    const totalPrice = price * quantity;
-                    console.log("Order Details:", orderDetails);
+          {/* Order Details */}
+<div className="p-6">
+  <h3 className="text-lg font-semibold text-gray-700 mb-4">Các sản phẩm</h3>
+  <div className="overflow-x-auto border rounded-lg shadow-md">
+    <table className="w-full border-collapse text-sm">
+      <thead>
+        <tr className="bg-gray-200 text-gray-700 text-sm font-semibold border-b">
+          <th className="py-3 px-4 text-left">Sản phẩm</th>
+          <th className="py-3 px-4 text-center">Số lượng</th>
+          <th className="py-3 px-4 text-center">Màu Sắc</th>
+          <th className="py-3 px-4 text-center">Size</th>
+          <th className="py-3 px-4 text-center">Giá trước giảm</th>
+          <th className="py-3 px-4 text-center">Giá sau giảm</th>
+          <th className="py-3 px-4 text-right">Đơn giá</th>
+          <th className="py-3 px-4 text-right">Thành tiền</th>
+        </tr>
+      </thead>
+      <tbody className="text-gray-600 divide-y divide-gray-300">
+        {orderDetails.orderDetails.map((detail, index) => {
+          const product = detail.productDetail?.product;
+          const quantity = detail.quantity ?? 0;
+          const colorName = detail.productDetail?.color?.name ?? "Không có màu";
+          const sizeName = detail.productDetail?.size?.name ?? "Không có kích thước";
+          const originalTotal = orderDetails.originalTotal ?? 0;
+          const totalBill = orderDetails.totalBill ?? 0;  
+          const price = detail.productDetail?.salePrice ?? product?.salePrice ?? 0;
+          const totalPrice = price * quantity;
+
+          console.log("Original Total:", originalTotal);
+          console.log("Total Bill:", totalBill);
 
 
-                    return (
-                      <tr key={detail.id || index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                        <td className="py-3 px-4 flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gray-300 rounded-md flex items-center justify-center text-xs font-semibold">
-                            {index + 1}
-                          </div>
-                          <div>
-                            <p className="font-medium text-gray-800">{product?.productName || "Không có tên"}</p>
-                            <p className="text-xs text-gray-500">{product?.productCode || "Không có mã"}</p>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4 text-center font-medium">{quantity}</td>
-                        <td className="py-3 px-4 text-center font-medium">{colorName}</td>
-                        <td className="py-3 px-4 text-center font-medium">{sizeName}</td>
-                        <td className="py-3 px-4 text-center font-medium">{formatCurrency(orderDetails.originalTotal ?? 0)}</td>
-                        <td className="py-3 px-4 text-center font-medium">{formatCurrency( orderDetails.totalBill ?? 0)}
-                        </td>
-                        <td className="py-3 px-4 text-right font-medium text-green-600">{formatCurrency(price)}</td>
-                        <td className="py-3 px-4 text-right font-semibold text-gray-900">{formatCurrency(totalPrice)}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-                <tfoot className="bg-gray-100 text-gray-800 font-bold border-t">
-                  <tr>
-                    <td colSpan="6" className="py-4 px-4 text-right">Tổng tiền trước khi áp voucher:</td>
-                    <td colSpan="2" className="py-4 px-4 text-right text-xl text-gray-700">
-                      {formatCurrency(orderDetails.originalTotal??0)}
-                    </td>
-                  </tr>
-                  <tr>
-                  <td colSpan="6" className="py-4 px-4 text-right">Số tiền trừ:</td>
-                  <td colSpan="2" className="py-4 px-4 text-right text-xl text-green-600">
-                    {formatCurrency((orderDetails.originalTotal ?? 0) - orderDetails.totalBill)}
-                  </td>
-                </tr>
-                  <tr>
-                    <td colSpan="6" className="py-4 px-4 text-right">Tổng tiền sau khi áp voucher:</td>
-                    <td colSpan="2" className="py-4 px-4 text-right text-xl text-red-600">
-                      {formatCurrency(orderDetails.totalBill)}
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-          </div>
+          return (
+            <tr key={detail.id || index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+              <td className="py-3 px-4 flex items-center gap-3">
+                <div className="w-10 h-10 bg-gray-300 rounded-md flex items-center justify-center text-xs font-semibold">
+                  {index + 1}
+                </div>
+                <div>
+                  <p className="font-medium text-gray-800">{product?.productName || "Không có tên"}</p>
+                  <p className="text-xs text-gray-500">{product?.productCode || "Không có mã"}</p>
+                </div>
+              </td>
+              <td className="py-3 px-4 text-center font-medium">{quantity}</td>
+              <td className="py-3 px-4 text-center font-medium">{colorName}</td>
+              <td className="py-3 px-4 text-center font-medium">{sizeName}</td>
+              <td className="py-3 px-4 text-center font-medium">{formatCurrency(originalTotal)}</td>
+              <td className="py-3 px-4 text-center font-medium">{formatCurrency(totalBill)}</td>
+              <td className="py-3 px-4 text-right font-medium text-green-600">{formatCurrency(price)}</td>
+              <td className="py-3 px-4 text-right font-semibold text-gray-900">{formatCurrency(totalPrice)}</td>
+            </tr>
+          );
+        })}
+      </tbody>
+      <tfoot className="bg-gray-100 text-gray-800 font-bold border-t">
+        <tr>
+          <td colSpan="6" className="py-4 px-4 text-right">Tổng tiền trước khi áp voucher:</td>
+          <td colSpan="2" className="py-4 px-4 text-right text-xl text-gray-700">
+            {formatCurrency(orderDetails.originalTotal ?? 0)}
+          </td>
+        </tr>
+        <tr>
+          <td colSpan="6" className="py-4 px-4 text-right">Số tiền trừ:</td>
+          <td colSpan="2" className="py-4 px-4 text-right text-xl text-green-600">
+            {formatCurrency(orderDetails.discount ?? ((orderDetails.originalTotal ?? 0) - (orderDetails.totalBill ?? 0)))}
+          </td>
+        </tr>
+        <tr>
+          <td colSpan="6" className="py-4 px-4 text-right">Tổng tiền sau khi áp voucher:</td>
+          <td colSpan="2" className="py-4 px-4 text-right text-xl text-red-600">
+            {formatCurrency(orderDetails.totalBill ?? 0)}
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</div>
 
 
 
