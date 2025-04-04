@@ -25,7 +25,8 @@ const Sleeve = lazy(() => import("../pages/admin/Attribute/Sleeve"));
 const Promotion = lazy(() => import("../pages/admin/Attribute/Promotion"));
 
 // 📌 Quản lý hóa đơn, voucher
-const Order = lazy(() => import("../pages/admin/Order"));
+const InStoreOrder = lazy(() => import("../pages/admin/Order")); // Sử dụng index.jsx cho Hóa đơn POS
+const OrderOnline = lazy(() => import("../pages/admin/Order/OrderOnline")); // File mới cho Đơn hàng Online
 const OrderDetail = lazy(() => import("../pages/admin/Order/OrderDetail"));
 const Voucher = lazy(() => import("../pages/admin/Voucher"));
 
@@ -49,7 +50,8 @@ const adminRoutes = [
   { path: "attribute/size", component: Size, role: "ADMIN" },
   { path: "attribute/sleeve", component: Sleeve, role: "ADMIN" },
   { path: "attribute/promotion", component: Promotion, role: "ADMIN" },
-  { path: "order", component: Order, role: "ADMIN" },
+  { path: "order/pos", component: InStoreOrder, role: "ADMIN" }, // Route cho Hóa đơn POS
+  { path: "order/online", component: OrderOnline, role: "ADMIN" }, // Route cho Đơn hàng Online
   { path: "order/:id/details", component: OrderDetail, role: "ADMIN" },
   { path: "voucher", component: Voucher, role: "ADMIN" },
   { path: "statistics", component: Statistic, role: "ADMIN" },
