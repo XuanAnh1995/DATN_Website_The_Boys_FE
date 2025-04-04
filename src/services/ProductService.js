@@ -118,10 +118,12 @@ const ProductService = {
       throw error;
     }
   },
+
   async getProductDetailsByProductCode(productCode) {
     try {
-      const response = await api.get(`/api/products/details/${productCode}`);
-      return response.data.data;
+      const response = await api.get(`/api/v1/product-details/${productCode}/variants`);
+      console.log("Dữ liệu từ API:", response.data); // Kiểm tra dữ liệu
+      return response.data;
     } catch (error) {
       console.error("Error fetching product details by product code:", error);
       throw error;

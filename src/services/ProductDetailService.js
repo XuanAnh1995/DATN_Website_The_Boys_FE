@@ -87,17 +87,19 @@ const ProductDetailService = {
       throw error;
     }
   },
+
   async getProductVariants(productCode) {
     try {
       const response = await api.get(
         `/api/v1/product-details/${productCode}/variants`
       );
-      return response.data || []; // Trả về mảng rỗng nếu response.data là null
+      return response.data.data || []; // Trả về mảng rỗng nếu response.data là null
     } catch (error) {
       console.error("Error fetching product variants:", error);
       throw error;
     }
   },
+
 };
 
 export default ProductDetailService;
