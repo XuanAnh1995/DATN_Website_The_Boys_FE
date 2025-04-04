@@ -34,6 +34,7 @@ function Payment() {
 
   const voucherOptions = [];
   const [formData, setFormData] = useState({
+    fullName: "",
     phone: "",
     email: "",
   });

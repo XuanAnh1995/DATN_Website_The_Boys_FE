@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import ProductService from "../../services/ProductService";
+import ProductDetailService from "../../services/ProductDetailService";
 import CartService from "../../services/CartService";
 
 const ViewProductDetail = () => {
@@ -13,24 +14,47 @@ const ViewProductDetail = () => {
   const [isLoadingCart, setIsLoadingCart] = useState(false);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [availableSizes, setAvailableSizes] = useState([]);
+  const [availableColors, setAvailableColors] = useState([]);
+  const [availableCollars, setAvailableCollars] = useState([]);
+  const [availableSleeves, setAvailableSleeves] = useState([]);
+  const [imageLoading, setImageLoading] = useState(true);
+
 
   useEffect(() => {
     const fetchProductDetails = async () => {
       try {
         setLoading(true);
         setError(null);
-        const details =
-          await ProductService.getProductDetailsByProductCode(productCode);
+
+        // Lấy các biến thể sản phẩm
+        const details = await ProductService.getProductDetailsByProductCode(productCode);
+
         console.log("Dữ liệu chi tiết sản phẩm:", details);
 
         if (details && details.length > 0) {
+          // Thêm isFavorite vào mỗi biến thể sản phẩm
+          const updatedDetails = details.map((detail) => ({
+            ...detail,
+            isFavorite: false, // Giá trị mặc định
+          }));
+
           setProductDetails(details);
           setSelectedDetail(details[0]);
           setSelectedImage(details[0].photo || "");
+
+          // Sửa colorName thành name và sizeName thành name
+          const colors = [...new Set(details.map((detail) => detail?.color?.name).filter(Boolean))];
+          const sizes = [...new Set(details.map((detail) => detail?.size?.name).filter(Boolean))];
+          const collars = [...new Set(details.map((detail) => detail?.collar?.name).filter(Boolean))];
+          const sleeves = [...new Set(details.map((detail) => detail?.sleeve?.sleeveName).filter(Boolean))];
+
+          setAvailableColors(colors);
+          setAvailableSizes(sizes);
+          setAvailableCollars(collars);
+          setAvailableSleeves(sleeves);
         } else {
-          setError(
-            "Không tìm thấy sản phẩm hoặc biến thể nào với mã: " + productCode
-          );
+          setError("Không tìm thấy sản phẩm hoặc biến thể nào với mã: " + productCode);
         }
       } catch (error) {
         console.error("Lỗi khi lấy chi tiết sản phẩm:", error);
@@ -47,6 +71,54 @@ const ViewProductDetail = () => {
       setLoading(false);
     }
   }, [productCode]);
+
+  const handleColorChange = (color) => {
+    const matchingDetail = productDetails.find(
+      (detail) => detail?.color?.name === color && detail?.size?.name === selectedDetail?.size?.name
+    );
+    if (matchingDetail) {
+      setSelectedDetail(matchingDetail);
+      setSelectedImage(matchingDetail?.photo || "");
+    }
+  };
+
+  const handleSizeChange = (size) => {
+    const matchingDetail = productDetails.find(
+      (detail) => detail?.size?.name === size && detail?.color?.name === selectedDetail?.color?.name
+    );
+    if (matchingDetail) {
+      setSelectedDetail(matchingDetail);
+      setSelectedImage(matchingDetail?.photo || "");
+    }
+  };
+
+  const handleCollarChange = (collar) => {
+    const matchingDetail = productDetails.find(
+      (detail) =>
+        detail?.collar?.name === collar &&
+        detail?.color?.name === selectedDetail?.color?.name &&
+        detail?.size?.name === selectedDetail?.size?.name &&
+        detail?.sleeve?.sleeveName === selectedDetail?.sleeve?.sleeveName
+    );
+    if (matchingDetail) {
+      setSelectedDetail(matchingDetail);
+      setSelectedImage(matchingDetail?.photo || "");
+    }
+  };
+
+  const handleSleeveChange = (sleeve) => {
+    const matchingDetail = productDetails.find(
+      (detail) =>
+        detail?.sleeve?.sleeveName === sleeve &&
+        detail?.color?.name === selectedDetail?.color?.name &&
+        detail?.size?.name === selectedDetail?.size?.name &&
+        detail?.collar?.name === selectedDetail?.collar?.name
+    );
+    if (matchingDetail) {
+      setSelectedDetail(matchingDetail);
+      setSelectedImage(matchingDetail?.photo || "");
+    }
+  };
 
   const handleAddToCart = async () => {
     if (!selectedDetail) return;
@@ -127,22 +199,40 @@ const ViewProductDetail = () => {
         <div className="relative mb-4">
           <img
             src={selectedImage || "https://via.placeholder.com/400x500"}
-            alt={selectedDetail.product?.productName || "Sản phẩm"}
-            className="w-full h-[400px] object-cover rounded-lg"
+            alt={selectedDetail?.product?.productName || "Sản phẩm"}
+            className="w-full h-[400px] object-cover rounded-lg transition-opacity duration-300"
+            onLoad={() => setImageLoading(false)} // Ẩn loading khi ảnh tải xong
+            onError={(e) => (e.target.src = "https://via.placeholder.com/400x500")} // Hiển thị ảnh mặc định nếu lỗi
           />
-          <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold py-1 px-2 rounded">
-            -
-            {Math.round(
-              ((selectedDetail.importPrice - selectedDetail.salePrice) /
-                selectedDetail.importPrice) *
-                100
-            )}
-            %
-          </div>
-          <button className="absolute top-2 right-2 text-gray-500 hover:text-red-500 transition">
+          {/* Nhãn giảm giá */}
+          {selectedDetail?.promotion?.promotionPercent && selectedDetail.promotion.promotionPercent > 0 ? (
+            <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold py-1 px-2 rounded">
+              -{selectedDetail.promotion.promotionPercent}%
+            </div>
+          ) : (
+            selectedDetail?.salePrice && (
+              <div className="absolute top-2 left-2 bg-gray-500 text-white text-xs font-bold py-1 px-2 rounded">
+                Giá gốc
+              </div>
+            )
+          )}
+          {/* Nút yêu thích */}
+          <button
+            className={`absolute top-2 right-2 transition ${selectedDetail?.isFavorite
+              ? "text-red-500"
+              : "text-gray-500 hover:text-red-500"
+              }`}
+            onClick={() => {
+              // Logic để thêm/xóa sản phẩm khỏi danh sách yêu thích
+              const updatedDetail = { ...selectedDetail, isFavorite: !selectedDetail?.isFavorite };
+              setSelectedDetail(updatedDetail);
+              // Gọi API để lưu trạng thái yêu thích (nếu cần)
+              console.log("Toggled favorite for product:", updatedDetail);
+            }}
+          >
             <svg
               className="w-6 h-6"
-              fill="none"
+              fill={selectedDetail?.isFavorite ? "currentColor" : "none"}
               stroke="currentColor"
               viewBox="0 0 24 24"
               xmlns="http://www.w3.org/2000/svg"
@@ -155,23 +245,6 @@ const ViewProductDetail = () => {
               ></path>
             </svg>
           </button>
-        </div>
-        {/* Danh sách ảnh phụ */}
-        <div className="flex flex-wrap gap-2">
-          {productDetails.map((detail, index) => (
-            <div key={index} className="relative">
-              <img
-                src={detail.photo || "https://via.placeholder.com/80x80"}
-                alt={`Ảnh ${index + 1}`}
-                className={`w-20 h-20 object-cover rounded-md cursor-pointer border-2 ${
-                  selectedDetail.id === detail.id
-                    ? "border-[#1E3A8A]"
-                    : "border-gray-200"
-                } hover:border-[#1E3A8A]`}
-                onClick={() => handleSelectDetail(detail)}
-              />
-            </div>
-          ))}
         </div>
       </div>
 
@@ -202,7 +275,7 @@ const ViewProductDetail = () => {
           <p>
             Loại:{" "}
             <span className="text-black">
-              {selectedDetail.product?.category?.categoryName ||
+              {selectedDetail.product?.category?.name ||
                 "Không xác định"}
             </span>
           </p>
@@ -302,22 +375,24 @@ const ViewProductDetail = () => {
         {/* Thuộc tính sản phẩm */}
         <div className="mb-4">
           <p className="text-lg font-semibold mb-2 text-[#1E3A8A]">Màu sắc:</p>
-          {uniqueColors.length > 0 ? (
+          {availableColors.length > 0 ? (
             <div className="flex gap-2 flex-wrap">
-              {uniqueColors.map((color, index) => {
-                const detail = productDetails.find(
-                  (d) => d.color?.colorName === color
+              {availableColors.map((color, index) => {
+                const isAvailable = productDetails.some(
+                  (detail) =>
+                    detail?.color?.name === color &&
+                    detail?.size?.name === selectedDetail?.size?.name
                 );
                 return (
                   <button
                     key={index}
-                    onClick={() => detail && handleSelectDetail(detail)}
-                    className={`px-4 py-2 rounded-lg border ${
-                      selectedDetail.color?.colorName === color
-                        ? "border-[#1E3A8A] bg-[#1E3A8A]/10 text-[#1E3A8A]"
-                        : "border-gray-300"
-                    } hover:border-[#1E3A8A] hover:bg-[#1E3A8A]/10 transition`}
-                    disabled={!detail}
+                    onClick={() => handleColorChange(color)}
+                    disabled={!isAvailable}
+                    className={`px-4 py-2 rounded-lg border ${selectedDetail?.color?.name === color
+                      ? "border-[#1E3A8A] bg-[#1E3A8A]/10 text-[#1E3A8A]"
+                      : "border-gray-300"
+                      } ${!isAvailable ? "opacity-50 cursor-not-allowed" : ""
+                      } hover:border-[#1E3A8A] hover:bg-[#1E3A8A]/10 transition`}
                   >
                     {color}
                   </button>
@@ -331,22 +406,24 @@ const ViewProductDetail = () => {
 
         <div className="mb-4">
           <p className="text-lg font-semibold mb-2 text-[#1E3A8A]">Size:</p>
-          {uniqueSizes.length > 0 ? (
+          {availableSizes.length > 0 ? (
             <div className="flex gap-2 flex-wrap">
-              {uniqueSizes.map((size, index) => {
-                const detail = productDetails.find(
-                  (d) => d.size?.sizeName === size
+              {availableSizes.map((size, index) => {
+                const isAvailable = productDetails.some(
+                  (detail) =>
+                    detail?.size?.name === size &&
+                    detail?.color?.name === selectedDetail?.color?.name
                 );
                 return (
                   <button
                     key={index}
-                    onClick={() => detail && handleSelectDetail(detail)}
-                    className={`px-4 py-2 rounded-lg border ${
-                      selectedDetail.size?.sizeName === size
-                        ? "border-[#1E3A8A] bg-[#1E3A8A]/10 text-[#1E3A8A]"
-                        : "border-gray-300"
-                    } hover:border-[#1E3A8A] hover:bg-[#1E3A8A]/10 transition`}
-                    disabled={!detail}
+                    onClick={() => handleSizeChange(size)}
+                    disabled={!isAvailable}
+                    className={`px-4 py-2 rounded-lg border ${selectedDetail?.size?.name === size
+                      ? "border-[#1E3A8A] bg-[#1E3A8A]/10 text-[#1E3A8A]"
+                      : "border-gray-300"
+                      } ${!isAvailable ? "opacity-50 cursor-not-allowed" : ""
+                      } hover:border-[#1E3A8A] hover:bg-[#1E3A8A]/10 transition`}
                   >
                     {size}
                   </button>
@@ -359,6 +436,74 @@ const ViewProductDetail = () => {
           <button className="text-[#1E3A8A] text-sm mt-2 hover:underline">
             Gợi ý tìm size
           </button>
+        </div>
+
+        {/* Thêm phần Cổ áo */}
+        <div className="mb-4">
+          <p className="text-lg font-semibold mb-2 text-[#1E3A8A]">Cổ áo:</p>
+          {availableCollars.length > 0 ? (
+            <div className="flex gap-2 flex-wrap">
+              {availableCollars.map((collar, index) => {
+                const isAvailable = productDetails.some(
+                  (detail) =>
+                    detail?.collar?.name === collar &&
+                    detail?.color?.name === selectedDetail?.color?.name &&
+                    detail?.size?.name === selectedDetail?.size?.name &&
+                    detail?.sleeve?.sleeveName === selectedDetail?.sleeve?.sleeveName
+                );
+                return (
+                  <button
+                    key={index}
+                    onClick={() => handleCollarChange(collar)}
+                    disabled={!isAvailable}
+                    className={`px-4 py-2 rounded-lg border ${selectedDetail?.collar?.name === collar
+                      ? "border-[#1E3A8A] bg-[#1E3A8A]/10 text-[#1E3A8A]"
+                      : "border-gray-300"
+                      } ${!isAvailable ? "opacity-50 cursor-not-allowed" : ""
+                      } hover:border-[#1E3A8A] hover:bg-[#1E3A8A]/10 transition`}
+                  >
+                    {collar}
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-gray-500">Không có kiểu cổ áo nào khả dụng.</p>
+          )}
+        </div>
+
+        {/* Thêm phần Tay áo */}
+        <div className="mb-4">
+          <p className="text-lg font-semibold mb-2 text-[#1E3A8A]">Tay áo:</p>
+          {availableSleeves.length > 0 ? (
+            <div className="flex gap-2 flex-wrap">
+              {availableSleeves.map((sleeve, index) => {
+                const isAvailable = productDetails.some(
+                  (detail) =>
+                    detail?.sleeve?.sleeveName === sleeve &&
+                    detail?.color?.name === selectedDetail?.color?.name &&
+                    detail?.size?.name === selectedDetail?.size?.name &&
+                    detail?.collar?.name === selectedDetail?.collar?.name
+                );
+                return (
+                  <button
+                    key={index}
+                    onClick={() => handleSleeveChange(sleeve)}
+                    disabled={!isAvailable}
+                    className={`px-4 py-2 rounded-lg border ${selectedDetail?.sleeve?.sleeveName === sleeve
+                      ? "border-[#1E3A8A] bg-[#1E3A8A]/10 text-[#1E3A8A]"
+                      : "border-gray-300"
+                      } ${!isAvailable ? "opacity-50 cursor-not-allowed" : ""
+                      } hover:border-[#1E3A8A] hover:bg-[#1E3A8A]/10 transition`}
+                  >
+                    {sleeve}
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-gray-500">Không có kiểu tay áo nào khả dụng.</p>
+          )}
         </div>
 
         {/* Số lượng */}
@@ -398,11 +543,10 @@ const ViewProductDetail = () => {
           <button
             onClick={handleAddToCart}
             disabled={isLoadingCart}
-            className={`flex-1 bg-gray-300 text-black py-4 rounded-lg text-lg font-bold transition ${
-              isLoadingCart
-                ? "opacity-50 cursor-not-allowed"
-                : "hover:bg-gray-400"
-            }`}
+            className={`flex-1 bg-gray-300 text-black py-4 rounded-lg text-lg font-bold transition ${isLoadingCart
+              ? "opacity-50 cursor-not-allowed"
+              : "hover:bg-gray-400"
+              }`}
           >
             {isLoadingCart ? "ĐANG THÊM..." : "THÊM VÀO GIỎ"}
           </button>
