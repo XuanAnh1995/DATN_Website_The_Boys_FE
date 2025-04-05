@@ -27,13 +27,14 @@ const VNPayCallback = () => {
             try {
                 // Kiểm tra trạng thái giao dịch
                 if (vnpResponseCode === "00") {
-                    // Gọi API để hoàn tất thanh toán
+                    // Gọi API để hoàn tất thanh toán và cập nhật tồn kho
                     const paymentData = {
                         customerId: parseInt(localStorage.getItem("pendingCustomerId")) || -1,
                         voucherId: parseInt(localStorage.getItem("pendingVoucherId")) || null,
                     };
-                    await SalePOS.completePayment(vnpTxnRef, paymentData);
-                    console.log("✅ Đã hoàn tất thanh toán sau khi VNPay xác nhận");
+
+                    const response = await SalePOS.completePayment(vnpTxnRef, paymentData);
+                    console.log("✅ Thanh toán VNPay thành công:", response);
 
                     alert("Thanh toán thành công! Đơn hàng của bạn đã được xử lý.");
                 } else {

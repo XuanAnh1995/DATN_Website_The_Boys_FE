@@ -550,12 +550,12 @@ const ViewProductDetail = () => {
           >
             {isLoadingCart ? "ĐANG THÊM..." : "THÊM VÀO GIỎ"}
           </button>
-          <button
+          {/* <button
             onClick={handleBuyNow}
             className="flex-1 bg-[#1E3A8A] text-white py-4 rounded-lg text-lg font-bold hover:bg-[#163172] transition"
           >
             MUA NGAY
-          </button>
+          </button> */}
         </div>
 
         <button className="w-full bg-[#1E3A8A] text-white py-3 rounded-lg text-lg font-bold hover:bg-[#163172] transition mb-4">
