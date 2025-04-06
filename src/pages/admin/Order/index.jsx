@@ -31,6 +31,7 @@ export default function OrderPOS() {
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalElements, setTotalElements] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [search, setSearch] = useState("");
   const [sortConfig, setSortConfig] = useState({ key: "id", direction: "asc" });
@@ -41,7 +42,7 @@ export default function OrderPOS() {
 
   useEffect(() => {
     fetchOrders();
-  }, [currentPage, pageSize]);
+  }, [currentPage, pageSize, sortConfig]);
 
   useEffect(() => {
     filterOrders();
@@ -50,19 +51,21 @@ export default function OrderPOS() {
   const fetchOrders = async () => {
     setIsLoading(true);
     try {
-      const data = await OrderService.getPOSOrders("", currentPage - 1, pageSize);
-      let sortedOrders = data?.content || [];
-      if (sortConfig.key) {
-        sortedOrders.sort((a, b) => {
-          if (a[sortConfig.key] < b[sortConfig.key]) return sortConfig.direction === "asc" ? -1 : 1;
-          if (a[sortConfig.key] > b[sortConfig.key]) return sortConfig.direction === "asc" ? 1 : -1;
-          return 0;
-        });
-      }
-      setOrders(sortedOrders);
-      setTotalPages(data?.totalPages || 1);
-      setFilteredOrders(sortedOrders);
+      const data = await OrderService.getPOSOrders(
+        search,
+        currentPage - 1,
+        pageSize,
+        sortConfig.key,
+        sortConfig.direction
+      );
+
+      setOrders(data.content || []);
+      setTotalPages(data.totalPages || 1);
+      setTotalElements(data.totalElements || 0);
+      setFilteredOrders(data.content || []);
+
     } catch (error) {
+      console.error("Lỗi khi lấy dữ liệu hóa đơn POS:", error);
       toast.error("Lỗi khi tải dữ liệu hóa đơn POS");
     } finally {
       setIsLoading(false);
@@ -139,6 +142,11 @@ export default function OrderPOS() {
     toast.info(`In hóa đơn ${orderId}`);
   };
 
+  // Tính STT dựa trên trang hiện tại và kích thước trang
+  const getSTT = (index) => {
+    return (currentPage - 1) * pageSize + index + 1;
+  };
+
   return (
     <div className="p-6 bg-green-50 min-h-screen">
       <div className="max-w-7xl mx-auto">
@@ -178,7 +186,7 @@ export default function OrderPOS() {
               >
                 <AiOutlineFilter className="mr-2" /> Bộ lọc
               </button>
-              {selectedStatus !== null && (
+              {(selectedStatus !== null || search.trim()) && (
                 <button
                   onClick={handleClearFilters}
                   className="ml-2 px-4 py-3 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
@@ -197,11 +205,10 @@ export default function OrderPOS() {
                   <button
                     key={key}
                     onClick={() => handleStatusFilter(key)}
-                    className={`px-4 py-2 rounded-lg transition ${
-                      selectedStatus === key
-                        ? "bg-green-500 text-white shadow-md"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    }`}
+                    className={`px-4 py-2 rounded-lg transition ${selectedStatus === key
+                      ? "bg-green-500 text-white shadow-md"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      }`}
                   >
                     {orderStatusMap[key]}
                   </button>
@@ -278,7 +285,7 @@ export default function OrderPOS() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredOrders.map((item, index) => (
                     <tr key={item.id} className="hover:bg-green-50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{index + 1}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{getSTT(index)}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">{item.orderCode}</div>
                       </td>
@@ -289,16 +296,18 @@ export default function OrderPOS() {
                         <div className="text-sm text-gray-900">{item.employee?.fullname || "N/A"}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-700 font-medium">
-                        {formatCurrency(item.originalTotal)}
+                        {formatCurrency(item.originalTotal || item.totalBill)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-700 font-medium">
                         {formatCurrency(item.totalBill)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{item.paymentMethod || "Tiền mặt"}</div>
+                        <div className="text-sm text-gray-900">
+                          {item.paymentMethod === 1 ? "Chuyển khoản" : "Tiền mặt"}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <div className="text-sm font-medium">{item.totalAmount}</div>
+                        <div className="text-sm font-medium">{item.totalAmount || 0}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         <span className={getStatusClass(item.statusOrder)}>
@@ -329,7 +338,7 @@ export default function OrderPOS() {
           )}
         </div>
 
-        {filteredOrders.length > 0 && (
+        {totalElements > 0 && (
           <div className="bg-white p-4 rounded-lg shadow mt-6">
             <div className="flex flex-wrap items-center justify-between">
               <div className="flex items-center space-x-2">
@@ -346,25 +355,23 @@ export default function OrderPOS() {
                 </select>
                 <span className="text-sm text-gray-700 hidden sm:inline">
                   Trang <span className="font-medium">{currentPage}</span> /{" "}
-                  <span className="font-medium">{totalPages}</span>
+                  <span className="font-medium">{totalPages}</span> (Tổng: {totalElements})
                 </span>
               </div>
               <div className="flex items-center space-x-1 mt-4 sm:mt-0">
                 <button
                   onClick={() => handlePageChange(1)}
                   disabled={currentPage === 1}
-                  className={`p-2 border rounded-md ${
-                    currentPage === 1 ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-white hover:bg-gray-50 text-gray-700"
-                  }`}
+                  className={`p-2 border rounded-md ${currentPage === 1 ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-white hover:bg-gray-50 text-gray-700"
+                    }`}
                 >
                   &laquo;
                 </button>
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className={`p-2 border rounded-md ${
-                    currentPage === 1 ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-white hover:bg-gray-50 text-gray-700"
-                  }`}
+                  className={`p-2 border rounded-md ${currentPage === 1 ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-white hover:bg-gray-50 text-gray-700"
+                    }`}
                 >
                   &lt;
                 </button>
@@ -372,11 +379,10 @@ export default function OrderPOS() {
                   <button
                     key={number}
                     onClick={() => handlePageChange(number)}
-                    className={`p-2 border rounded-md min-w-[40px] ${
-                      currentPage === number
-                        ? "bg-green-500 text-white"
-                        : "bg-white hover:bg-gray-50 text-gray-700"
-                    }`}
+                    className={`p-2 border rounded-md min-w-[40px] ${currentPage === number
+                      ? "bg-green-500 text-white"
+                      : "bg-white hover:bg-gray-50 text-gray-700"
+                      }`}
                   >
                     {number}
                   </button>
@@ -384,18 +390,16 @@ export default function OrderPOS() {
                 <button
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className={`p-2 border rounded-md ${
-                    currentPage === totalPages ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-white hover:bg-gray-50 text-gray-700"
-                  }`}
+                  className={`p-2 border rounded-md ${currentPage === totalPages ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-white hover:bg-gray-50 text-gray-700"
+                    }`}
                 >
                   &gt;
                 </button>
                 <button
                   onClick={() => handlePageChange(totalPages)}
                   disabled={currentPage === totalPages}
-                  className={`p-2 border rounded-md ${
-                    currentPage === totalPages ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-white hover:bg-gray-50 text-gray-700"
-                  }`}
+                  className={`p-2 border rounded-md ${currentPage === totalPages ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-white hover:bg-gray-50 text-gray-700"
+                    }`}
                 >
                   &raquo;
                 </button>
