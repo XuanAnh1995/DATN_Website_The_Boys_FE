@@ -5,6 +5,9 @@ import SizeService from "../../../services/SizeService"
 import CustomerService from "../../../services/CustomerService"
 import { FaShoppingCart, FaTrash, FaPlus, FaTimes } from "react-icons/fa";
 import QRCode from "react-qr-code"; // Import thư viện qrcode.react
+import Toast from "../POS/components/Toast"
+import { debounce } from "lodash";
+import { data } from "autoprefixer";
 
 const SalePOSPage = () => {
     const [searchTerm, setSearchTerm] = useState("");
@@ -27,6 +30,27 @@ const SalePOSPage = () => {
         size: ""
     });
 
+    // thêm state để quản lý lỗi validation và trạng thái loading:
+    const [formErrors, setFormErrors] = useState({});
+    const [isLoading, setIsLoading] = useState(false);
+    const [notification, setNotification] = useState(null);
+    const [isSearching, setIsSearching] = useState(false);
+
+    const validateForm = () => {
+        const errors = {};
+        if (!newCustomer.fullname.trim()) {
+            errors.fullname = "Họ tên không được để trống";
+        }
+        if (!newCustomer.phone.trim()) {
+            errors.phone = "Số điện thoại không được để trống";
+        } else if (!/^\d{10}$/.test(newCustomer.phone.trim())) {
+            errors.phone = "Số điện thoại phải có đúng 10 chữ số";
+        }
+        if (newCustomer.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newCustomer.email.trim())) {
+            errors.email = "Email không hợp lệ";
+        }
+        return errors;
+    };
 
     // State mới cho danh sách màu sắc và kích thước
     const [colors, setColors] = useState([]);
@@ -91,6 +115,7 @@ const SalePOSPage = () => {
         setEmail(customer.email);
         setSearchKeyword(customer.fullname); // Hiển thị tên khách hàng trong input
         setFilteredCustomers([]); // Ẩn danh sách gợi ý
+        setIsSearching(false); // Tắt loading sau khi chọn khách hàng
         if (activeOrderIndex !== null) {
             setOrders(prevOrders => {
                 const updatedOrders = [...prevOrders];
@@ -261,22 +286,41 @@ const SalePOSPage = () => {
         }
     };
 
+    
     const handleSearchCustomer = (e) => {
         const keyword = e.target.value.toLowerCase();
         setSearchKeyword(keyword);
 
         if (!keyword) {
             setFilteredCustomers([]);
+            setIsSearching(false); // Tắt loading khi không có từ khóa
             return;
         }
 
-        const results = customers.filter((customer) =>
-            (customer.fullname?.toLowerCase() || "").includes(keyword) ||  // ✅ Kiểm tra fullname
-            (customer.phone || "").includes(keyword) ||  // ✅ Kiểm tra phone
-            (customer.email?.toLowerCase() || "").includes(keyword)  // ✅ Kiểm tra email
-        );
+        setIsSearching(true); // Bật loading khi bắt đầu tìm kiếm
+
+        // Chuẩn hóa và tìm kiếm trong danh sách khách hàng
+        const results = customers.filter((customer) => {
+            // Chuẩn hóa các trường của khách hàng
+            const fullname = (customer.fullname || "").trim().toLowerCase();
+            const phone = (customer.phone || "").trim().toLowerCase();
+            const email = (customer.email || "").trim().toLowerCase();
+
+            // Kiểm tra từ khóa có trong các trường không
+            return (
+                fullname.includes(keyword) ||
+                phone.includes(keyword) ||
+                email.includes(keyword)
+            );
+        });
+
+        // Ghi log để debug
+        console.log("Từ khóa tìm kiếm:", keyword);
+        console.log("Danh sách khách hàng:", customers);
+        console.log("Kết quả tìm kiếm:", results);
 
         setFilteredCustomers(results);
+        setIsSearching(false); // Tắt loading khi tìm kiếm hoàn tất
     };
 
     const handleVoucherChange = (voucherCode) => {
@@ -342,6 +386,7 @@ const SalePOSPage = () => {
         }));
     };
 
+    // Hiển thị thông báo
     const handleUseWalkInCustomer = () => {
         // Sử dụng khách vãng lai (không có thông tin cụ thể)
         setSelectedCustomer("walk-in"); // Giá trị đặc biệt cho khách vãng lai
@@ -349,6 +394,10 @@ const SalePOSPage = () => {
         setPhone("");
         setEmail("");
         setShowAddCustomerForm(false);
+        setNotification({
+            type: "info",
+            message: "Đã chọn khách vãng lai"
+        })
     };
 
     // Hàm reset thông tin khách hàng
@@ -363,10 +412,18 @@ const SalePOSPage = () => {
     };
 
     const handleSaveNewCustomer = async () => {
+        const errors = validateForm();
+
+        if (Object.keys(errors).length > 0) {
+            setFormErrors(errors);
+            return;
+        }
+
+        setIsLoading(true);
+        setFormErrors({});
+
+
         try {
-
-            // console.log("Dữ liệu gửi đi:", newCustomer);
-
             // Loại bỏ khoảng trắng đầu/cuối khi nhập thông tin
             const trimmedCustomer = {
                 fullname: newCustomer.fullname.trim(),
@@ -376,25 +433,33 @@ const SalePOSPage = () => {
 
             // Gọi API để lưu khách hàng mới
             const response = await CustomerService.add(trimmedCustomer);
-            console.log("Response từ backend:", response);
 
             // 🟢 Kiểm tra response và cập nhật UI
             if (response?.data?.id) {
-                console.log("🟢 Khách hàng đã được tạo, thêm vào danh sách...");
                 setCustomers(prev => [...prev, response.data]);
 
-                console.log("🟢 Chọn khách hàng mới...");
                 handleSelectCustomer(response.data);
 
-                console.log("🟢 Reset form khách hàng...");
+                setNotification({
+                    type: "success",
+                    message: "Thêm mới khách hàng thành công !"
+                })
+
                 resetNewCustomer(); // Reset form
             } else {
-                console.log("❌ Không thể tạo khách hàng mới, dữ liệu trả về:", response);
+                setNotification({
+                    type: "error",
+                    message: "Không thể thêm khách hàng. Vui lòng thử lại"
+                });
             }
 
         } catch (error) {
-            console.error("Lỗi khi tạo khách hàng mới:", error);
-            // alert(`Lỗi khi tạo khách hàng: ${error.response?.data?.message || "Không xác định"}`);
+            setNotification({
+                type: "error",
+                message: error.response?.data?.message || "Lỗi khi thêm khách hàng"
+            })
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -782,76 +847,130 @@ const SalePOSPage = () => {
 
     return (
         <div className="p-4 bg-gray-100 min-h-screen relative">
-
+            {/* Hiển thị Toast */}
+            {notification && (
+                <Toast
+                    type={notification.type}
+                    message={notification.message}
+                    onClose={() => setNotification(null)}
+                />
+            )}
             {/* Form thêm khách hàng mới */}
             {showAddCustomerForm && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
                     <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-                        {/* Hiển thị thông tin khách hàng đã chọn */}
-                        {selectedCustomer && (
-                            <div className="mt-2 p-2 bg-gray-50 rounded">
-                                <p><strong>Tên:</strong> {selectedCustomer.fullname}</p>
-                                <p><strong>SĐT:</strong> {selectedCustomer.phone}</p>
-                                <p><strong>Email:</strong> {selectedCustomer.email}</p>
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-semibold">Thêm khách hàng mới</h3>
+                            <button
+                                onClick={handleCancelAddCustomer}
+                                className="text-gray-500 hover:text-gray-700"
+                            >
+                                <FaTimes size={20} />
+                            </button>
+                        </div>
+
+                        <div className="space-y-3">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">
+                                    Họ tên <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    name="fullname"
+                                    value={newCustomer.fullname}
+                                    onChange={handleNewCustomerInputChange}
+                                    className={`mt-1 block w-full border rounded-md shadow-sm p-2 ${formErrors.fullname ? "border-red-500" : "border-gray-300"
+                                        }`}
+                                    placeholder="Nhập họ tên khách hàng"
+                                />
+                                {formErrors.fullname && (
+                                    <p className="text-red-500 text-sm mt-1">{formErrors.fullname}</p>
+                                )}
                             </div>
-                        )}
 
-                        {/* Nếu không tìm thấy khách hàng, hiển thị form thêm mới */}
-                        {!selectedCustomer && (
-                            <div className="space-y-3 mt-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Họ tên</label>
-                                    <input
-                                        type="text"
-                                        name="fullname"
-                                        value={newCustomer.fullname}
-                                        onChange={handleNewCustomerInputChange}
-                                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                                        placeholder="Nhập họ tên khách hàng"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Số điện thoại</label>
-                                    <input
-                                        type="tel"
-                                        name="phone"
-                                        value={newCustomer.phone}
-                                        onChange={handleNewCustomerInputChange}
-                                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                                        placeholder="Nhập số điện thoại"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Email</label>
-                                    <input
-                                        type="email"
-                                        name="email"
-                                        value={newCustomer.email}
-                                        onChange={handleNewCustomerInputChange}
-                                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                                        placeholder="Nhập email"
-                                    />
-                                </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">
+                                    Số điện thoại <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="tel"
+                                    name="phone"
+                                    value={newCustomer.phone}
+                                    onChange={handleNewCustomerInputChange}
+                                    className={`mt-1 block w-full border rounded-md shadow-sm p-2 ${formErrors.phone ? "border-red-500" : "border-gray-300"
+                                        }`}
+                                    placeholder="Nhập số điện thoại"
+                                />
+                                {formErrors.phone && (
+                                    <p className="text-red-500 text-sm mt-1">{formErrors.phone}</p>
+                                )}
                             </div>
-                        )}
 
-                        {/* Nút Hành Động */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700">
+                                    Email
+                                </label>
+                                <input
+                                    type="email"
+                                    name="email"
+                                    value={newCustomer.email}
+                                    onChange={handleNewCustomerInputChange}
+                                    className={`mt-1 block w-full border rounded-md shadow-sm p-2 ${formErrors.email ? "border-red-500" : "border-gray-300"
+                                        }`}
+                                    placeholder="Nhập email (không bắt buộc)"
+                                />
+                                {formErrors.email && (
+                                    <p className="text-red-500 text-sm mt-1">{formErrors.email}</p>
+                                )}
+                            </div>
+                        </div>
+
                         <div className="mt-6 flex justify-between">
                             <button
                                 onClick={handleUseWalkInCustomer}
                                 className="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                                title="Sử dụng khách vãng lai mà không lưu thông tin"
                             >
-                                Khách vãng lai
+                                Sử dụng khách vãng lai
                             </button>
-
-                            <button
-                                onClick={handleSaveNewCustomer}
-                                className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-                            >
-                                Lưu khách hàng
-                            </button>
+                            <div className="flex space-x-2">
+                                <button
+                                    onClick={handleCancelAddCustomer}
+                                    className="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                                >
+                                    Hủy
+                                </button>
+                                <button
+                                    onClick={handleSaveNewCustomer}
+                                    disabled={isLoading}
+                                    className={`inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white ${isLoading ? "bg-blue-400" : "bg-blue-600 hover:bg-blue-700"
+                                        }`}
+                                >
+                                    {isLoading ? (
+                                        <svg
+                                            className="animate-spin h-5 w-5 mr-2 text-white"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <circle
+                                                className="opacity-25"
+                                                cx="12"
+                                                cy="12"
+                                                r="10"
+                                                stroke="currentColor"
+                                                strokeWidth="4"
+                                            />
+                                            <path
+                                                className="opacity-75"
+                                                fill="currentColor"
+                                                d="M4 12a8 8 0 018-8v8H4z"
+                                            />
+                                        </svg>
+                                    ) : null}
+                                    Lưu khách hàng
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1117,45 +1236,97 @@ const SalePOSPage = () => {
 
                 {/* Thông tin thanh toán */}
                 <div className="bg-white p-4 rounded shadow">
-                    <h3 className="text-lg font-semibold">Khách hàng</h3>
                     {/* Ô tìm kiếm khách hàng */}
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Tìm kiếm khách hàng
+                    </label>
                     <div className="flex items-center space-x-2 w-80">
-                        {/* Ô nhập tìm kiếm */}
                         <div className="relative flex-1">
                             <input
                                 type="text"
                                 value={searchKeyword}
                                 onChange={handleSearchCustomer}
-                                placeholder="🔍 Nhập tên, số điện thoại hoặc email..."
-                                className="border p-2 w-full rounded-md shadow-sm"
+                                placeholder="Nhập tên, số điện thoại hoặc email..."
+                                className="border p-2 w-full rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             />
+                            {/* Trạng thái loading khi tìm kiếm */}
+                            {isSearching && (
+                                <div className="absolute right-2 top-2">
+                                    <svg
+                                        className="animate-spin h-5 w-5 text-blue-500"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <circle
+                                            className="opacity-25"
+                                            cx="12"
+                                            cy="12"
+                                            r="10"
+                                            stroke="currentColor"
+                                            strokeWidth="4"
+                                        />
+                                        <path
+                                            className="opacity-75"
+                                            fill="currentColor"
+                                            d="M4 12a8 8 0 018-8v8H4z"
+                                        />
+                                    </svg>
+                                </div>
+                            )}
 
                             {/* Danh sách gợi ý khách hàng */}
                             {filteredCustomers.length > 0 && (
-                                <ul className="absolute z-10 bg-white border rounded-md w-full mt-1 shadow">
+                                <ul className="absolute z-10 bg-white border rounded-md w-full mt-1 shadow-lg max-h-60 overflow-y-auto">
                                     {filteredCustomers.map((customer) => (
                                         <li
                                             key={customer.id}
                                             onClick={() => handleSelectCustomer(customer)}
-                                            className="p-2 hover:bg-gray-100 cursor-pointer"
+                                            className="p-3 hover:bg-blue-50 cursor-pointer flex items-center space-x-2 border-b last:border-b-0"
                                         >
-                                            {customer.fullname} - {customer.phone}
+                                            <svg
+                                                className="h-5 w-5 text-gray-500"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth="2"
+                                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                                                />
+                                            </svg>
+                                            <div>
+                                                <p className="font-medium text-gray-800">{customer.fullname}</p>
+                                                <p className="text-sm text-gray-500">{customer.phone}</p>
+                                            </div>
                                         </li>
                                     ))}
                                 </ul>
                             )}
+                            {/* Thông báo khi không tìm thấy khách hàng */}
+                            {!isSearching && searchKeyword && filteredCustomers.length === 0 && (
+                                <div className="absolute z-10 bg-white border rounded-md w-full mt-1 shadow-lg p-3 text-gray-500">
+                                    Không tìm thấy khách hàng.{" "}
+                                    <button
+                                        onClick={handleAddNewCustomerClick}
+                                        className="text-blue-600 hover:underline"
+                                    >
+                                        Thêm khách hàng mới
+                                    </button>
+                                </div>
+                            )}
                         </div>
-
-                        {/* Nút Thêm khách hàng */}
                         <button
                             onClick={handleAddNewCustomerClick}
-                            className="bg-blue-600 text-white p-2 rounded flex items-center justify-center w-10 h-10"
+                            className="bg-blue-600 text-white p-2 rounded flex items-center justify-center w-10 h-10 hover:bg-blue-700"
                             title="Thêm khách hàng mới"
                         >
                             <FaPlus />
                         </button>
                     </div>
-
 
                     {customerName && (
                         <div className="mt-2 p-2 bg-gray-50 rounded">
@@ -1252,24 +1423,12 @@ const SalePOSPage = () => {
                         <div className="mt-4 text-center">
                             <p className="text-sm text-gray-700 mb-2">Quét mã QR để thanh toán qua VNPay:</p>
                             <QRCode value={paymentUrl} size={200} level="H" />
-                            <p className="text-sm text-gray-500 mt-2">
-                                Hoặc{" "}
-                                <a
-                                    href={paymentUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-blue-600 hover:underline"
-                                >
-                                    nhấn vào đây
-                                </a>{" "}
-                                để thanh toán trực tiếp.
-                            </p>
                         </div>
                     )}
 
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
 
