@@ -258,10 +258,10 @@ const OrderTimeline = ({ currentStatus, updateOrderStatus }) => {
                                     </button>
                                     <span
                                         className={`mt-2 text-sm font-medium ${nodeStatus === "current"
-                                                ? "text-blue-600"
-                                                : nodeStatus === "completed"
-                                                    ? "text-green-600"
-                                                    : "text-gray-600"
+                                            ? "text-blue-600"
+                                            : nodeStatus === "completed"
+                                                ? "text-green-600"
+                                                : "text-gray-600"
                                             }`}
                                     >
                                         {orderStatusMap[status]}
@@ -310,10 +310,10 @@ const OrderTimeline = ({ currentStatus, updateOrderStatus }) => {
                                             </button>
                                             <span
                                                 className={`mt-2 text-sm font-medium ${nodeStatus === "current"
-                                                        ? "text-blue-600"
-                                                        : nodeStatus === "completed"
-                                                            ? "text-green-600"
-                                                            : "text-gray-600"
+                                                    ? "text-blue-600"
+                                                    : nodeStatus === "completed"
+                                                        ? "text-green-600"
+                                                        : "text-gray-600"
                                                     }`}
                                             >
                                                 {orderStatusMap[status]}
@@ -331,8 +331,8 @@ const OrderTimeline = ({ currentStatus, updateOrderStatus }) => {
                             <div className="mt-12 flex justify-center">
                                 <button
                                     className={`px-4 py-2 rounded-full border-2 font-medium text-sm transition-all duration-300 flex items-center gap-2 ${isValidNextStatus(currentStatus, "-1")
-                                            ? "bg-white text-red-700 border-red-300 hover:bg-red-50"
-                                            : "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                                        ? "bg-white text-red-700 border-red-300 hover:bg-red-50"
+                                        : "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
                                         }`}
                                     onClick={() => updateOrderStatus("-1")}
                                     disabled={!isValidNextStatus(currentStatus, "-1")}
@@ -664,6 +664,7 @@ const OrderDetail = () => {
                     )}
 
                     {/* Order Details */}
+                    {/* Order Details */}
                     <div className="p-6">
                         <h3 className="text-lg font-semibold text-gray-700 mb-4">Các sản phẩm</h3>
                         <div className="overflow-x-auto border rounded-lg shadow-md">
@@ -674,8 +675,6 @@ const OrderDetail = () => {
                                         <th className="py-3 px-4 text-center">Số lượng</th>
                                         <th className="py-3 px-4 text-center">Màu Sắc</th>
                                         <th className="py-3 px-4 text-center">Size</th>
-                                        <th className="py-3 px-4 text-center">Giá trước giảm</th>
-                                        <th className="py-3 px-4 text-center">Giá sau giảm</th>
                                         <th className="py-3 px-4 text-right">Đơn giá</th>
                                         <th className="py-3 px-4 text-right">Thành tiền</th>
                                     </tr>
@@ -687,8 +686,6 @@ const OrderDetail = () => {
                                             const quantity = detail.quantity ?? 0;
                                             const colorName = detail.productDetail?.color?.name ?? "Không có màu";
                                             const sizeName = detail.productDetail?.size?.name ?? "Không có kích thước";
-                                            const originalTotal = orderDetails.originalTotal ?? 0;
-                                            const totalBill = orderDetails.totalBill ?? 0;
                                             const price = detail.productDetail?.salePrice ?? product?.salePrice ?? 0;
                                             const totalPrice = price * quantity;
 
@@ -713,12 +710,6 @@ const OrderDetail = () => {
                                                     <td className="py-3 px-4 text-center font-medium">{quantity}</td>
                                                     <td className="py-3 px-4 text-center font-medium">{colorName}</td>
                                                     <td className="py-3 px-4 text-center font-medium">{sizeName}</td>
-                                                    <td className="py-3 px-4 text-center font-medium">
-                                                        {formatCurrency(originalTotal)}
-                                                    </td>
-                                                    <td className="py-3 px-4 text-center font-medium">
-                                                        {formatCurrency(totalBill)}
-                                                    </td>
                                                     <td className="py-3 px-4 text-right font-medium text-green-600">
                                                         {formatCurrency(price)}
                                                     </td>
@@ -730,7 +721,7 @@ const OrderDetail = () => {
                                         })
                                     ) : (
                                         <tr>
-                                            <td colSpan="8" className="py-3 px-4 text-center text-gray-500">
+                                            <td colSpan="6" className="py-3 px-4 text-center text-gray-500">
                                                 Không có sản phẩm nào trong đơn hàng
                                             </td>
                                         </tr>
@@ -738,24 +729,23 @@ const OrderDetail = () => {
                                 </tbody>
                                 <tfoot className="bg-gray-100 text-gray-800 font-bold border-t">
                                     <tr>
-                                        <td colSpan="6" className="py-4 px-4 text-right">
+                                        <td colSpan="4" className="py-4 px-4 text-right">
                                             Tổng tiền trước khi áp voucher:
                                         </td>
                                         <td colSpan="2" className="py-4 px-4 text-right text-xl text-gray-700">
-                                            {formatCurrency(orderDetails.originalTotal ?? 0)}
+                                            {formatCurrency(orderDetails.totalAmount ?? 0)}
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td colSpan="6" className="py-4 px-4 text-right">Số tiền trừ:</td>
+                                        <td colSpan="4" className="py-4 px-4 text-right">Số tiền trừ:</td>
                                         <td colSpan="2" className="py-4 px-4 text-right text-xl text-green-600">
                                             {formatCurrency(
-                                                orderDetails.discount ??
-                                                ((orderDetails.originalTotal ?? 0) - (orderDetails.totalBill ?? 0))
+                                                ((orderDetails.totalAmount ?? 0) - (orderDetails.totalBill ?? 0))
                                             )}
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td colSpan="6" className="py-4 px-4 text-right">
+                                        <td colSpan="4" className="py-4 px-4 text-right">
                                             Tổng tiền sau khi áp voucher:
                                         </td>
                                         <td colSpan="2" className="py-4 px-4 text-right text-xl text-red-600">
@@ -827,7 +817,7 @@ const OrderDetail = () => {
                         </button>
                         <button
                             className="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-800 transition flex items-center"
-                            onClick={() => navigate("/admin/order")}
+                            onClick={() => navigate("/admin/order/online")}
                         >
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"

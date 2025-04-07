@@ -310,7 +310,7 @@ export default function OnlineOrder() {
                           <div className="text-sm text-gray-900">{item.employee?.fullname || "N/A"}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-700 font-medium">
-                          {formatCurrency(item.originalTotal)}
+                          {formatCurrency(item.totalAmount)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-700 font-medium">
                           {formatCurrency(item.totalBill)}

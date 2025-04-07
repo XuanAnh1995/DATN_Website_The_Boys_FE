@@ -143,6 +143,20 @@ const OrderService = {
     }
   },
 
+  // Cập nhật trạng thái đơn hàng online
+  updateOrderStatus: async (id, newStatus) => {
+    try {
+      const response = await api.put(`${API_URL_ORDER_ONLINE}/${id}/status`, null, {
+        params: { newStatus }
+      });
+      console.log(`Trạng thái đơn hàng online ${id} đã cập nhật thành ${newStatus}:`, response.data.data);
+      return response.data.data; // Trả về dữ liệu đơn hàng đã cập nhật
+    } catch (error) {
+      console.error(`❌ Lỗi khi cập nhật trạng thái đơn hàng online ${id}:`, error.response?.data || error.message);
+      throw error;
+    }
+  },
+
 };
 
 export default OrderService;
