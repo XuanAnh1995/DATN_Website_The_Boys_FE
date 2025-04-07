@@ -91,7 +91,7 @@ const SalePOS = {
     async createVNPayPaymentUrl(orderId) {
         console.log(`📌 Tạo URL thanh toán VNPay cho đơn hàng #${orderId}`);
         try {
-            const response = await api.post(`/payment/create-payment-url/${orderId}`, {}, {
+            const response = await api.post(`/payment/create-payment-url-pos/${orderId}`, {}, {
                 params: { isPOS: true } // Chỉ định đơn hàng POS
             });
             console.log("✅ URL thanh toán:", response.data);
@@ -160,12 +160,12 @@ const SalePOS = {
                 customerId: orderData.customerId,
                 voucherId: orderData.voucherId,
             };
-            await SalePOS.updateOrderInfo(orderId, paymentData); 
+            await SalePOS.updateOrderInfo(orderId, paymentData);
             console.log("✅ Đã cập nhật customerId và voucherId");
 
             // Nếu không phải VNPay, hoàn tất thanh toán ngay
             if (orderData.paymentMethod !== "vnpay") {
-                console.log("🔍 Xử lý thanh toán tiền mặt cho đơn hàng:", orderId); 
+                console.log("🔍 Xử lý thanh toán tiền mặt cho đơn hàng:", orderId);
                 const paymentResponse = await SalePOS.completePayment(orderId, paymentData);
                 console.log("✅ Thanh toán thành công:", paymentResponse);
                 return { orderId, paymentResponse };
@@ -182,17 +182,17 @@ const SalePOS = {
     },
 
     /** 🖨️ Lấy sản phẩm theo mã vạch */
-  getProductByBarcode: async (barcode) => {
-    console.log("📌 Lấy sản phẩm theo mã vạch:", barcode);
-    try {
-        const response = await api.get(API_Barcode);
-      console.log("✅ Sản phẩm từ mã vạch:", response.data);
-      return response.data; // Giả sử backend trả về dữ liệu sản phẩm
-    } catch (error) {
-      console.error("❌ Lỗi khi lấy sản phẩm theo mã vạch:", error.response?.data || error.message);
-      throw error;
-    }
-  },
+    getProductByBarcode: async (barcode) => {
+        console.log("📌 Lấy sản phẩm theo mã vạch:", barcode);
+        try {
+            const response = await api.get(API_Barcode);
+            console.log("✅ Sản phẩm từ mã vạch:", response.data);
+            return response.data; // Giả sử backend trả về dữ liệu sản phẩm
+        } catch (error) {
+            console.error("❌ Lỗi khi lấy sản phẩm theo mã vạch:", error.response?.data || error.message);
+            throw error;
+        }
+    },
 };
 
 export default SalePOS;
