@@ -28,16 +28,16 @@ const getStatusClass = (status) => {
   return status === -1
     ? `${baseClasses} bg-red-100 text-red-800`
     : status === 0
-    ? `${baseClasses} bg-yellow-100 text-yellow-800`
-    : status === 1
-    ? `${baseClasses} bg-blue-100 text-blue-800`
-    : status === 2
-    ? `${baseClasses} bg-green-100 text-green-800`
-    : status === 3
-    ? `${baseClasses} bg-purple-100 text-purple-800`
-    : status === 4
-    ? `${baseClasses} bg-orange-100 text-orange-800`
-    : `${baseClasses} bg-gray-100 text-gray-800`;
+      ? `${baseClasses} bg-yellow-100 text-yellow-800`
+      : status === 1
+        ? `${baseClasses} bg-blue-100 text-blue-800`
+        : status === 2
+          ? `${baseClasses} bg-green-100 text-green-800`
+          : status === 3
+            ? `${baseClasses} bg-purple-100 text-purple-800`
+            : status === 4
+              ? `${baseClasses} bg-orange-100 text-orange-800`
+              : `${baseClasses} bg-gray-100 text-gray-800`;
 };
 
 export default function OnlineOrder() {
@@ -208,11 +208,10 @@ export default function OnlineOrder() {
                   <button
                     key={key}
                     onClick={() => handleStatusFilter(key)}
-                    className={`px-4 py-2 rounded-lg transition ${
-                      selectedStatus === key
+                    className={`px-4 py-2 rounded-lg transition ${selectedStatus === key
                         ? "bg-green-500 text-white shadow-md"
                         : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    }`}
+                      }`}
                   >
                     {orderStatusMap[key]}
                   </button>
@@ -295,46 +294,53 @@ export default function OnlineOrder() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-  {filteredOrders.map((item, index) => {
-    // Tính số tiền giảm
-    const discount = item.originalTotal - item.totalBill;
+                  {filteredOrders.map((item, index) => {
+                    const discount = item.originalTotal - item.totalBill;
 
-    return (
-      <tr key={item.id} className="hover:bg-green-50 transition-colors">
-        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{index + 1}</td>
-        <td className="px-6 py-4 whitespace-nowrap">
-          <div className="text-sm font-medium text-gray-900">{item.orderCode}</div>
-        </td>
-        <td className="px-6 py-4 whitespace-nowrap">
-          <div className="text-sm text-gray-900">{item.customer?.fullname || "N/A"}</div>
-        </td>
-        <td className="px-6 py-4 whitespace-nowrap">
-          <div className="text-sm text-gray-900">{item.employee?.fullname || "N/A"}</div>
-        </td>
-        <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-700 font-medium">
-          {formatCurrency(item.originalTotal)}
-        </td>
-        <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-700 font-medium">
-          {formatCurrency(item.totalBill)}
-        </td>
-        <td className="px-6 py-4 whitespace-nowrap">
-          <div className="text-sm text-gray-900">{item.voucher?.voucherName || "Không Có Voucher"}</div>
-        </td>
-        <td className="px-6 py-4 whitespace-nowrap text-center">
-          <div className="text-sm font-medium">{item.totalAmount}</div>
-        </td>
-        <td className="px-6 py-4 whitespace-nowrap text-center">
-          <span className={getStatusClass(item.statusOrder)}>
-            {orderStatusMap[item.statusOrder.toString()] || "Không xác định"}
-          </span>
-        </td>
-        <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-700 font-medium">
-          {formatCurrency(discount)} {/* Hiển thị số tiền giảm */}
-        </td>
-      </tr>
-    );  
-  })}
-</tbody>
+                    return (
+                      <tr key={item.id} className="hover:bg-green-50 transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{index + 1}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">{item.orderCode}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{item.customer?.fullname || "N/A"}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{item.employee?.fullname || "N/A"}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-700 font-medium">
+                          {formatCurrency(item.originalTotal)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-700 font-medium">
+                          {formatCurrency(item.totalBill)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{item.voucher?.voucherName || "Không Có Voucher"}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-center">
+                          <div className="text-sm font-medium">{item.totalAmount}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-center">
+                          <span className={getStatusClass(item.statusOrder)}>
+                            {orderStatusMap[item.statusOrder.toString()] || "Không xác định"}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-center">
+                          <div className="flex justify-center space-x-2">
+                            <button
+                              className="text-green-500 hover:text-green-700 p-1 rounded-full hover:bg-green-100 transition-colors"
+                              onClick={() => navigate(`/admin/order/online/${item.id}/details`)}
+                              title="Xem chi tiết"
+                            >
+                              <AiOutlineEye size={20} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
 
               </table>
             </div>
@@ -365,18 +371,16 @@ export default function OnlineOrder() {
                 <button
                   onClick={() => handlePageChange(1)}
                   disabled={currentPage === 1}
-                  className={`p-2 border rounded-md ${
-                    currentPage === 1 ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-white hover:bg-gray-50 text-gray-700"
-                  }`}
+                  className={`p-2 border rounded-md ${currentPage === 1 ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-white hover:bg-gray-50 text-gray-700"
+                    }`}
                 >
                   &laquo;
                 </button>
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className={`p-2 border rounded-md ${
-                    currentPage === 1 ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-white hover:bg-gray-50 text-gray-700"
-                  }`}
+                  className={`p-2 border rounded-md ${currentPage === 1 ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-white hover:bg-gray-50 text-gray-700"
+                    }`}
                 >
                   &lt;
                 </button>
@@ -384,11 +388,10 @@ export default function OnlineOrder() {
                   <button
                     key={number}
                     onClick={() => handlePageChange(number)}
-                    className={`p-2 border rounded-md min-w-[40px] ${
-                      currentPage === number
+                    className={`p-2 border rounded-md min-w-[40px] ${currentPage === number
                         ? "bg-green-500 text-white"
                         : "bg-white hover:bg-gray-50 text-gray-700"
-                    }`}
+                      }`}
                   >
                     {number}
                   </button>
@@ -396,18 +399,16 @@ export default function OnlineOrder() {
                 <button
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className={`p-2 border rounded-md ${
-                    currentPage === totalPages ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-white hover:bg-gray-50 text-gray-700"
-                  }`}
+                  className={`p-2 border rounded-md ${currentPage === totalPages ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-white hover:bg-gray-50 text-gray-700"
+                    }`}
                 >
                   &gt;
                 </button>
                 <button
                   onClick={() => handlePageChange(totalPages)}
                   disabled={currentPage === totalPages}
-                  className={`p-2 border rounded-md ${
-                    currentPage === totalPages ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-white hover:bg-gray-50 text-gray-700"
-                  }`}
+                  className={`p-2 border rounded-md ${currentPage === totalPages ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-white hover:bg-gray-50 text-gray-700"
+                    }`}
                 >
                   &raquo;
                 </button>

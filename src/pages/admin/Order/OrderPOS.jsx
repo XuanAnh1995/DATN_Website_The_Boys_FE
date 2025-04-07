@@ -1,4 +1,3 @@
-// src/pages/admin/Order/index.jsx
 import React, { useState, useEffect } from "react";
 import {
   AiOutlineEye,
@@ -318,7 +317,7 @@ export default function OrderPOS() {
                         <div className="flex justify-center space-x-2">
                           <button
                             className="text-green-500 hover:text-green-700 p-1 rounded-full hover:bg-green-100 transition-colors"
-                            onClick={() => navigate(`/admin/order/${item.id}/details`)}
+                            onClick={() => navigate(`/admin/order/pos/${item.id}/details`)}
                           >
                             <AiOutlineEye size={20} />
                           </button>
