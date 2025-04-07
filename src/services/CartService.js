@@ -1,10 +1,10 @@
-import api from "../ultils/api"; 
+import api from "../ultils/api";
 
 const CartService = {
   async getAllCartItems() {
     try {
       const response = await api.get(`/cart`);
-      return response.data.data; 
+      return response.data.data;
     } catch (error) {
       console.error("Error fetching cart items:", error);
       throw error;
@@ -24,7 +24,7 @@ const CartService = {
   async removeProductFromCart(cartItemId) {
     try {
       const response = await api.delete(`/cart/${cartItemId}`);
-      return response.data; 
+      return response.data;
     } catch (error) {
       console.error("Error removing product from cart:", error);
       throw error;

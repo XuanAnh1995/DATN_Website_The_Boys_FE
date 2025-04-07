@@ -1,5 +1,5 @@
 import api from "../ultils/api";
-import store from "../store"; 
+import store from "../store";
 import { setUser } from "../store/userSlice";
 
 const AuthService = {
@@ -58,45 +58,50 @@ const AuthService = {
       store.dispatch(setUser({ name: "User", email: "", role, token }));
     }
   },
-  
+
   async getCurrentUser() {
     try {
-      const token = this.getToken(); 
+      const token = this.getToken();
       if (!token) {
         throw new Error("Không tìm thấy token, vui lòng đăng nhập lại.");
       }
-  
+
       const response = await api.get("/auth/current-user", {
-        headers: { Authorization: `Bearer ${token}` }, 
+        headers: { Authorization: `Bearer ${token}` },
       });
-  
+
       const user = response.data.data;
       store.dispatch(setUser(user));
       return user;
     } catch (error) {
       console.error("Lỗi khi lấy thông tin người dùng:", error);
-      throw error.response?.data || { message: "Không thể lấy thông tin người dùng." };
+      throw (
+        error.response?.data || {
+          message: "Không thể lấy thông tin người dùng.",
+        }
+      );
     }
   },
-  
+
   async getCurrentUserAddresses() {
     try {
-      const token = this.getToken(); 
+      const token = this.getToken();
       if (!token) {
         throw new Error("Không tìm thấy token, vui lòng đăng nhập lại.");
       }
-  
+
       const response = await api.get("/auth/current-user/addresses", {
-        headers: { Authorization: `Bearer ${token}` }, 
+        headers: { Authorization: `Bearer ${token}` },
       });
-  
+
       return response.data.data || [];
     } catch (error) {
       console.error("Lỗi khi lấy địa chỉ người dùng:", error);
-      throw error.response?.data || { message: "Không thể lấy địa chỉ người dùng." };
+      throw (
+        error.response?.data || { message: "Không thể lấy địa chỉ người dùng." }
+      );
     }
   },
-  
 };
 
 export default AuthService;
