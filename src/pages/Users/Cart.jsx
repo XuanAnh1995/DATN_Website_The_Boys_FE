@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import CartService from "../../services/CartService";
+import { toast } from "react-toastify";
 
 function Cart() {
   const [cartItems, setCartItems] = useState([]);
@@ -38,7 +39,7 @@ function Cart() {
         return newQuantities;
       });
     } catch (error) {
-      console.error("Error removing product from cart:", error);
+      toast.error(error.response.data.message);
     }
   };
 
@@ -58,13 +59,66 @@ function Cart() {
         cartItemId,
         newQuantity
       );
+
+      // Cập nhật lại cartItems và localQuantities khi thành công
       setCartItems((prevItems) =>
         prevItems.map((item) => (item.id === cartItemId ? updatedItem : item))
       );
+      setLocalQuantities((prev) => ({
+        ...prev,
+        [cartItemId]: updatedItem.quantity,
+      }));
     } catch (error) {
-      console.error("Error updating cart item quantity:", error);
+      toast.error(error.response.data.message);
+
+      // Nếu thất bại, lấy lại quantity cũ từ cartItems để reset input
+      const originalItem = cartItems.find((item) => item.id === cartItemId);
+      if (originalItem) {
+        setLocalQuantities((prev) => ({
+          ...prev,
+          [cartItemId]: originalItem.quantity,
+        }));
+
+      }
     }
   };
+
+  const updateQuantityAndSync = async (cartItemId, newQuantity) => {
+    if (newQuantity < 1) newQuantity = 1;
+
+    // Cập nhật local trước để phản hồi nhanh UI
+    setLocalQuantities((prev) => ({ ...prev, [cartItemId]: newQuantity }));
+
+    try {
+      const updatedItem = await CartService.updateCartItemQuantity(
+        cartItemId,
+        newQuantity
+      );
+
+      setCartItems((prevItems) =>
+        prevItems.map((item) =>
+          item.id === cartItemId ? updatedItem : item
+        )
+      );
+
+      // Đồng bộ lại local quantity theo BE (nếu có ràng buộc số lượng)
+      setLocalQuantities((prev) => ({
+        ...prev,
+        [cartItemId]: updatedItem.quantity,
+      }));
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Lỗi cập nhật số lượng");
+      const originalItem = cartItems.find((item) => item.id === cartItemId);
+      if (originalItem) {
+        setLocalQuantities((prev) => ({
+          ...prev,
+          [cartItemId]: originalItem.quantity,
+        }));
+      }
+    }
+  };
+
+
 
   const proceedToPayment = () => {
     const totalAmount = cartItems.reduce(
@@ -140,18 +194,17 @@ function Cart() {
                           Thương hiệu: {item.brandName}
                         </p>
                       </div>
+
                       <div className="flex items-center">
                         <button
                           onClick={() =>
-                            handleQuantityInputChange(
+                            updateQuantityAndSync(
                               item.id,
-                              Math.max(
-                                1,
-                                (parseInt(localQuantities[item.id]) || 1) - 1
-                              )
+                              (parseInt(localQuantities[item.id]) || 1) - 1
                             )
                           }
                           className="px-3 py-1 text-orange-500 hover:bg-orange-50 transition-colors"
+                          disabled={(parseInt(localQuantities[item.id]) || 1) <= 1}
                         >
                           −
                         </button>
@@ -166,7 +219,7 @@ function Cart() {
                         />
                         <button
                           onClick={() =>
-                            handleQuantityInputChange(
+                            updateQuantityAndSync(
                               item.id,
                               (parseInt(localQuantities[item.id]) || 1) + 1
                             )
@@ -176,6 +229,8 @@ function Cart() {
                           +
                         </button>
                       </div>
+
+
                       <div className="ml-4">
                         <button
                           onClick={() => handleRemoveItem(item.id)}
