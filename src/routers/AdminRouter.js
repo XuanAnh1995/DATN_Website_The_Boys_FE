@@ -25,9 +25,10 @@ const Sleeve = lazy(() => import("../pages/admin/Attribute/Sleeve"));
 const Promotion = lazy(() => import("../pages/admin/Attribute/Promotion"));
 
 // 📌 Quản lý hóa đơn, voucher
-const InStoreOrder = lazy(() => import("../pages/admin/Order")); // Sử dụng index.jsx cho Hóa đơn POS
+const OrderPOS = lazy(() => import("../pages/admin/Order/OrderPOS")); // Sử dụng index.jsx cho Hóa đơn POS
 const OrderOnline = lazy(() => import("../pages/admin/Order/OrderOnline")); // File mới cho Đơn hàng Online
-const OrderDetail = lazy(() => import("../pages/admin/Order/OrderDetail"));
+const OrderPOSDetail = lazy(() => import("../pages/admin/Order/OrderPOSDetail"));
+const OrderOnlineDetail = lazy(() => import("../pages/admin/Order/OrderOnlineDetail"));
 const Voucher = lazy(() => import("../pages/admin/Voucher"));
 
 // 📌 Quản lý danh mục, thống kê
@@ -50,9 +51,10 @@ const adminRoutes = [
   { path: "attribute/size", component: Size, role: "ADMIN" },
   { path: "attribute/sleeve", component: Sleeve, role: "ADMIN" },
   { path: "attribute/promotion", component: Promotion, role: "ADMIN" },
-  { path: "order/pos", component: InStoreOrder, role: "ADMIN" }, // Route cho Hóa đơn POS
+  { path: "order/pos", component: OrderPOS, role: "ADMIN" }, // Route cho Hóa đơn POS
   { path: "order/online", component: OrderOnline, role: "ADMIN" }, // Route cho Đơn hàng Online
-  { path: "order/:id/details", component: OrderDetail, role: "ADMIN" },
+  { path: "order/pos/:id/details", component: OrderPOSDetail, role: "ADMIN" }, // Chi tiết hóa đơn POS
+  { path: "order/online/:id/details", component: OrderOnlineDetail, role: "ADMIN" }, // Chi tiết đơn hàng Online
   { path: "voucher", component: Voucher, role: "ADMIN" },
   { path: "statistics", component: Statistic, role: "ADMIN" },
 ];

@@ -119,6 +119,30 @@ const OrderService = {
     }
   },
 
+  // Lấy chi tiết đơn hàng online theo ID
+  getOnlineOrderDetails: async (id) => {
+    try {
+      const response = await api.get(`${API_URL_ORDER_ONLINE}/${id}/details`);
+      console.log(`Chi tiết đơn hàng online ${id}:`, response.data.data);
+      return response.data.data;
+    } catch (error) {
+      console.error(`❌ Lỗi khi lấy chi tiết đơn hàng online ${id}:`, error.response?.data || error.message);
+      throw error;
+    }
+  },
+
+  // Lấy chi tiết đơn hàng POS theo ID
+  getPOSOrderDetails: async (id) => {
+    try {
+      const response = await api.get(`${API_URL_ORDER_POS}/${id}/details`);
+      console.log(`Chi tiết đơn hàng POS ${id}:`, response.data.data);
+      return response.data.data;
+    } catch (error) {
+      console.error(`❌ Lỗi khi lấy chi tiết đơn hàng POS ${id}:`, error.response?.data || error.message);
+      throw error;
+    }
+  },
+
 };
 
 export default OrderService;
