@@ -226,14 +226,33 @@ const SalePOSPage = () => {
             const bestVoucher = sortedVouchers[0];
             setOptimalVoucher(bestVoucher || null);
 
-            // Tự động áp dụng voucher tối ưu (tùy chọn)
+            // Chỉ tự động áp dụng nếu chưa có voucher được chọn thủ công
             if (bestVoucher && !selectedVoucher) {
                 handleVoucherChange(bestVoucher.voucherCode);
+            } else if (!bestVoucher) {
+                selectedVoucher("");    // Reset nếu không có voucher hợp lệ
+                setCalculatedDiscount(0);
             }
         } else {
             setOptimalVoucher(null);
+            setSelectedVoucher("");
+            setCalculatedDiscount(0);
         }
     }, [currentOrder.totalAmount, vouchers, selectedVoucher]);
+
+    useEffect(() => {
+        if (activeOrderIndex !== null && selectedVoucher) {
+            const voucher = vouchers.find(v => v.voucherCode === selectedVoucher);
+            if (voucher && currentOrder.totalAmount >= voucher.minCondition) {
+                const discountAmount = calculateDiscount(voucher, currentOrder.totalAmount);
+                setCalculatedDiscount(discountAmount);
+            } else {
+                setCalculatedDiscount(0);
+            }
+        } else {
+            setCalculatedDiscount(0);
+        }
+    }, [currentOrder.totalAmount, selectedVoucher, vouchers, activeOrderIndex]);
 
     // Hàm lấy danh sách sản phẩm chi tiết
     const fetchProductDetails = async () => {
@@ -286,7 +305,7 @@ const SalePOSPage = () => {
         }
     };
 
-    
+
     const handleSearchCustomer = (e) => {
         const keyword = e.target.value.toLowerCase();
         setSearchKeyword(keyword);
@@ -333,10 +352,7 @@ const SalePOSPage = () => {
         console.log("📌 Voucher tìm thấy:", voucher);
 
         if (voucher && currentOrder.totalAmount >= voucher.minCondition) {
-            const discountAmount = Math.min(
-                (currentOrder.totalAmount * voucher.reducedPercent) / 100,
-                voucher.maxDiscount
-            );
+            const discountAmount = calculateDiscount(voucher, currentOrder.totalAmount);
 
             console.log("✅ Giảm giá áp dụng:", discountAmount);
 
@@ -352,17 +368,24 @@ const SalePOSPage = () => {
             console.log("❌ Không đủ điều kiện để áp dụng voucher.");
 
             setCalculatedDiscount(0);
+
+            if (activeOrderIndex != null) {
+                setOrders(prevOrders => {
+                    const updatedOrders = [...prevOrders];
+                    updatedOrders[activeOrderIndex].voucherId = null;
+                    return updatedOrders;
+                })
+            }
         }
     };
 
     // Hàm tính giá trị giảm giá thực tế cho một voucher
     const calculateDiscount = (voucher, totalAmount) => {
         if (!voucher || totalAmount < voucher.minCondition) return 0;
-        const discountAmount = Math.min(
+        return Math.min(
             (totalAmount * voucher.reducedPercent) / 100,
             voucher.maxDiscount
         );
-        return discountAmount;
     };
 
     const handleAddNewCustomerClick = () => {
@@ -537,6 +560,11 @@ const SalePOSPage = () => {
         const product = allProducts.find(p => p.productDetailCode === scannedBarcode);
 
         if (product) {
+            if (product.quantity <= 0) {
+                alert(`Sản phẩm "${product.product?.productName}" đã hết hàng!`);
+                console.warn(`⚠ Sản phẩm ${product.id} đã hết hàng (số lượng: ${product.quantity}).`);
+                return;
+            }
             console.log("✅ Tìm thấy sản phẩm:", product);
             handleAddToCart(product);
         } else {
@@ -544,16 +572,18 @@ const SalePOSPage = () => {
         }
     };
 
-
-
-
-
     // thêm sản phẩm vào giỏ hàng
     const handleAddToCart = (product) => {
         console.log("🛒 [ADD TO CART] Bắt đầu thêm sản phẩm vào giỏ hàng...");
         if (activeOrderIndex === null || activeOrderIndex >= orders.length) {
             alert("Vui lòng tạo hóa đơn trước!");
             console.warn("⚠ Không có đơn hàng nào được chọn. Hãy tạo đơn hàng trước!");
+            return;
+        }
+
+        // Kiểm tra số lượng tồn kho trước khi thêm sản phẩm
+        if (product.quantity <= 0) {
+            alert(`Sản phẩm ${product.product?.productName} đã hết hàng !`);
             return;
         }
 
@@ -763,6 +793,27 @@ const SalePOSPage = () => {
             console.log("⚠ Không có khách hàng nào được chọn.");
             alert("Vui lòng chọn khách hàng!");
             return;
+        }
+
+        // Tính số tiền khách phải trả
+        const amountToPay = currentOrder.totalAmount - calculatedDiscount;
+
+        // Kiểm tra số tiền khách thanh toán nếu là tiền mặt
+        if (paymentMethod === "cash") {
+            if (customerPaid < amountToPay) {
+                console.log("⚠ Số tiền khách thanh toán không đủ.");
+                alert(`Số tiền khách thanh toán (${customerPaid.toLocaleString()} VND) không đủ. Khách cần trả ít nhất ${amountToPay.toLocaleString()} VND.`);
+                return;
+            }
+        }
+
+        // Thêm xác nhận trước khi thanh toán
+        const confirmMessage = `Bạn có chắc chắn muốn thanh toán?\n\nTổng tiền: ${currentOrder.totalAmount.toLocaleString()} VND\nGiảm giá: ${calculatedDiscount.toLocaleString()} VND\nKhách phải trả: ${amountToPay.toLocaleString()} VND\nPhương thức: ${paymentMethod === "cash" ? "Tiền mặt" : "VNPay"}${paymentMethod === "cash" ? `\nKhách thanh toán: ${customerPaid.toLocaleString()} VND\nTiền thừa: ${changeAmount.toLocaleString()} VND` : ""}`;
+        const isConfirmed = window.confirm(confirmMessage);
+
+        if (!isConfirmed) {
+            console.log("❌ Người dùng đã hủy thanh toán.");
+            return; // Dừng lại nếu người dùng hủy
         }
 
         const customerId = selectedCustomer === "walk-in" ? -1 : selectedCustomer;
@@ -1347,7 +1398,7 @@ const SalePOSPage = () => {
                             onChange={(e) => handleVoucherChange(e.target.value)}
                             className="border p-2 w-full mt-1 rounded-md"
                         >
-                            <option value="">Chọn voucher</option>
+                            {/* <option value="">Sử dụng voucher</option> */}
                             {vouchers
                                 .filter(v => {
                                     const now = new Date();
@@ -1362,7 +1413,7 @@ const SalePOSPage = () => {
                                 .sort((a, b) => {
                                     const discountA = calculateDiscount(a, currentOrder.totalAmount);
                                     const discountB = calculateDiscount(b, currentOrder.totalAmount);
-                                    return discountB - discountA; // Sắp xếp giảm dần theo giá trị giảm giá
+                                    return discountB - discountA; // Voucher tối ưu lên đầu
                                 })
                                 .map(v => (
                                     <option key={v.id} value={v.voucherCode}>
@@ -1420,9 +1471,21 @@ const SalePOSPage = () => {
 
                     {/* Hiển thị mã QR nếu có paymentUrl và showQRCode là true */}
                     {paymentMethod === "vnpay" && showQRCode && paymentUrl && (
-                        <div className="mt-4 text-center">
-                            <p className="text-sm text-gray-700 mb-2">Quét mã QR để thanh toán qua VNPay:</p>
-                            <QRCode value={paymentUrl} size={200} level="H" />
+                        <div style={{ textAlign: 'center', marginTop: '20px' }}>
+                            <p>Quét mã QR để thanh toán qua VNPay:</p>
+                            <QRCode
+                                value={paymentUrl}
+                                size={300}
+                                level="H"
+                                includeMargin={true}
+                            />
+                            <div style={{ marginTop: '10px' }}>
+                                <a href={paymentUrl} target="_blank" rel="noopener noreferrer">
+                                    <button style={{ padding: '10px 20px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
+                                        Mở URL thanh toán trực tiếp
+                                    </button>
+                                </a>
+                            </div>
                         </div>
                     )}
 
