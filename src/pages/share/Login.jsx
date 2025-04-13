@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AiOutlineLock, AiOutlineEye, AiOutlineEyeInvisible, AiOutlineUser } from "react-icons/ai";
 import AuthService from "../../services/AuthService";
 import { useNavigate } from "react-router-dom";
@@ -11,6 +11,22 @@ const LoginPage = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const navigate = useNavigate();
 
+  useEffect(() => {
+    // Kiểm tra localStorage (đã lưu user ở đó sau khi login)
+    const userData = localStorage.getItem("user");
+    if (userData) {
+      const user = JSON.parse(userData);
+      
+      if (user?.token && user?.role) {
+        if (user.role === "ADMIN" || user.role === "STAFF") {
+          navigate("/admin/dashboard");
+        } else {
+          navigate("/home");
+        }
+      }
+    }
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault(); 
     setErrorMessage('');
@@ -21,12 +37,13 @@ const LoginPage = () => {
         
         // Kiểm tra role từ response
         const role = response?.data?.role;
+        console.log("Role:", role); // In ra role để kiểm tra
 
         // Điều hướng theo role
         if (role === "ADMIN" || role === "STAFF") {
-            navigate("/admin/dashboard");
+            window.location.href = "/admin/dashboard";
         } else {
-            navigate("/home");
+            window.location.href= "/home";
         }
     } catch (error) {
         setErrorMessage(error.message || "Đăng nhập thất bại. Vui lòng thử lại.");
