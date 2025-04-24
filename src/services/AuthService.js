@@ -102,6 +102,31 @@ const AuthService = {
       );
     }
   },
+
+  async register(registerData) {
+    try {
+      const response = await api.post("/auth/register", registerData, {
+        headers: { "Content-Type": "application/json" },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Lỗi khi đăng ký:", error);
+      throw error.response?.data || { message: "Không thể đăng ký." };
+    }
+  },
+
+  async forgetPassword(usernameOrEmail) {
+    try {
+      const response = await api.post("/auth/forget-password", { usernameOrEmail }, {
+        headers: { "Content-Type": "application/json" },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Lỗi khi yêu cầu quên mật khẩu:", error);
+      throw error.response?.data || { message: "Không thể yêu cầu quên mật khẩu." };
+    }
+  },
+
 };
 
 export default AuthService;

@@ -47,8 +47,14 @@ const userSlice = createSlice({
       state.role = "";
       state.token = null;
       state.isLoggedIn = false;
-      localStorage.removeItem("user"); // 🔥 Xóa khỏi LocalStorage
-    },
+    
+      // 🔥 Xóa localStorage
+      localStorage.removeItem("user");
+    
+      // 🔥 Xóa cookie (nếu bạn set role/token bằng document.cookie)
+      document.cookie = "token=; Max-Age=0; path=/";
+      document.cookie = "role=; Max-Age=0; path=/";
+    }    
   },
 });
 

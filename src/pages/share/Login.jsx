@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AiOutlineLock, AiOutlineEye, AiOutlineEyeInvisible, AiOutlineUser } from "react-icons/ai";
 import AuthService from "../../services/AuthService";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -10,6 +10,22 @@ const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Kiểm tra localStorage (đã lưu user ở đó sau khi login)
+    const userData = localStorage.getItem("user");
+    if (userData) {
+      const user = JSON.parse(userData);
+      
+      if (user?.token && user?.role) {
+        if (user.role === "ADMIN" || user.role === "STAFF") {
+          navigate("/admin/dashboard");
+        } else {
+          navigate("/home");
+        }
+      }
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault(); 
@@ -21,12 +37,13 @@ const LoginPage = () => {
         
         // Kiểm tra role từ response
         const role = response?.data?.role;
+        console.log("Role:", role); // In ra role để kiểm tra
 
         // Điều hướng theo role
         if (role === "ADMIN" || role === "STAFF") {
-            navigate("/admin/dashboard");
+            window.location.href = "/admin/dashboard";
         } else {
-            navigate("/home");
+            window.location.href= "/home";
         }
     } catch (error) {
         setErrorMessage(error.message || "Đăng nhập thất bại. Vui lòng thử lại.");
@@ -141,6 +158,27 @@ const LoginPage = () => {
               </button>
             </div>
           </form>
+
+          <div className="text-center mt-4">
+            <p className="text-sm text-gray-600">
+              Quên mật khẩu?{" "}
+              <Link
+                to="/forgot-password"
+                className="text-blue-600 hover:underline"
+              >
+                Nhấn vào đây
+              </Link>
+            </p>
+            <p className="text-sm text-gray-600 mt-2">
+              Chưa có tài khoản?{" "}
+              <Link
+                to="/register"
+                className="text-blue-600 hover:underline"
+              >
+                Đăng ký ngay
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>
