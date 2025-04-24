@@ -14,6 +14,8 @@ import UserRouter from "./UserRouter";
 // Import trang Login và Unauthorized
 import Login from "../pages/share/Login";
 import Unauthorized from "../pages/share/Unauthorized";
+import ForgotPasswordForm from "../pages/share/ForgotPassword";
+import RegisterForm from "../pages/share/Register";
 
 function AppRouter() {
   const { isLoggedIn, role } = useSelector((state) => state.user);
@@ -29,6 +31,8 @@ function AppRouter() {
           {/* Route Public */}
           <Route path="/login" element={<Login />} />
           <Route path="/unauthorized" element={<Unauthorized />} />
+          <Route path="/forgot-password" element={<ForgotPasswordForm />} />
+          <Route path="/register" element={<RegisterForm />} />
 
           {/* Admin Routes */}
           <Route

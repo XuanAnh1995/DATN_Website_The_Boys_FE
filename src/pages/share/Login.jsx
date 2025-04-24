@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AiOutlineLock, AiOutlineEye, AiOutlineEyeInvisible, AiOutlineUser } from "react-icons/ai";
 import AuthService from "../../services/AuthService";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -158,6 +158,27 @@ const LoginPage = () => {
               </button>
             </div>
           </form>
+
+          <div className="text-center mt-4">
+            <p className="text-sm text-gray-600">
+              Quên mật khẩu?{" "}
+              <Link
+                to="/forgot-password"
+                className="text-blue-600 hover:underline"
+              >
+                Nhấn vào đây
+              </Link>
+            </p>
+            <p className="text-sm text-gray-600 mt-2">
+              Chưa có tài khoản?{" "}
+              <Link
+                to="/register"
+                className="text-blue-600 hover:underline"
+              >
+                Đăng ký ngay
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>
