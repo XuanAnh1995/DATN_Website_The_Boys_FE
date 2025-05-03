@@ -18,7 +18,7 @@ const userRouter = [
     component: ViewProductDetail,
     role: "CUSTOMER",
   }, // Giữ nguyên nhưng sẽ công khai ở AppRouter
-  { path: "personal", component: PersonalPage, role: "CUSTOMER" },
+  { path: "personal/:name", component: PersonalPage, role: "CUSTOMER" },
   { path: "search", component: SearchPage, role: "CUSTOMER" },
   { path: "cart", component: Cart, role: "CUSTOMER" },
   { path: "pay", component: Payment, role: "CUSTOMER" },

@@ -1,8 +1,13 @@
 import React, { useEffect, useState } from "react";
-import CustomerService from "../../services/CustomerService";
+import { useSelector } from "react-redux";
+import { useNavigate, useParams } from "react-router-dom";
+import LoginInfoService from "../../services/LoginInfoService";
 import { toast } from "react-toastify";
 
-const PersonalPage = ({ customerId }) => {
+const PersonalPage = () => {
+  const { isLoggedIn } = useSelector((state) => state.user);
+  const { name } = useParams();
+  const decodedName = decodeURIComponent(name);
   const [customer, setCustomer] = useState(null);
   const [defaultAddress, setDefaultAddress] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -13,29 +18,50 @@ const PersonalPage = ({ customerId }) => {
     password: "",
   });
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchCustomerData = async () => {
+      if (!isLoggedIn || !decodedName) {
+        console.error("Lỗi: Người dùng chưa đăng nhập hoặc tên không tồn tại");
+        toast.error("Vui lòng đăng nhập để xem thông tin cá nhân!");
+        navigate("/login");
+        return;
+      }
+
       try {
-        const customerData = await CustomerService.getById(customerId);
+        console.log("Đang lấy thông tin khách hàng với fullname:", decodedName);
+        const customerData = await LoginInfoService.getCurrentUser();
+        console.log("Dữ liệu khách hàng:", customerData);
+
+        // Kiểm tra fullname từ URL khớp với người dùng hiện tại
+        if (customerData.fullname !== decodedName) {
+          console.error("Lỗi: Fullname không khớp với người dùng hiện tại");
+          toast.error("Bạn không có quyền xem trang này!");
+          navigate("/unauthorized");
+          return;
+        }
+
         setCustomer(customerData);
         setFormData({
           fullname: customerData.fullname || "",
           email: customerData.email || "",
           phone: customerData.phone || "",
-          password: "", // Không lấy password từ backend
+          password: "",
         });
-        setDefaultAddress(null); // Chưa có API địa chỉ
+
+        const addresses = await LoginInfoService.getCurrentUserAddresses();
+        console.log("Dữ liệu địa chỉ:", addresses);
+        const defaultAddr = addresses.find((addr) => addr.isDefault) || null;
+        setDefaultAddress(defaultAddr);
       } catch (error) {
         console.error("Lỗi khi lấy thông tin khách hàng:", error);
         toast.error("Không thể tải thông tin khách hàng!");
       }
     };
 
-    if (customerId) {
-      fetchCustomerData();
-    }
-  }, [customerId]);
+    fetchCustomerData();
+  }, [isLoggedIn, decodedName, navigate]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -49,12 +75,17 @@ const PersonalPage = ({ customerId }) => {
         fullname: formData.fullname,
         email: formData.email,
         phone: formData.phone,
-        ...(formData.password && { password: formData.password }), // Chỉ gửi password nếu có thay đổi
+        ...(formData.password && { password: formData.password }),
       };
-      await CustomerService.update(customerId, updateData);
+      // Giả sử có API để cập nhật thông tin khách hàng
+      await LoginInfoService.updateCurrentUser(updateData);
       setCustomer({ ...customer, ...updateData });
       setIsEditing(false);
       toast.success("Cập nhật thông tin thành công!");
+      // Điều hướng lại với fullname mới nếu thay đổi
+      if (updateData.fullname !== decodedName) {
+        navigate(`/personal/${encodeURIComponent(updateData.fullname)}`);
+      }
     } catch (error) {
       console.error("Lỗi khi cập nhật thông tin:", error);
       toast.error("Cập nhật thông tin thất bại!");
@@ -62,6 +93,14 @@ const PersonalPage = ({ customerId }) => {
       setIsLoading(false);
     }
   };
+
+  if (!isLoggedIn || !decodedName) {
+    return (
+      <p className="text-center text-red-500 text-3xl">
+        Vui lòng đăng nhập để xem thông tin cá nhân!
+      </p>
+    );
+  }
 
   if (!customer) {
     return <p className="text-center text-gray-500 text-3xl">Đang tải...</p>;
@@ -106,7 +145,7 @@ const PersonalPage = ({ customerId }) => {
               {customer.fullname || "Chưa cập nhật"}
             </h2>
             <p className="text-gray-600">
-              Mã khách hàng: {customer.customerCode}
+              Mã khách hàng: {customer.customerCode || "Chưa cập nhật"}
             </p>
             <p className="text-gray-600">
               Trạng thái: {customer.status ? "Hoạt động" : "Không hoạt động"}
@@ -120,7 +159,9 @@ const PersonalPage = ({ customerId }) => {
               <label className="block text-sm font-medium text-gray-700">
                 Tên đăng nhập
               </label>
-              <p className="mt-1 text-gray-900">{customer.username}</p>
+              <p className="mt-1 text-gray-900">
+                {customer.username || "Chưa cập nhật"}
+              </p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">
@@ -233,6 +274,7 @@ const PersonalPage = ({ customerId }) => {
               value={formData.password}
               onChange={handleInputChange}
               placeholder="Nhập mật khẩu mới (bỏ trống nếu không đổi)"
+              autoComplete="new-password"
               className="block w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
