@@ -3,9 +3,9 @@ import api from "../ultils/api"; // Import instance Axios đã cấu hình
 
 const API_URL = "api/order";
 
-const API_URL_ORDER_ONLINE = "orders/online"
+const API_URL_ORDER_ONLINE = "orders/online";
 
-const API_URL_ORDER_POS = "orders/pos"
+const API_URL_ORDER_POS = "orders/pos";
 
 const OrderService = {
   // Lấy danh sách đơn hàng POS
@@ -22,7 +22,10 @@ const OrderService = {
       console.log("Danh sách đơn hàng POS: ", response.data.data);
       return response.data.data;
     } catch (error) {
-      console.error("❌ Lỗi khi lấy danh sách đơn hàng POS:", error.response?.data || error.message);
+      console.error(
+        "❌ Lỗi khi lấy danh sách đơn hàng POS:",
+        error.response?.data || error.message
+      );
       throw error;
     }
   },
@@ -41,12 +44,14 @@ const OrderService = {
       console.log("Danh sách đơn hàng Online: ", response.data.data);
       return response.data.data;
     } catch (error) {
-      console.error("❌ Lỗi khi lấy danh sách đơn hàng Online:", error.response?.data || error.message);
+      console.error(
+        "❌ Lỗi khi lấy danh sách đơn hàng Online:",
+        error.response?.data || error.message
+      );
       throw error;
     }
   },
 
-  
   // Chuyển đổi trạng thái đơn hàng
   toggleStatusOrder: async (id) => {
     try {
@@ -54,7 +59,10 @@ const OrderService = {
       console.log(`Trạng thái đơn hàng ${id} đã thay đổi:`, response.data);
       return response.data;
     } catch (error) {
-      console.error(`❌ Lỗi khi thay đổi trạng thái đơn hàng ${id}:`, error.response?.data || error.message);
+      console.error(
+        `❌ Lỗi khi thay đổi trạng thái đơn hàng ${id}:`,
+        error.response?.data || error.message
+      );
       throw error;
     }
   },
@@ -66,7 +74,10 @@ const OrderService = {
       console.log(`Đơn hàng ${id} đã cập nhật:`, response.data);
       return response.data;
     } catch (error) {
-      console.error(`❌ Lỗi khi cập nhật đơn hàng ${id}:`, error.response?.data || error.message);
+      console.error(
+        `❌ Lỗi khi cập nhật đơn hàng ${id}:`,
+        error.response?.data || error.message
+      );
       throw error;
     }
   },
@@ -78,7 +89,10 @@ const OrderService = {
       console.log("Đơn hàng đã tạo:", response.data);
       return response.data;
     } catch (error) {
-      console.error("❌ Lỗi khi tạo đơn hàng:", error.response?.data || error.message);
+      console.error(
+        "❌ Lỗi khi tạo đơn hàng:",
+        error.response?.data || error.message
+      );
       throw error;
     }
   },
@@ -90,7 +104,10 @@ const OrderService = {
       console.log(`Chi tiết đơn hàng ${id}:`, response.data);
       return response.data;
     } catch (error) {
-      console.error(`❌ Lỗi khi lấy chi tiết đơn hàng ${id}:`, error.response?.data || error.message);
+      console.error(
+        `❌ Lỗi khi lấy chi tiết đơn hàng ${id}:`,
+        error.response?.data || error.message
+      );
       throw error;
     }
   },
@@ -99,10 +116,16 @@ const OrderService = {
   updateOrderStatus: async (id, status) => {
     try {
       const response = await api.put(`${API_URL}/${id}/${status}`);
-      console.log(`Trạng thái đơn hàng ${id} đã cập nhật thành ${status}:`, response.data);
+      console.log(
+        `Trạng thái đơn hàng ${id} đã cập nhật thành ${status}:`,
+        response.data
+      );
       return response.data;
     } catch (error) {
-      console.error(`❌ Lỗi khi cập nhật trạng thái đơn hàng ${id}:`, error.response?.data || error.message);
+      console.error(
+        `❌ Lỗi khi cập nhật trạng thái đơn hàng ${id}:`,
+        error.response?.data || error.message
+      );
       throw error;
     }
   },
@@ -114,7 +137,10 @@ const OrderService = {
       console.log(`Thông tin đơn hàng online ${id}:`, response.data.data);
       return response.data.data;
     } catch (error) {
-      console.error(`❌ Lỗi khi lấy thông tin đơn hàng online ${id}:`, error.response?.data || error.message);
+      console.error(
+        `❌ Lỗi khi lấy thông tin đơn hàng online ${id}:`,
+        error.response?.data || error.message
+      );
       throw error;
     }
   },
@@ -126,7 +152,10 @@ const OrderService = {
       console.log(`Chi tiết đơn hàng online ${id}:`, response.data.data);
       return response.data.data;
     } catch (error) {
-      console.error(`❌ Lỗi khi lấy chi tiết đơn hàng online ${id}:`, error.response?.data || error.message);
+      console.error(
+        `❌ Lỗi khi lấy chi tiết đơn hàng online ${id}:`,
+        error.response?.data || error.message
+      );
       throw error;
     }
   },
@@ -138,7 +167,10 @@ const OrderService = {
       console.log(`Chi tiết đơn hàng POS ${id}:`, response.data.data);
       return response.data.data;
     } catch (error) {
-      console.error(`❌ Lỗi khi lấy chi tiết đơn hàng POS ${id}:`, error.response?.data || error.message);
+      console.error(
+        `❌ Lỗi khi lấy chi tiết đơn hàng POS ${id}:`,
+        error.response?.data || error.message
+      );
       throw error;
     }
   },
@@ -146,17 +178,26 @@ const OrderService = {
   // Cập nhật trạng thái đơn hàng online
   updateOrderStatus: async (id, newStatus) => {
     try {
-      const response = await api.put(`${API_URL_ORDER_ONLINE}/${id}/status`, null, {
-        params: { newStatus }
-      });
-      console.log(`Trạng thái đơn hàng online ${id} đã cập nhật thành ${newStatus}:`, response.data.data);
+      const response = await api.put(
+        `${API_URL_ORDER_ONLINE}/${id}/status`,
+        null,
+        {
+          params: { newStatus },
+        }
+      );
+      console.log(
+        `Trạng thái đơn hàng online ${id} đã cập nhật thành ${newStatus}:`,
+        response.data.data
+      );
       return response.data.data; // Trả về dữ liệu đơn hàng đã cập nhật
     } catch (error) {
-      console.error(`❌ Lỗi khi cập nhật trạng thái đơn hàng online ${id}:`, error.response?.data || error.message);
+      console.error(
+        `❌ Lỗi khi cập nhật trạng thái đơn hàng online ${id}:`,
+        error.response?.data || error.message
+      );
       throw error;
     }
   },
-
 };
 
 export default OrderService;

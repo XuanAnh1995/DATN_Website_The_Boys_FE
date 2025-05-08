@@ -524,7 +524,7 @@ const Header = () => {
         {/* Logo chính giữa */}
         <div className="flex justify-center flex-1">
           <h1 className="text-5xl font-extrabold text-black">
-            The<span className="text-red-600">Boys</span>
+            The<span className="text-sky-900">Boys</span>
           </h1>
         </div>
 
@@ -533,7 +533,7 @@ const Header = () => {
           {isLoggedIn ? (
             <>
               <Link
-                to={`/personal/${encodeURIComponent(name)}`}
+                to={`/personal`}
                 className="bg-green-600 text-white px-4 py-1 rounded text-sm flex items-center gap-1 hover:bg-green-700 transition"
               >
                 <FaUser /> {name}
@@ -562,7 +562,7 @@ const Header = () => {
             </>
           )}
           <Link
-            to="/stores"
+            to="https://www.google.com/maps/place/Tr%C6%B0%E1%BB%9Dng+Cao+%C4%91%E1%BA%B3ng+FPT+Polytechnic+c%C6%A1+s%E1%BB%9F+H%C3%A0+Nam/@20.8253938,105.6755226,68081m/data=!3m1!1e3!4m10!1m2!2m1!1sfpt+poly!3m6!1s0x3135cf62d752dc67:0xd79f03899b4e83d8!8m2!3d20.6037973!4d105.9344136!15sCghmcHQgcG9seZIBBnNjaG9vbKoBSgoKL20vMDVjMjc4aBABKgwiCGZwdCBwb2x5KAAyHhABIhqQapc8vU_g4dG5nBOkX18DtUJSeB7d1I6lAzIMEAIiCGZwdCBwb2x54AEA!16s%2Fg%2F11v3mhrlb3?entry=ttu&g_ep=EgoyMDI1MDUwNS4wIKXMDSoASAFQAw%3D%3D"
             className="bg-blue-600 text-white px-4 py-1 rounded text-sm flex items-center gap-1 hover:bg-blue-700 transition"
           >
             <FaMapMarkerAlt /> Cửa hàng
@@ -618,16 +618,19 @@ const Header = () => {
 
       {/* Menu nhỏ dưới */}
       <div className="flex justify-center max-w-7xl mx-auto mt-4 gap-8 text-sm">
-        <div className="flex flex-col items-center cursor-pointer hover:text-red-600">
-          <FaClipboardCheck size={20} />
-          <span>Kiểm tra</span>
-        </div>
         <Link
-          to="/favorites"
+          to="/products"
           className="relative flex flex-col items-center cursor-pointer hover:text-red-600"
         >
           <FaHeart size={20} />
-          <span>Yêu thích</span>
+          <span>Bộ sưu tập</span>
+        </Link>
+        <Link
+          to="/order"
+          className="relative flex flex-col items-center cursor-pointer hover:text-red-600"
+        >
+          <FaClipboardCheck size={20} />
+          <span>Đơn hàng</span>
         </Link>
         <Link
           to="/cart"
@@ -645,7 +648,7 @@ const Header = () => {
         </Link>
         {isLoggedIn && (
           <Link
-            to={`/personal/${encodeURIComponent(name)}`}
+            to={`/personal`}
             className="relative flex flex-col items-center cursor-pointer hover:text-red-600"
           >
             <FaUser size={20} />
