@@ -9,7 +9,7 @@ const SearchPage = lazy(() => import("../pages/Users/SearchPage.jsx"));
 const Cart = lazy(() => import("../pages/Users/Cart.jsx"));
 const Products = lazy(() => import("../pages/Users/Products.jsx"));
 const Payment = lazy(() => import("../pages/Users/Payment.jsx"));
-
+const UserOder = lazy(() => import("../pages/Users/UserOrder.jsx"));
 const userRouter = [
   { path: "home", component: Home, role: "CUSTOMER" },
   { path: "products", component: Products, role: "CUSTOMER" },
@@ -22,6 +22,7 @@ const userRouter = [
   { path: "search", component: SearchPage, role: "CUSTOMER" },
   { path: "cart", component: Cart, role: "CUSTOMER" },
   { path: "pay", component: Payment, role: "CUSTOMER" },
+  { path: "order", component: UserOder, role: "CUSTOMER" },
 ];
 
 export default userRouter;

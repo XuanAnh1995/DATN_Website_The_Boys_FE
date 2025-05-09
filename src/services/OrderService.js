@@ -2,6 +2,7 @@
 import api from "../ultils/api"; // Import instance Axios đã cấu hình
 
 const API_URL = "api/order";
+
 const API_URL_ORDER_ONLINE = "orders/online";
 const API_URL_ORDER_POS = "orders/pos";
 
@@ -140,8 +141,7 @@ const OrderService = {
         } catch (error) {
             console.error(`❌ Lỗi khi lấy chi tiết đơn hàng POS ${id}:`, error.response?.data || error.message);
             throw error;
-        }
-    }
+  
 };
 
 export default OrderService;
