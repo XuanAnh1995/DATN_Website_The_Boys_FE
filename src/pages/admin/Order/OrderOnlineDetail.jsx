@@ -7,7 +7,6 @@ import { toast } from "react-toastify";
 const orderStatusMap = {
     "-1": "Đã hủy",
     "0": "Chờ xác nhận",
-    "1": "Chờ thanh toán",
     "2": "Đã xác nhận",
     "3": "Đang giao hàng",
     "4": "Giao thất bại",
@@ -20,20 +19,28 @@ const getStatusClass = (status) => {
     return status === -1
         ? `${baseClasses} bg-red-100 text-red-800`
         : status === 0
-            ? `${baseClasses} bg-yellow-100 text-yellow-800`
-            : status === 1
-                ? `${baseClasses} bg-blue-100 text-blue-800`
-                : status === 2
-                    ? `${baseClasses} bg-green-100 text-green-800`
-                    : status === 3
-                        ? `${baseClasses} bg-purple-100 text-purple-800`
-                        : status === 4
-                            ? `${baseClasses} bg-orange-100 text-orange-800`
-                            : `${baseClasses} bg-teal-100 text-teal-800`;
+        ? `${baseClasses} bg-yellow-100 text-yellow-800`
+        : status === 2
+        ? `${baseClasses} bg-green-100 text-green-800`
+        : status === 3
+        ? `${baseClasses} bg-purple-100 text-purple-800`
+        : status === 4
+        ? `${baseClasses} bg-orange-100 text-orange-800`
+        : `${baseClasses} bg-teal-100 text-teal-800`;
 };
 
-// Component Timeline được cải tiến
-const OrderTimeline = ({ currentStatus, updateOrderStatus }) => {
+// Component Timeline
+const OrderTimeline = ({ currentStatus, fetchOrderDetails }) => {
+    const [note, setNote] = useState("");
+    const [showNoteInput, setShowNoteInput] = useState(false);
+    const [selectedStatus, setSelectedStatus] = useState(null);
+    const [confirmStatus, setConfirmStatus] = useState(null);
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+
+    useEffect(() => {
+        console.log("Current Status:", currentStatus);
+    }, [currentStatus]);
+
     // Mảng biểu tượng cho các trạng thái
     const statusIcons = {
         "-1": (
@@ -60,20 +67,6 @@ const OrderTimeline = ({ currentStatus, updateOrderStatus }) => {
                 <path
                     fillRule="evenodd"
                     d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z"
-                    clipRule="evenodd"
-                />
-            </svg>
-        ),
-        "1": (
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-            >
-                <path
-                    fillRule="evenodd"
-                    d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z"
                     clipRule="evenodd"
                 />
             </svg>
@@ -135,23 +128,23 @@ const OrderTimeline = ({ currentStatus, updateOrderStatus }) => {
 
     // Hàm kiểm tra trạng thái hợp lệ để chuyển
     const isValidNextStatus = (currentStatus, nextStatus) => {
-        const current = parseInt(currentStatus);
-        const next = parseInt(nextStatus);
+        const current = parseInt(currentStatus, 10);
+        const next = parseInt(nextStatus, 10);
+        console.log("Validating:", current, "->", next);
+
+        if (isNaN(current) || isNaN(next) || current === -1 || current === 5) {
+            return false;
+        }
 
         switch (current) {
-            case 0: // Chờ xác nhận
-                return next === 1 || next === -1; // Chờ thanh toán hoặc Đã hủy
-            case 1: // Chờ thanh toán
-                return next === 2 || next === -1; // Đã xác nhận hoặc Đã hủy
-            case 2: // Đã xác nhận
-                return next === 3 || next === -1; // Đang giao hàng hoặc Đã hủy
-            case 3: // Đang giao hàng
-                return next === 4 || next === 5; // Giao thất bại hoặc Hoàn thành
-            case 4: // Giao thất bại
-                return next === 3 || next === -1; // Quay lại Đang giao hàng hoặc Đã hủy
-            case 5: // Hoàn thành
-            case -1: // Đã hủy
-                return false; // Không thể chuyển tiếp
+            case 0:
+                return next === 2 || next === -1;
+            case 2:
+                return next === 3 || next === -1;
+            case 3:
+                return next === 4 || next === 5;
+            case 4:
+                return next === 3 || next === -1;
             default:
                 return false;
         }
@@ -159,24 +152,21 @@ const OrderTimeline = ({ currentStatus, updateOrderStatus }) => {
 
     // Xác định trạng thái node
     const getNodeStatus = (status, currentStatus) => {
-        const current = parseInt(currentStatus);
-        const step = parseInt(status);
+        const current = parseInt(currentStatus, 10);
+        const step = parseInt(status, 10);
 
-        if (current === -1 && status === "-1") return "completed";
+        if (isNaN(current) || isNaN(step)) return "disabled";
+
+        if (current === -1 && step === 5) return "hidden";
+        if (current === -1 && status === "-1") return "arningcompleted";
         if (current === -1) return "disabled";
 
         if (step === current) return "current";
-        if (
-            step < current ||
-            (current === 5 && step !== -1) ||
-            (current === 4 && step === 3)
-        )
-            return "completed";
+        if (step < current || (current === 5 && step !== -1)) return "completed";
         if (isValidNextStatus(currentStatus, status)) return "available";
 
-        // Làm mờ nút không hợp lệ trong nhánh
-        if (current === 4 && step === 5) return "disabled"; // Khi Giao thất bại, Hoàn thành mờ đi
-        if (current === 5 && step === 4) return "disabled"; // Khi Hoàn thành, Giao thất bại mờ đi
+        if (current === 4 && step === 5) return "disabled";
+        if (current === 5 && step === 4) return "disabled";
 
         return "disabled";
     };
@@ -190,6 +180,8 @@ const OrderTimeline = ({ currentStatus, updateOrderStatus }) => {
                 return "bg-blue-500 text-white border-blue-500 shadow-lg shadow-blue-200 ring-4 ring-blue-100";
             case "available":
                 return "bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400";
+            case "hidden":
+                return "hidden";
             default:
                 return "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed";
         }
@@ -203,13 +195,66 @@ const OrderTimeline = ({ currentStatus, updateOrderStatus }) => {
             case "current":
             case "available":
                 return "bg-gray-300";
+            case "hidden":
+                return "hidden";
             default:
                 return "bg-gray-200";
         }
     };
 
+    // Xử lý khi nhấn vào trạng thái
+    const handleStatusClick = (status) => {
+        console.log("Checking status transition:", currentStatus, "->", status, "Valid:", isValidNextStatus(currentStatus, status));
+        if (isValidNextStatus(currentStatus, status)) {
+            setConfirmStatus(status);
+            setShowConfirmModal(true);
+        }
+    };
+
+    // Xử lý xác nhận từ modal
+    const handleConfirm = () => {
+        setShowConfirmModal(false);
+        setSelectedStatus(confirmStatus);
+        setShowNoteInput(true);
+        setNote("");
+    };
+
+    // Xử lý hủy từ modal
+    const handleCancelConfirm = () => {
+        setShowConfirmModal(false);
+        setConfirmStatus(null);
+    };
+
+    // Xử lý gửi trạng thái mới
+    const handleSubmitStatus = async () => {
+        if (selectedStatus == -1 && !note.trim()) {
+            toast.error("Vui lòng nhập lý do hủy đơn hàng");
+            return;
+        }
+        try {
+            const updatedOrder = await fetchOrderDetails(selectedStatus, note);
+            setShowNoteInput(false);
+            setSelectedStatus(null);
+            setNote("");
+            if (selectedStatus == -1) {
+                if (updatedOrder.wasConfirmedBeforeCancel) {
+                    toast.success("Đơn hàng đã hủy thành công và số lượng sản phẩm đã được hoàn trả!");
+                } else {
+                    toast.success("Đơn hàng đã hủy thành công!");
+                }
+            } else if (selectedStatus == 2) {
+                toast.success("Đơn hàng đã được xác nhận và số lượng sản phẩm đã được trừ khỏi kho!");
+            } else {
+                toast.success(`Cập nhật trạng thái thành ${orderStatusMap[selectedStatus]} thành công!`);
+            }
+        } catch (error) {
+            console.error("Lỗi khi cập nhật trạng thái:", error);
+            toast.error(error.response?.data?.message || "Lỗi khi cập nhật trạng thái. Vui lòng thử lại!");
+        }
+    };
+
     // Định nghĩa luồng chạy chính và nhánh
-    const mainFlow = ["0", "1", "2", "3"];
+    const mainFlow = ["0", "2", "3"];
     const branchFlow = ["4", "5"];
 
     return (
@@ -237,6 +282,7 @@ const OrderTimeline = ({ currentStatus, updateOrderStatus }) => {
                     <div className="flex items-center justify-between mb-12">
                         {mainFlow.map((status, index) => {
                             const nodeStatus = getNodeStatus(status, currentStatus);
+                            if (nodeStatus === "hidden") return null;
                             return (
                                 <div
                                     key={status}
@@ -246,12 +292,16 @@ const OrderTimeline = ({ currentStatus, updateOrderStatus }) => {
                                         className={`w-12 h-12 flex items-center justify-center rounded-full border-2 font-medium text-sm transition-all duration-300 ${getNodeClasses(
                                             nodeStatus
                                         )}`}
-                                        onClick={() => updateOrderStatus(status)}
+                                        onClick={() => handleStatusClick(status)}
                                         disabled={nodeStatus !== "available"}
                                         title={
                                             isValidNextStatus(currentStatus, status)
-                                                ? `Cập nhật sang ${orderStatusMap[status]}`
-                                                : ""
+                                                ? status === "2"
+                                                    ? "Cập nhật sang Đã xác nhận (số lượng sản phẩm sẽ được trừ)"
+                                                    : status === "-1"
+                                                    ? "Hủy đơn hàng (số lượng sản phẩm sẽ được hoàn lại nếu đã xác nhận)"
+                                                    : `Cập nhật sang ${orderStatusMap[status]}`
+                                                : "Trạng thái không hợp lệ"
                                         }
                                     >
                                         {statusIcons[status]}
@@ -260,17 +310,16 @@ const OrderTimeline = ({ currentStatus, updateOrderStatus }) => {
                                         className={`mt-2 text-sm font-medium ${nodeStatus === "current"
                                             ? "text-blue-600"
                                             : nodeStatus === "completed"
-                                                ? "text-green-600"
-                                                : "text-gray-600"
-                                            }`}
+                                            ? "text-green-600"
+                                            : "text-gray-600"
+                                        }`}
                                     >
                                         {orderStatusMap[status]}
                                     </span>
-                                    {/* Connector */}
                                     {index < mainFlow.length - 1 && (
                                         <div
                                             className={`absolute top-6 left-1/2 w-full h-1 ${getConnectorClasses(
-                                                getNodeStatus(parseInt(status) + 1, currentStatus)
+                                                getNodeStatus(mainFlow[index + 1], currentStatus)
                                             )}`}
                                         />
                                     )}
@@ -282,13 +331,11 @@ const OrderTimeline = ({ currentStatus, updateOrderStatus }) => {
                     {/* Nhánh rẽ từ Đang giao hàng */}
                     {parseInt(currentStatus) >= 3 && (
                         <>
-                            {/* Đường kết nối dọc từ Đang giao hàng */}
                             <div className="absolute top-12 left-3/4 transform -translate-x-1/2 w-1 h-8 bg-gray-300"></div>
-
-                            {/* Các trạng thái sau Đang giao hàng */}
                             <div className="flex justify-center gap-32 relative mt-8">
                                 {branchFlow.map((status) => {
                                     const nodeStatus = getNodeStatus(status, currentStatus);
+                                    if (nodeStatus === "hidden") return null;
                                     return (
                                         <div
                                             key={status}
@@ -298,12 +345,12 @@ const OrderTimeline = ({ currentStatus, updateOrderStatus }) => {
                                                 className={`w-12 h-12 flex items-center justify-center rounded-full border-2 font-medium text-sm transition-all duration-300 ${getNodeClasses(
                                                     nodeStatus
                                                 )}`}
-                                                onClick={() => updateOrderStatus(status)}
+                                                onClick={() => handleStatusClick(status)}
                                                 disabled={nodeStatus !== "available"}
                                                 title={
                                                     isValidNextStatus(currentStatus, status)
                                                         ? `Cập nhật sang ${orderStatusMap[status]}`
-                                                        : ""
+                                                        : "Trạng thái không hợp lệ"
                                                 }
                                             >
                                                 {statusIcons[status]}
@@ -312,9 +359,9 @@ const OrderTimeline = ({ currentStatus, updateOrderStatus }) => {
                                                 className={`mt-2 text-sm font-medium ${nodeStatus === "current"
                                                     ? "text-blue-600"
                                                     : nodeStatus === "completed"
-                                                        ? "text-green-600"
-                                                        : "text-gray-600"
-                                                    }`}
+                                                    ? "text-green-600"
+                                                    : "text-gray-600"
+                                                }`}
                                             >
                                                 {orderStatusMap[status]}
                                             </span>
@@ -325,23 +372,90 @@ const OrderTimeline = ({ currentStatus, updateOrderStatus }) => {
                         </>
                     )}
 
-                    {/* Nút Đã hủy - Hiển thị khi ở trạng thái 0, 1, 2 hoặc 4 */}
-                    {(parseInt(currentStatus) <= 2 || parseInt(currentStatus) === 4) &&
+                    {(parseInt(currentStatus) === 0 || parseInt(currentStatus) === 2 || parseInt(currentStatus) === 3 || parseInt(currentStatus) === 4) &&
                         parseInt(currentStatus) !== -1 && (
                             <div className="mt-12 flex justify-center">
                                 <button
                                     className={`px-4 py-2 rounded-full border-2 font-medium text-sm transition-all duration-300 flex items-center gap-2 ${isValidNextStatus(currentStatus, "-1")
                                         ? "bg-white text-red-700 border-red-300 hover:bg-red-50"
                                         : "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
-                                        }`}
-                                    onClick={() => updateOrderStatus("-1")}
+                                    }`}
+                                    onClick={() => handleStatusClick("-1")}
                                     disabled={!isValidNextStatus(currentStatus, "-1")}
+                                    title="Hủy đơn hàng (số lượng sản phẩm sẽ được hoàn lại nếu đã xác nhận)"
                                 >
                                     {statusIcons["-1"]}
                                     Hủy đơn hàng
                                 </button>
                             </div>
                         )}
+
+                    {/* Ô nhập ghi chú */}
+                    {showNoteInput && (
+                        <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <h4 className="font-medium text-gray-700 mb-2">
+                                Ghi chú cho trạng thái: {orderStatusMap[selectedStatus]}
+                            </h4>
+                            <textarea
+                                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                                placeholder={
+                                    selectedStatus == -1
+                                        ? "Vui lòng nhập lý do hủy đơn hàng (bắt buộc)"
+                                        : "Nhập ghi chú (tùy chọn)"
+                                }
+                                value={note}
+                                onChange={(e) => setNote(e.target.value)}
+                                rows={4}
+                            />
+                            <div className="mt-2 flex justify-end gap-2">
+                                <button
+                                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                                    onClick={() => {
+                                        setShowNoteInput(false);
+                                        setSelectedStatus(null);
+                                        setNote("");
+                                    }}
+                                >
+                                    Hủy
+                                </button>
+                                <button
+                                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                                    onClick={handleSubmitStatus}
+                                >
+                                    Xác nhận
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Modal xác nhận */}
+                    {showConfirmModal && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                            <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
+                                <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                                    {confirmStatus === "-1"
+                                        ? "Bạn có muốn hủy đơn hàng không? Số lượng sản phẩm sẽ được hoàn lại nếu đã xác nhận."
+                                        : confirmStatus === "2"
+                                        ? "Bạn có muốn xác nhận đơn hàng không? Số lượng sản phẩm sẽ được trừ khỏi kho."
+                                        : `Bạn có muốn chuyển trạng thái sang "${orderStatusMap[confirmStatus]}" không?`}
+                                </h3>
+                                <div className="flex justify-end gap-2">
+                                    <button
+                                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                                        onClick={handleCancelConfirm}
+                                    >
+                                        Hủy
+                                    </button>
+                                    <button
+                                        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                                        onClick={handleConfirm}
+                                    >
+                                        Xác nhận
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -353,18 +467,16 @@ const OrderTimeline = ({ currentStatus, updateOrderStatus }) => {
                 </h4>
                 <p className="text-sm text-gray-600">
                     {parseInt(currentStatus) === -1
-                        ? "Đơn hàng đã bị hủy và không thể tiếp tục xử lý."
+                        ? "Đơn hàng đã bị hủy và số lượng sản phẩm đã được hoàn lại nếu trước đó đã xác nhận."
                         : parseInt(currentStatus) === 0
-                            ? "Đơn hàng của bạn đang chờ được xác nhận. Nhân viên sẽ liên hệ sớm."
-                            : parseInt(currentStatus) === 1
-                                ? "Vui lòng thanh toán đơn hàng để tiếp tục quá trình xử lý."
-                                : parseInt(currentStatus) === 2
-                                    ? "Đơn hàng đã được xác nhận và đang được chuẩn bị để giao."
-                                    : parseInt(currentStatus) === 3
-                                        ? "Đơn hàng đang được giao đến địa chỉ của bạn."
-                                        : parseInt(currentStatus) === 4
-                                            ? "Đơn hàng không thể giao thành công. Có thể thử lại hoặc hủy đơn."
-                                            : "Đơn hàng đã được giao thành công. Cảm ơn bạn đã mua sắm!"}
+                        ? "Đơn hàng của bạn đang chờ được xác nhận. Số lượng sản phẩm chưa được trừ."
+                        : parseInt(currentStatus) === 2
+                        ? "Đơn hàng đã được xác nhận và số lượng sản phẩm đã được trừ khỏi kho."
+                        : parseInt(currentStatus) === 3
+                        ? "Đơn hàng đang được giao đến địa chỉ của bạn."
+                        : parseInt(currentStatus) === 4
+                        ? "Đơn hàng không thể giao thành công. Có thể thử lại hoặc hủy đơn."
+                        : "Đơn hàng đã được giao thành công. Cảm ơn bạn đã mua sắm!"}
                 </p>
             </div>
         </div>
@@ -376,10 +488,12 @@ const OrderDetail = () => {
     const navigate = useNavigate();
     const [orderDetails, setOrderDetails] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [isFetching, setIsFetching] = useState(false);
 
     useEffect(() => {
         const fetchOrderDetails = async () => {
             try {
+                setLoading(true);
                 const response = await OrderService.getOnlineOrderDetails(id);
                 console.log("Order Online Response:", response);
                 if (response) {
@@ -397,48 +511,27 @@ const OrderDetail = () => {
         fetchOrderDetails();
     }, [id]);
 
-    // Hàm kiểm tra trạng thái hợp lệ để chuyển
-    const isValidNextStatus = (currentStatus, nextStatus) => {
-        const current = parseInt(currentStatus);
-        const next = parseInt(nextStatus);
-
-        switch (current) {
-            case 0: // Chờ xác nhận
-                return next === 1 || next === -1; // Chờ thanh toán hoặc Đã hủy
-            case 1: // Chờ thanh toán
-                return next === 2 || next === -1; // Đã xác nhận hoặc Đã hủy
-            case 2: // Đã xác nhận
-                return next === 3 || next === -1; // Đang giao hàng hoặc Đã hủy
-            case 3: // Đang giao hàng
-                return next === 4 || next === 5; // Giao thất bại hoặc Hoàn thành
-            case 4: // Giao thất bại
-                return next === 3 || next === -1; // Quay lại Đang giao hàng hoặc Đã hủy
-            case 5: // Hoàn thành
-            case -1: // Đã hủy
-                return false; // Không thể chuyển tiếp
-            default:
-                return false;
-        }
-    };
-
-    // Hàm cập nhật trạng thái đơn hàng
-    const updateOrderStatus = async (newStatus) => {
-        if (!isValidNextStatus(orderDetails.statusOrder, newStatus)) {
-            toast.error("Không thể chuyển sang trạng thái này!");
-            return;
-        }
-
+    const fetchOrderDetails = async (newStatus, note) => {
         try {
-            const updatedOrder = await OrderService.updateOrderStatus(id, newStatus);
-            setOrderDetails(updatedOrder);
-            toast.success("Cập nhật trạng thái thành công");
+            setIsFetching(true);
+            await OrderService.updateOrderStatus(id, newStatus, note);
+            const response = await OrderService.getOnlineOrderDetails(id);
+            console.log("Refetched Order Online Response:", response);
+            if (response) {
+                setOrderDetails(response);
+                return response; // Trả về dữ liệu đơn hàng để sử dụng trong handleSubmitStatus
+            } else {
+                toast.error("Dữ liệu đơn hàng không hợp lệ");
+                throw new Error("Dữ liệu đơn hàng không hợp lệ");
+            }
         } catch (error) {
-            console.error("Lỗi khi cập nhật trạng thái:", error);
-            toast.error("Lỗi khi cập nhật trạng thái");
+            console.error("Lỗi khi tải lại chi tiết đơn hàng:", error);
+            throw error;
+        } finally {
+            setIsFetching(false);
         }
     };
 
-    // Fix print style to include all products
     useEffect(() => {
         const style = document.createElement("style");
         style.innerHTML = `
@@ -650,6 +743,12 @@ const OrderDetail = () => {
                                     </span>
                                 </p>
                             </div>
+                            {orderDetails.note && parseInt(orderDetails.statusOrder) === -1 && (
+                                <div className="col-span-2">
+                                    <p className="text-sm text-gray-500">Lý do hủy</p>
+                                    <p className="font-medium text-red-600">{orderDetails.note}</p>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -658,12 +757,11 @@ const OrderDetail = () => {
                         <div className="p-6 border-b">
                             <OrderTimeline
                                 currentStatus={orderDetails.statusOrder}
-                                updateOrderStatus={updateOrderStatus}
+                                fetchOrderDetails={fetchOrderDetails}
                             />
                         </div>
                     )}
 
-                    {/* Order Details */}
                     {/* Order Details */}
                     <div className="p-6">
                         <h3 className="text-lg font-semibold text-gray-700 mb-4">Các sản phẩm</h3>
@@ -680,7 +778,13 @@ const OrderDetail = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="text-gray-600 divide-y divide-gray-300">
-                                    {orderDetails?.orderDetails?.length > 0 ? (
+                                    {isFetching ? (
+                                        <tr>
+                                            <td colSpan="6" className="py-3 px-4 text-center text-gray-500">
+                                                Đang tải sản phẩm...
+                                            </td>
+                                        </tr>
+                                    ) : Array.isArray(orderDetails?.orderDetails) && orderDetails.orderDetails.length > 0 ? (
                                         orderDetails.orderDetails.map((detail, index) => {
                                             const product = detail.productDetail?.product;
                                             const quantity = detail.quantity ?? 0;
