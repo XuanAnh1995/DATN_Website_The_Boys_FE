@@ -14,8 +14,8 @@ import { useNavigate } from "react-router-dom";
 
 // Chỉ giữ hai trạng thái cho hóa đơn POS
 const orderStatusMap = {
-  "1": "Chờ thanh toán",
-  "5": "Hoàn thành",
+  1: "Chờ thanh toán",
+  5: "Hoàn thành",
 };
 
 const getStatusClass = (status) => {
@@ -62,7 +62,6 @@ export default function OrderPOS() {
       setTotalPages(data.totalPages || 1);
       setTotalElements(data.totalElements || 0);
       setFilteredOrders(data.content || []);
-
     } catch (error) {
       console.error("Lỗi khi lấy dữ liệu hóa đơn POS:", error);
       toast.error("Lỗi khi tải dữ liệu hóa đơn POS");
@@ -74,7 +73,9 @@ export default function OrderPOS() {
   const filterOrders = () => {
     let filtered = [...orders];
     if (selectedStatus !== null) {
-      filtered = filtered.filter((order) => order.statusOrder.toString() === selectedStatus);
+      filtered = filtered.filter(
+        (order) => order.statusOrder.toString() === selectedStatus
+      );
     }
     if (search.trim()) {
       const searchTerm = search.toLowerCase();
@@ -94,7 +95,8 @@ export default function OrderPOS() {
   };
 
   const handleSort = (key) => {
-    const direction = sortConfig.key === key && sortConfig.direction === "asc" ? "desc" : "asc";
+    const direction =
+      sortConfig.key === key && sortConfig.direction === "asc" ? "desc" : "asc";
     setSortConfig({ key, direction });
   };
 
@@ -117,7 +119,10 @@ export default function OrderPOS() {
   };
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(amount);
   };
 
   const getPageNumbers = () => {
@@ -151,8 +156,12 @@ export default function OrderPOS() {
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-green-800">Quản lý hóa đơn POS</h1>
-            <p className="text-sm text-gray-500 mt-1">Quản lý và theo dõi tất cả hóa đơn tại quầy</p>
+            <h1 className="text-2xl font-bold text-green-800">
+              Quản lý hóa đơn POS
+            </h1>
+            <p className="text-sm text-gray-500 mt-1">
+              Quản lý và theo dõi tất cả hóa đơn tại quầy
+            </p>
           </div>
           <div className="mt-4 md:mt-0">
             <button
@@ -198,16 +207,19 @@ export default function OrderPOS() {
 
           {showFilters && (
             <div className="mt-4 pt-4 border-t border-gray-200">
-              <h3 className="text-sm font-medium text-gray-500 mb-2">Lọc theo trạng thái:</h3>
+              <h3 className="text-sm font-medium text-gray-500 mb-2">
+                Lọc theo trạng thái:
+              </h3>
               <div className="flex flex-wrap gap-2">
                 {Object.keys(orderStatusMap).map((key) => (
                   <button
                     key={key}
                     onClick={() => handleStatusFilter(key)}
-                    className={`px-4 py-2 rounded-lg transition ${selectedStatus === key
-                      ? "bg-green-500 text-white shadow-md"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                      }`}
+                    className={`px-4 py-2 rounded-lg transition ${
+                      selectedStatus === key
+                        ? "bg-green-500 text-white shadow-md"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
                   >
                     {orderStatusMap[key]}
                   </button>
@@ -238,9 +250,12 @@ export default function OrderPOS() {
                     >
                       <div className="flex items-center space-x-1">
                         <span>STT</span>
-                        {sortConfig.key === "id" && (
-                          sortConfig.direction === "asc" ? <AiFillCaretUp className="text-green-500" /> : <AiFillCaretDown className="text-green-500" />
-                        )}
+                        {sortConfig.key === "id" &&
+                          (sortConfig.direction === "asc" ? (
+                            <AiFillCaretUp className="text-green-500" />
+                          ) : (
+                            <AiFillCaretDown className="text-green-500" />
+                          ))}
                       </div>
                     </th>
                     <th
@@ -250,49 +265,87 @@ export default function OrderPOS() {
                     >
                       <div className="flex items-center space-x-1">
                         <span>Mã hóa đơn</span>
-                        {sortConfig.key === "orderCode" && (
-                          sortConfig.direction === "asc" ? <AiFillCaretUp className="text-green-500" /> : <AiFillCaretDown className="text-green-500" />
-                        )}
+                        {sortConfig.key === "orderCode" &&
+                          (sortConfig.direction === "asc" ? (
+                            <AiFillCaretUp className="text-green-500" />
+                          ) : (
+                            <AiFillCaretDown className="text-green-500" />
+                          ))}
                       </div>
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
                       Khách hàng
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
                       Nhân viên
                     </th>
-                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Tổng tiền trước giảm
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Tổng tiền hàng
                     </th>
-                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Tổng tiền sau giảm
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Tổng tiền khách phải trả
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
                       Phương thức thanh toán
                     </th>
-                    <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
                       Số lượng SP
                     </th>
-                    <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
                       Trạng thái
                     </th>
-                    <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
                       Hành động
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredOrders.map((item, index) => (
-                    <tr key={item.id} className="hover:bg-green-50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{getSTT(index)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{item.orderCode}</div>
+                    <tr
+                      key={item.id}
+                      className="hover:bg-green-50 transition-colors"
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {getSTT(index)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{item.customer?.fullname || "N/A"}</div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {item.orderCode}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{item.employee?.fullname || "N/A"}</div>
+                        <div className="text-sm text-gray-900">
+                          {item.customer?.fullname || "N/A"}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">
+                          {item.employee?.fullname || "N/A"}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-700 font-medium">
                         {formatCurrency(item.originalTotal || item.totalBill)}
@@ -302,22 +355,29 @@ export default function OrderPOS() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">
-                          {item.paymentMethod === 1 ? "Chuyển khoản" : "Tiền mặt"}
+                          {item.paymentMethod === 1
+                            ? "Chuyển khoản"
+                            : "Tiền mặt"}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <div className="text-sm font-medium">{item.totalAmount || 0}</div>
+                        <div className="text-sm font-medium">
+                          {item.totalAmount || 0}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         <span className={getStatusClass(item.statusOrder)}>
-                          {orderStatusMap[item.statusOrder.toString()] || "Không xác định"}
+                          {orderStatusMap[item.statusOrder.toString()] ||
+                            "Không xác định"}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         <div className="flex justify-center space-x-2">
                           <button
                             className="text-green-500 hover:text-green-700 p-1 rounded-full hover:bg-green-100 transition-colors"
-                            onClick={() => navigate(`/admin/order/pos/${item.id}/details`)}
+                            onClick={() =>
+                              navigate(`/admin/order/pos/${item.id}/details`)
+                            }
                           >
                             <AiOutlineEye size={20} />
                           </button>
@@ -354,23 +414,30 @@ export default function OrderPOS() {
                 </select>
                 <span className="text-sm text-gray-700 hidden sm:inline">
                   Trang <span className="font-medium">{currentPage}</span> /{" "}
-                  <span className="font-medium">{totalPages}</span> (Tổng: {totalElements})
+                  <span className="font-medium">{totalPages}</span> (Tổng:{" "}
+                  {totalElements})
                 </span>
               </div>
               <div className="flex items-center space-x-1 mt-4 sm:mt-0">
                 <button
                   onClick={() => handlePageChange(1)}
                   disabled={currentPage === 1}
-                  className={`p-2 border rounded-md ${currentPage === 1 ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-white hover:bg-gray-50 text-gray-700"
-                    }`}
+                  className={`p-2 border rounded-md ${
+                    currentPage === 1
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : "bg-white hover:bg-gray-50 text-gray-700"
+                  }`}
                 >
                   &laquo;
                 </button>
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className={`p-2 border rounded-md ${currentPage === 1 ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-white hover:bg-gray-50 text-gray-700"
-                    }`}
+                  className={`p-2 border rounded-md ${
+                    currentPage === 1
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : "bg-white hover:bg-gray-50 text-gray-700"
+                  }`}
                 >
                   &lt;
                 </button>
@@ -378,10 +445,11 @@ export default function OrderPOS() {
                   <button
                     key={number}
                     onClick={() => handlePageChange(number)}
-                    className={`p-2 border rounded-md min-w-[40px] ${currentPage === number
-                      ? "bg-green-500 text-white"
-                      : "bg-white hover:bg-gray-50 text-gray-700"
-                      }`}
+                    className={`p-2 border rounded-md min-w-[40px] ${
+                      currentPage === number
+                        ? "bg-green-500 text-white"
+                        : "bg-white hover:bg-gray-50 text-gray-700"
+                    }`}
                   >
                     {number}
                   </button>
@@ -389,16 +457,22 @@ export default function OrderPOS() {
                 <button
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className={`p-2 border rounded-md ${currentPage === totalPages ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-white hover:bg-gray-50 text-gray-700"
-                    }`}
+                  className={`p-2 border rounded-md ${
+                    currentPage === totalPages
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : "bg-white hover:bg-gray-50 text-gray-700"
+                  }`}
                 >
                   &gt;
                 </button>
                 <button
                   onClick={() => handlePageChange(totalPages)}
                   disabled={currentPage === totalPages}
-                  className={`p-2 border rounded-md ${currentPage === totalPages ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-white hover:bg-gray-50 text-gray-700"
-                    }`}
+                  className={`p-2 border rounded-md ${
+                    currentPage === totalPages
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : "bg-white hover:bg-gray-50 text-gray-700"
+                  }`}
                 >
                   &raquo;
                 </button>

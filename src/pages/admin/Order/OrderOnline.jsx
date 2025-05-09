@@ -14,12 +14,12 @@ import { useNavigate } from "react-router-dom";
 // Các trạng thái đơn hàng
 const orderStatusMap = {
   "-1": "Đã hủy",
-  "0": "Chờ xác nhận",
-  "1": "Chờ thanh toán",
-  "2": "Đã xác nhận",
-  "3": "Đang giao hàng",
-  "4": "Giao hàng không thành công",
-  "5": "Hoàn thành",
+  0: "Chờ xác nhận",
+  1: "Chờ thanh toán",
+  2: "Đã xác nhận",
+  3: "Đang giao hàng",
+  4: "Giao hàng không thành công",
+  5: "Hoàn thành",
 };
 
 // Tạo lớp CSS cho từng trạng thái
@@ -64,12 +64,18 @@ export default function OnlineOrder() {
   const fetchOrders = async () => {
     setIsLoading(true);
     try {
-      const data = await OrderService.getOnlineOrders("", currentPage - 1, pageSize);
+      const data = await OrderService.getOnlineOrders(
+        "",
+        currentPage - 1,
+        pageSize
+      );
       let sortedOrders = data?.content || [];
       if (sortConfig.key) {
         sortedOrders.sort((a, b) => {
-          if (a[sortConfig.key] < b[sortConfig.key]) return sortConfig.direction === "asc" ? -1 : 1;
-          if (a[sortConfig.key] > b[sortConfig.key]) return sortConfig.direction === "asc" ? 1 : -1;
+          if (a[sortConfig.key] < b[sortConfig.key])
+            return sortConfig.direction === "asc" ? -1 : 1;
+          if (a[sortConfig.key] > b[sortConfig.key])
+            return sortConfig.direction === "asc" ? 1 : -1;
           return 0;
         });
       }
@@ -87,7 +93,9 @@ export default function OnlineOrder() {
   const filterOrders = () => {
     let filtered = [...orders];
     if (selectedStatus !== null) {
-      filtered = filtered.filter((order) => order.statusOrder.toString() === selectedStatus);
+      filtered = filtered.filter(
+        (order) => order.statusOrder.toString() === selectedStatus
+      );
     }
     if (search.trim()) {
       const searchTerm = search.toLowerCase();
@@ -107,7 +115,8 @@ export default function OnlineOrder() {
   };
 
   const handleSort = (key) => {
-    const direction = sortConfig.key === key && sortConfig.direction === "asc" ? "desc" : "asc";
+    const direction =
+      sortConfig.key === key && sortConfig.direction === "asc" ? "desc" : "asc";
     setSortConfig({ key, direction });
   };
 
@@ -130,7 +139,10 @@ export default function OnlineOrder() {
   };
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(amount);
   };
 
   const getPageNumbers = () => {
@@ -155,8 +167,12 @@ export default function OnlineOrder() {
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-green-800">Quản lý đơn hàng Online</h1>
-            <p className="text-sm text-gray-500 mt-1">Quản lý và theo dõi tất cả đơn hàng Online</p>
+            <h1 className="text-2xl font-bold text-green-800">
+              Quản lý đơn hàng Online
+            </h1>
+            <p className="text-sm text-gray-500 mt-1">
+              Quản lý và theo dõi tất cả đơn hàng Online
+            </p>
           </div>
           <div className="mt-4 md:mt-0">
             <button
@@ -202,16 +218,19 @@ export default function OnlineOrder() {
 
           {showFilters && (
             <div className="mt-4 pt-4 border-t border-gray-200">
-              <h3 className="text-sm font-medium text-gray-500 mb-2">Lọc theo trạng thái:</h3>
+              <h3 className="text-sm font-medium text-gray-500 mb-2">
+                Lọc theo trạng thái:
+              </h3>
               <div className="flex flex-wrap gap-2">
                 {Object.keys(orderStatusMap).map((key) => (
                   <button
                     key={key}
                     onClick={() => handleStatusFilter(key)}
-                    className={`px-4 py-2 rounded-lg transition ${selectedStatus === key
+                    className={`px-4 py-2 rounded-lg transition ${
+                      selectedStatus === key
                         ? "bg-green-500 text-white shadow-md"
                         : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                      }`}
+                    }`}
                   >
                     {orderStatusMap[key]}
                   </button>
@@ -242,13 +261,12 @@ export default function OnlineOrder() {
                     >
                       <div className="flex items-center space-x-1">
                         <span>STT</span>
-                        {sortConfig.key === "id" && (
-                          sortConfig.direction === "asc" ? (
+                        {sortConfig.key === "id" &&
+                          (sortConfig.direction === "asc" ? (
                             <AiFillCaretUp className="text-green-500" />
                           ) : (
                             <AiFillCaretDown className="text-green-500" />
-                          )
-                        )}
+                          ))}
                       </div>
                     </th>
                     <th
@@ -258,37 +276,54 @@ export default function OnlineOrder() {
                     >
                       <div className="flex items-center space-x-1">
                         <span>Mã đơn hàng</span>
-                        {sortConfig.key === "orderCode" && (
-                          sortConfig.direction === "asc" ? (
+                        {sortConfig.key === "orderCode" &&
+                          (sortConfig.direction === "asc" ? (
                             <AiFillCaretUp className="text-green-500" />
                           ) : (
                             <AiFillCaretDown className="text-green-500" />
-                          )
-                        )}
+                          ))}
                       </div>
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
                       Khách hàng
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
                       Nhân viên
                     </th>
-                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Tổng tiền trước giảm
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Tổng tiền hàng
                     </th>
-                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Tổng tiền sau giảm
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Tổng tiền khách phải trả
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
                       Tên Voucher
                     </th>
-                    <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Số lượng SP
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
                       Trạng thái
                     </th>
-                    <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
                       Hành động
                     </th>
                   </tr>
@@ -298,16 +333,27 @@ export default function OnlineOrder() {
                     const discount = item.originalTotal - item.totalBill;
 
                     return (
-                      <tr key={item.id} className="hover:bg-green-50 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{index + 1}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">{item.orderCode}</div>
+                      <tr
+                        key={item.id}
+                        className="hover:bg-green-50 transition-colors"
+                      >
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {index + 1}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{item.customer?.fullname || "N/A"}</div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {item.orderCode}
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{item.employee?.fullname || "N/A"}</div>
+                          <div className="text-sm text-gray-900">
+                            {item.customer?.fullname || "N/A"}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">
+                            {item.employee?.fullname || "N/A"}
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-700 font-medium">
                           {formatCurrency(item.totalAmount)}
@@ -316,21 +362,25 @@ export default function OnlineOrder() {
                           {formatCurrency(item.totalBill)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{item.voucher?.voucherName || "Không Có Voucher"}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-center">
-                          <div className="text-sm font-medium">{item.totalAmount}</div>
+                          <div className="text-sm text-gray-900">
+                            {item.voucher?.voucherName || "Không Có Voucher"}
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-center">
                           <span className={getStatusClass(item.statusOrder)}>
-                            {orderStatusMap[item.statusOrder.toString()] || "Không xác định"}
+                            {orderStatusMap[item.statusOrder.toString()] ||
+                              "Không xác định"}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-center">
                           <div className="flex justify-center space-x-2">
                             <button
                               className="text-green-500 hover:text-green-700 p-1 rounded-full hover:bg-green-100 transition-colors"
-                              onClick={() => navigate(`/admin/order/online/${item.id}/details`)}
+                              onClick={() =>
+                                navigate(
+                                  `/admin/order/online/${item.id}/details`
+                                )
+                              }
                               title="Xem chi tiết"
                             >
                               <AiOutlineEye size={20} />
@@ -341,7 +391,6 @@ export default function OnlineOrder() {
                     );
                   })}
                 </tbody>
-
               </table>
             </div>
           )}
@@ -371,16 +420,22 @@ export default function OnlineOrder() {
                 <button
                   onClick={() => handlePageChange(1)}
                   disabled={currentPage === 1}
-                  className={`p-2 border rounded-md ${currentPage === 1 ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-white hover:bg-gray-50 text-gray-700"
-                    }`}
+                  className={`p-2 border rounded-md ${
+                    currentPage === 1
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : "bg-white hover:bg-gray-50 text-gray-700"
+                  }`}
                 >
                   &laquo;
                 </button>
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className={`p-2 border rounded-md ${currentPage === 1 ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-white hover:bg-gray-50 text-gray-700"
-                    }`}
+                  className={`p-2 border rounded-md ${
+                    currentPage === 1
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : "bg-white hover:bg-gray-50 text-gray-700"
+                  }`}
                 >
                   &lt;
                 </button>
@@ -388,10 +443,11 @@ export default function OnlineOrder() {
                   <button
                     key={number}
                     onClick={() => handlePageChange(number)}
-                    className={`p-2 border rounded-md min-w-[40px] ${currentPage === number
+                    className={`p-2 border rounded-md min-w-[40px] ${
+                      currentPage === number
                         ? "bg-green-500 text-white"
                         : "bg-white hover:bg-gray-50 text-gray-700"
-                      }`}
+                    }`}
                   >
                     {number}
                   </button>
@@ -399,16 +455,22 @@ export default function OnlineOrder() {
                 <button
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className={`p-2 border rounded-md ${currentPage === totalPages ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-white hover:bg-gray-50 text-gray-700"
-                    }`}
+                  className={`p-2 border rounded-md ${
+                    currentPage === totalPages
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : "bg-white hover:bg-gray-50 text-gray-700"
+                  }`}
                 >
                   &gt;
                 </button>
                 <button
                   onClick={() => handlePageChange(totalPages)}
                   disabled={currentPage === totalPages}
-                  className={`p-2 border rounded-md ${currentPage === totalPages ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-white hover:bg-gray-50 text-gray-700"
-                    }`}
+                  className={`p-2 border rounded-md ${
+                    currentPage === totalPages
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : "bg-white hover:bg-gray-50 text-gray-700"
+                  }`}
                 >
                   &raquo;
                 </button>

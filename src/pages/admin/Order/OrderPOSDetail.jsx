@@ -5,8 +5,8 @@ import { toast } from "react-toastify";
 
 // Các trạng thái hóa đơn POS
 const orderStatusMap = {
-  "1": "Chờ thanh toán",
-  "5": "Hoàn thành",
+  1: "Chờ thanh toán",
+  5: "Hoàn thành",
 };
 
 // Tạo lớp CSS cho từng trạng thái
@@ -59,7 +59,10 @@ const OrderPOSDetail = () => {
   // Định dạng tiền tệ
   const formatCurrency = (amount) => {
     if (amount === undefined || amount === null) return "N/A";
-    return amount.toLocaleString("vi-VN", { style: "currency", currency: "VND" });
+    return amount.toLocaleString("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    });
   };
 
   // Fix style cho in ấn
@@ -207,7 +210,9 @@ const OrderPOSDetail = () => {
               d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
             />
           </svg>
-          <p className="text-red-500 font-bold text-xl mb-2">Không tìm thấy hóa đơn!</p>
+          <p className="text-red-500 font-bold text-xl mb-2">
+            Không tìm thấy hóa đơn!
+          </p>
           <button
             className="mt-4 px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-800 transition no-print"
             onClick={() => navigate("/admin/order/pos")}
@@ -235,36 +240,53 @@ const OrderPOSDetail = () => {
 
           {/* Customer Info */}
           <div className="p-6 border-b">
-            <h3 className="text-lg font-semibold text-gray-700 mb-4">Thông tin khách hàng</h3>
+            <h3 className="text-lg font-semibold text-gray-700 mb-4">
+              Thông tin khách hàng
+            </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-gray-500">Họ và tên</p>
-                <p className="font-medium">{orderDetails.customer?.fullname || "N/A"}</p>
+                <p className="font-medium">
+                  {orderDetails.customer?.fullname || "N/A"}
+                </p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Số điện thoại</p>
-                <p className="font-medium">{orderDetails.customer?.phone || "N/A"}</p>
+                <p className="font-medium">
+                  {orderDetails.customer?.phone || "N/A"}
+                </p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Ngày tạo hóa đơn</p>
-                <p className="font-medium">{formatDate(orderDetails.createDate)}</p>
+                <p className="font-medium">
+                  {formatDate(orderDetails.createDate)}
+                </p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Trạng thái hóa đơn</p>
                 <p className="font-medium">
-                  <span className={getStatusClass(parseInt(orderDetails?.statusOrder))}>
-                    {orderStatusMap[orderDetails?.statusOrder?.toString()] || "Không xác định"}
+                  <span
+                    className={getStatusClass(
+                      parseInt(orderDetails?.statusOrder)
+                    )}
+                  >
+                    {orderStatusMap[orderDetails?.statusOrder?.toString()] ||
+                      "Không xác định"}
                   </span>
                 </p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Nhân viên</p>
-                <p className="font-medium">{orderDetails.employee?.fullname || "N/A"}</p>
+                <p className="font-medium">
+                  {orderDetails.employee?.fullname || "N/A"}
+                </p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Phương thức thanh toán</p>
                 <p className="font-medium">
-                  {orderDetails.paymentMethod === 1 ? "Chuyển khoản" : "Tiền mặt"}
+                  {orderDetails.paymentMethod === 1
+                    ? "Chuyển khoản"
+                    : "Tiền mặt"}
                 </p>
               </div>
             </div>
@@ -272,7 +294,9 @@ const OrderPOSDetail = () => {
 
           {/* Order Details */}
           <div className="p-6">
-            <h3 className="text-lg font-semibold text-gray-700 mb-4">Các sản phẩm</h3>
+            <h3 className="text-lg font-semibold text-gray-700 mb-4">
+              Các sản phẩm
+            </h3>
             <div className="overflow-x-auto border rounded-lg shadow-md">
               <table className="w-full border-collapse text-sm">
                 <thead>
@@ -289,16 +313,25 @@ const OrderPOSDetail = () => {
                   {orderDetails?.orderDetails?.length > 0 ? (
                     orderDetails.orderDetails.map((detail, index) => {
                       const product = detail.productDetail?.product;
+                      const productDetail = detail.productDetail || {};
                       const quantity = detail.quantity ?? 0;
-                      const colorName = detail.productDetail?.color?.name ?? "Không có màu";
-                      const sizeName = detail.productDetail?.size?.name ?? "Không có kích thước";
-                      const price = detail.productDetail?.salePrice ?? product?.salePrice ?? 0;
+                      const colorName =
+                        detail.productDetail?.color?.name ?? "Không có màu";
+                      const sizeName =
+                        detail.productDetail?.size?.name ??
+                        "Không có kích thước";
+                      const price =
+                        detail.productDetail?.salePrice ??
+                        product?.salePrice ??
+                        0;
                       const totalPrice = price * quantity;
 
                       return (
                         <tr
                           key={detail.id || index}
-                          className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                          className={
+                            index % 2 === 0 ? "bg-white" : "bg-gray-50"
+                          }
                         >
                           <td className="py-3 px-4 flex items-center gap-3">
                             <div className="w-10 h-10 bg-gray-300 rounded-md flex items-center justify-center text-xs font-semibold">
@@ -309,13 +342,20 @@ const OrderPOSDetail = () => {
                                 {product?.productName || "Không có tên"}
                               </p>
                               <p className="text-xs text-gray-500">
-                                {product?.productCode || "Không có mã"}
+                                {productDetail.productDetailCode ||
+                                  "Không có mã"}
                               </p>
                             </div>
                           </td>
-                          <td className="py-3 px-4 text-center font-medium">{quantity}</td>
-                          <td className="py-3 px-4 text-center font-medium">{colorName}</td>
-                          <td className="py-3 px-4 text-center font-medium">{sizeName}</td>
+                          <td className="py-3 px-4 text-center font-medium">
+                            {quantity}
+                          </td>
+                          <td className="py-3 px-4 text-center font-medium">
+                            {colorName}
+                          </td>
+                          <td className="py-3 px-4 text-center font-medium">
+                            {sizeName}
+                          </td>
                           <td className="py-3 px-4 text-right font-medium text-green-600">
                             {formatCurrency(price)}
                           </td>
@@ -327,7 +367,10 @@ const OrderPOSDetail = () => {
                     })
                   ) : (
                     <tr>
-                      <td colSpan="6" className="py-3 px-4 text-center text-gray-500">
+                      <td
+                        colSpan="6"
+                        className="py-3 px-4 text-center text-gray-500"
+                      >
                         Không có sản phẩm nào trong hóa đơn
                       </td>
                     </tr>
@@ -338,16 +381,24 @@ const OrderPOSDetail = () => {
                     <td colSpan="5" className="py-4 px-4 text-right">
                       Tổng tiền trước khi áp voucher:
                     </td>
-                    <td colSpan="1" className="py-4 px-4 text-right text-xl text-gray-700">
+                    <td
+                      colSpan="1"
+                      className="py-4 px-4 text-right text-xl text-gray-700"
+                    >
                       {formatCurrency(orderDetails.originalTotal ?? 0)}
                     </td>
                   </tr>
                   <tr>
-                    <td colSpan="5" className="py-4 px-4 text-right">Số tiền giảm:</td>
-                    <td colSpan="1" className="py-4 px-4 text-right text-xl text-green-600">
+                    <td colSpan="5" className="py-4 px-4 text-right">
+                      Số tiền giảm (Khuyến mãi):
+                    </td>
+                    <td
+                      colSpan="1"
+                      className="py-4 px-4 text-right text-xl text-green-600"
+                    >
                       {formatCurrency(
                         orderDetails.discount ??
-                          (orderDetails.originalTotal - orderDetails.totalBill) ??
+                          orderDetails.originalTotal - orderDetails.totalBill ??
                           0
                       )}
                     </td>
@@ -356,7 +407,10 @@ const OrderPOSDetail = () => {
                     <td colSpan="5" className="py-4 px-4 text-right">
                       Tổng tiền sau khi áp voucher:
                     </td>
-                    <td colSpan="1" className="py-4 px-4 text-right text-xl text-red-600">
+                    <td
+                      colSpan="1"
+                      className="py-4 px-4 text-right text-xl text-red-600"
+                    >
                       {formatCurrency(orderDetails.totalBill ?? 0)}
                     </td>
                   </tr>
@@ -384,12 +438,16 @@ const OrderPOSDetail = () => {
                     </svg>
                   </div>
                   <div className="ml-3">
-                    <h3 className="text-sm font-medium text-green-800">Mã giảm giá đã áp dụng</h3>
+                    <h3 className="text-sm font-medium text-green-800">
+                      Mã giảm giá đã áp dụng
+                    </h3>
                     <div className="mt-2 text-sm text-green-700">
                       <p className="font-medium">
                         {orderDetails.voucher?.voucherName || "Không có tên"}
                       </p>
-                      <p>{orderDetails.voucher?.description || "Không có mô tả"}</p>
+                      <p>
+                        {orderDetails.voucher?.description || "Không có mô tả"}
+                      </p>
                     </div>
                   </div>
                 </div>
