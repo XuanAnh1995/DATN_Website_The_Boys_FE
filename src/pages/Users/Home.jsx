@@ -850,15 +850,15 @@ const Layout = () => {
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [showCompareModal, setShowCompareModal] = useState(false);
   const images = [
-    "/src/assets/banner-thoi-trang-nam-dep-tm-luxury.jpg",
-    "/src/assets/banner-thoi-trang-nam-tinh.jpg",
-    "/src/assets/dung-luong-banner-thoi-trang.jpg",
+    // "/src/assets/Black and White Vintage Illustration Men's Fashion Banner (1).png",
+    // "/src/assets/Facing to camera business man yellow blue Youtube Thumbnail.png",
+    "/src/assets/Black and White Vintage Illustration Men's Fashion Banner.png",
   ];
 
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentImage((prevImage) => (prevImage + 1) % images.length);
-    }, 3000);
+    }, 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -980,15 +980,15 @@ const Layout = () => {
   return (
     <main className="bg-gray-50 text-gray-900">
       {/* Banner */}
-      <div className="relative w-screen h-[40vh] overflow-hidden mt-2 border border-gray-200 shadow-lg">
+      <div className="relative w-screen h-screen overflow-hidden border border-gray-200 shadow-lg">
         <img
           src={images[currentImage]}
           alt="Banner"
           className="w-full h-full object-cover transition-opacity duration-500 ease-in-out"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#1E3A8A]/50 to-transparent flex items-center justify-center">
-          <h1 className="text-4xl font-extrabold text-white drop-shadow-lg">
-            Welcome to TheBoys!
+          <h1 className="text-4xl md:text-5xl font-extrabold text-white drop-shadow-lg">
+            {/* Thêm nội dung tiêu đề nếu cần */}
           </h1>
         </div>
       </div>
