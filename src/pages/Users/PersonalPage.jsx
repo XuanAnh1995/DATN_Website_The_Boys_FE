@@ -2,10 +2,11 @@ import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import Select from "react-select";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import LoginInfoService from "../../services/LoginInfoService";
-import AddressService from "../../services/CustomerAddressService";
+import AccountService from "../../services/Account";
 import GHNService from "../../services/GHNService";
-import { toast } from "react-toastify";
 
 const PersonalPage = () => {
   const { isLoggedIn, role } = useSelector((state) => state.user);
@@ -14,6 +15,8 @@ const PersonalPage = () => {
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isAddAddressModalOpen, setIsAddAddressModalOpen] = useState(false);
+  const [isPasswordConfirmModalOpen, setIsPasswordConfirmModalOpen] =
+    useState(false);
   const [formData, setFormData] = useState({
     fullname: "",
     email: "",
@@ -123,7 +126,6 @@ const PersonalPage = () => {
         setIsLoading(true);
         const customerData = await LoginInfoService.getCurrentUser();
         console.log("Dữ liệu khách hàng:", customerData);
-        console.log("Customer ID:", customerData.id);
         setCustomer(customerData);
         setFormData({
           fullname: customerData.fullname || "",
@@ -138,22 +140,21 @@ const PersonalPage = () => {
           customerData.avatar || "https://via.placeholder.com/150"
         );
 
-        // Fetch addresses
         try {
-          const addresses = await LoginInfoService.getCurrentUserAddresses();
+          const addresses = await AccountService.getCustomerAddresses();
           console.log("Dữ liệu địa chỉ thô:", addresses);
           const formattedAddresses = addresses.map((address) => ({
             value: address.id,
             label: `${address.addressDetail}, ${address.wardName}, ${address.districtName}, ${address.provinceName}`,
             fullAddress: {
               id: address.id,
-              address_detail: address.addressDetail,
-              ward_name: address.wardName,
-              ward_id: address.wardId,
-              district_id: address.districtId,
-              district_name: address.districtName,
-              province_id: address.provinceId,
-              province_name: address.provinceName,
+              addressDetail: address.addressDetail,
+              wardName: address.wardName,
+              wardId: address.wardId,
+              districtId: address.districtId,
+              districtName: address.districtName,
+              provinceId: address.provinceId,
+              provinceName: address.provinceName,
               isDefault: address.isDefault || false,
             },
           }));
@@ -166,12 +167,14 @@ const PersonalPage = () => {
           setSelectedAddress(defaultAddr);
         } catch (addressError) {
           console.error("Lỗi khi lấy danh sách địa chỉ:", addressError);
-          toast.error("Không thể tải danh sách địa chỉ!");
+          toast.error(
+            addressError.response?.data?.message ||
+              "Không thể tải danh sách địa chỉ!"
+          );
           setUserAddresses([]);
           setSelectedAddress(null);
         }
 
-        // Fetch provinces for address creation
         try {
           const provinceData = await GHNService.getProvinces();
           console.log("Dữ liệu tỉnh/thành phố:", provinceData);
@@ -271,17 +274,66 @@ const PersonalPage = () => {
     }
   };
 
+  const handleDeleteAddress = async (addressId) => {
+    if (!isLoggedIn) {
+      toast.error("Phiên đăng nhập hết hạn, vui lòng đăng nhập lại!");
+      navigate("/login");
+      return;
+    }
+
+    if (window.confirm("Bạn có chắc muốn xóa địa chỉ này?")) {
+      try {
+        setIsLoading(true);
+        const response = await AccountService.deleteAddress(addressId);
+        const updatedAddresses = userAddresses.filter(
+          (addr) => addr.value !== addressId
+        );
+        setUserAddresses(updatedAddresses);
+        if (selectedAddress && selectedAddress.value === addressId) {
+          const newDefault =
+            updatedAddresses.find((addr) => addr.fullAddress.isDefault) ||
+            updatedAddresses[0] ||
+            null;
+          setSelectedAddress(newDefault);
+        }
+        toast.success(response.message || "Xóa địa chỉ thành công!");
+      } catch (error) {
+        console.error("Lỗi khi xóa địa chỉ:", error);
+        const errorMessages = error.response?.data?.data || [];
+        if (errorMessages.length > 0) {
+          errorMessages.forEach((msg) => toast.error(msg));
+        } else if (
+          error.response?.status === 401 ||
+          error.response?.status === 403
+        ) {
+          toast.error("Phiên đăng nhập hết hạn, vui lòng đăng nhập lại!");
+          navigate("/login");
+        } else if (error.response?.status === 404) {
+          toast.error(
+            error.response?.data?.message || "Địa chỉ không tồn tại!"
+          );
+        } else {
+          toast.error(error.response?.data?.message || "Xóa địa chỉ thất bại!");
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
   const handleUpdate = async () => {
-    // Validate profile form if any changes were made
     const hasProfileChanges =
       formData.fullname !== (customer.fullname || "") ||
       formData.email !== (customer.email || "") ||
       formData.phone !== (customer.phone || "") ||
-      formData.oldPassword ||
-      formData.newPassword ||
       avatarFile;
 
-    if (hasProfileChanges && !validateForm()) return;
+    const hasPasswordChanges =
+      formData.oldPassword &&
+      formData.newPassword &&
+      formData.confirmNewPassword;
+
+    if ((hasProfileChanges || hasPasswordChanges) && !validateForm()) return;
 
     if (!customer?.id) {
       toast.error("Không tìm thấy ID khách hàng!");
@@ -291,75 +343,57 @@ const PersonalPage = () => {
     try {
       setIsLoading(true);
 
-      // Update profile if changes exist
       if (hasProfileChanges) {
-        const updateData = {
-          fullname: formData.fullname,
-          email: formData.email,
-          phone: formData.phone,
-        };
-        if (formData.oldPassword && formData.newPassword) {
-          updateData.oldPassword = formData.oldPassword;
-          updateData.password = formData.newPassword;
+        if (
+          formData.fullname !== (customer.fullname || "") ||
+          formData.email !== (customer.email || "") ||
+          formData.phone !== (customer.phone || "")
+        ) {
+          const response = await AccountService.updateCustomerInfo({
+            fullname: formData.fullname,
+            email: formData.email,
+            phone: formData.phone,
+          });
+          setCustomer((prev) => ({
+            ...prev,
+            fullname: formData.fullname,
+            email: formData.email,
+            phone: formData.phone,
+          }));
+          toast.success(response.message || "Cập nhật thông tin thành công!");
         }
-        const response = await LoginInfoService.updateCurrentUser(updateData);
-        let updatedCustomer = { ...customer, ...updateData };
 
         if (avatarFile) {
-          const formData = new FormData();
-          formData.append("avatar", avatarFile);
-          const avatarResponse = await LoginInfoService.updateAvatar(formData);
-          console.log("Avatar response:", avatarResponse);
+          const avatarFormData = new FormData();
+          avatarFormData.append("avatar", avatarFile);
+          const avatarResponse =
+            await LoginInfoService.updateAvatar(avatarFormData);
           if (
             avatarResponse.status === "success" &&
             avatarResponse.data.avatarUrl
           ) {
-            updatedCustomer.avatar = avatarResponse.data.avatarUrl;
+            setCustomer((prev) => ({
+              ...prev,
+              avatar: avatarResponse.data.avatarUrl,
+            }));
             setAvatarFile(null);
+            toast.success("Cập nhật ảnh đại diện thành công!");
           } else {
-            toast.warn(
-              "Cập nhật ảnh đại diện thất bại, nhưng thông tin khác đã được lưu."
-            );
+            toast.warn("Cập nhật ảnh đại diện thất bại!");
           }
         }
-
-        setCustomer(updatedCustomer);
-        setAvatarPreview(
-          updatedCustomer.avatar || "https://via.placeholder.com/150"
-        );
-        setFormData({
-          fullname: updatedCustomer.fullname || "",
-          email: updatedCustomer.email || "",
-          phone: updatedCustomer.phone || "",
-          oldPassword: "",
-          newPassword: "",
-          confirmNewPassword: "",
-          customAddress: "",
-        });
-        toast.success(
-          response.data?.message || "Cập nhật thông tin thành công!"
-        );
       }
 
-      // Update default address if selected
+      if (hasPasswordChanges) {
+        setIsPasswordConfirmModalOpen(true);
+        return; // Wait for confirmation
+      }
+
       if (selectedAddress) {
         const currentDefault = userAddresses.find(
           (addr) => addr.fullAddress.isDefault
         );
         if (!currentDefault || currentDefault.value !== selectedAddress.value) {
-          const addressData = {
-            addressDetail: selectedAddress.fullAddress.address_detail,
-            wardName: selectedAddress.fullAddress.ward_name,
-            wardId: Number(selectedAddress.fullAddress.ward_id),
-            districtId: Number(selectedAddress.fullAddress.district_id),
-            districtName: selectedAddress.fullAddress.district_name,
-            provinceId: Number(selectedAddress.fullAddress.province_id),
-            provinceName: selectedAddress.fullAddress.province_name,
-            isDefault: true,
-            customerId: customer.id,
-          };
-          console.log("Cập nhật địa chỉ mặc định:", addressData);
-          await AddressService.update(selectedAddress.value, addressData);
           const updatedAddresses = userAddresses.map((addr) => ({
             ...addr,
             fullAddress: {
@@ -391,6 +425,43 @@ const PersonalPage = () => {
     }
   };
 
+  const handleConfirmPasswordChange = async () => {
+    try {
+      setIsLoading(true);
+      const response = await AccountService.updateCustomerPassword({
+        oldPassword: formData.oldPassword,
+        password: formData.newPassword,
+      });
+      toast.success(response.message || "Cập nhật mật khẩu thành công!");
+      setFormData((prev) => ({
+        ...prev,
+        oldPassword: "",
+        newPassword: "",
+        confirmNewPassword: "",
+      }));
+      setIsPasswordConfirmModalOpen(false);
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Lỗi khi cập nhật mật khẩu:", error);
+      const errorMessages = error.response?.data?.data || [];
+      if (errorMessages.length > 0) {
+        errorMessages.forEach((msg) => toast.error(msg));
+      } else if (
+        error.response?.status === 401 ||
+        error.response?.status === 403
+      ) {
+        toast.error("Phiên đăng nhập hết hạn, vui lòng đăng nhập lại!");
+        navigate("/login");
+      } else {
+        toast.error(
+          error.response?.data?.message || "Cập nhật mật khẩu thất bại!"
+        );
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleAddAddress = async () => {
     if (!validateNewAddressForm()) return;
 
@@ -400,49 +471,37 @@ const PersonalPage = () => {
       return;
     }
 
-    if (!customer?.id) {
-      toast.error("Không tìm thấy ID khách hàng!");
-      return;
-    }
-
     try {
       setIsLoading(true);
       const newAddress = {
-        addressDetail: formData.customAddress,
-        wardName: selectedWard.label,
-        wardId: Number(selectedWard.value),
-        districtId: Number(selectedDistrict.value),
-        districtName: selectedDistrict.label,
         provinceId: Number(selectedProvince.value),
         provinceName: selectedProvince.label,
-        isDefault: userAddresses.length === 0,
-        customerId: customer.id,
+        districtId: Number(selectedDistrict.value),
+        districtName: selectedDistrict.label,
+        wardId: Number(selectedWard.value),
+        wardName: selectedWard.label,
+        addressDetail: formData.customAddress,
       };
       console.log("Gửi địa chỉ mới:", newAddress);
-      const response = await AddressService.create(newAddress);
-      console.log("Kết quả thêm địa chỉ:", response);
+      const response = await AccountService.createAddress(newAddress);
       const addedAddressData = response.data;
       const addedAddress = {
         value: addedAddressData.id,
         label: `${addedAddressData.addressDetail}, ${addedAddressData.wardName}, ${addedAddressData.districtName}, ${addedAddressData.provinceName}`,
         fullAddress: {
           id: addedAddressData.id,
-          address_detail: addedAddressData.addressDetail,
-          ward_name: addedAddressData.wardName,
-          ward_id: addedAddressData.wardId,
-          district_id: addedAddressData.districtId,
-          district_name: addedAddressData.districtName,
-          province_id: addedAddressData.provinceId,
-          province_name: addedAddressData.provinceName,
-          isDefault: addedAddressData.isDefault || false,
+          addressDetail: addedAddressData.addressDetail,
+          wardName: addedAddressData.wardName,
+          wardId: addedAddressData.wardId,
+          districtId: addedAddressData.districtId,
+          districtName: addedAddressData.districtName,
+          provinceId: addedAddressData.provinceId,
+          provinceName: addedAddressData.provinceName,
+          isDefault: userAddresses.length === 0,
         },
       };
       const updatedAddresses = [...userAddresses, addedAddress];
-      if (addedAddressData.isDefault) {
-        updatedAddresses.forEach(
-          (addr) =>
-            (addr.fullAddress.isDefault = addr.value === addedAddressData.id)
-        );
+      if (userAddresses.length === 0) {
         setSelectedAddress(addedAddress);
       }
       setUserAddresses(updatedAddresses);
@@ -453,10 +512,9 @@ const PersonalPage = () => {
       setSelectedWard(null);
       setDistricts([]);
       setWards([]);
-      toast.success("Thêm địa chỉ thành công!");
+      toast.success(response.message || "Thêm địa chỉ thành công!");
     } catch (error) {
       console.error("Lỗi khi thêm địa chỉ:", error);
-      console.log("Dữ liệu lỗi địa chỉ:", error.response?.data);
       const errorMessages = error.response?.data?.data || [];
       if (errorMessages.length > 0) {
         errorMessages.forEach((msg) => toast.error(msg));
@@ -468,7 +526,7 @@ const PersonalPage = () => {
         navigate("/login");
       } else if (error.response?.status === 400) {
         toast.error(
-          error.response.data?.message ||
+          error.response?.data?.message ||
             "Thông tin địa chỉ không hợp lệ! Vui lòng kiểm tra lại."
         );
       } else {
@@ -484,338 +542,95 @@ const PersonalPage = () => {
 
   if (!isLoggedIn || role !== "CUSTOMER") {
     return (
-      <p className="text-center text-red-500 text-3xl">
-        Vui lòng đăng nhập để xem thông tin cá nhân!
-      </p>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50">
+        <p className="text-2xl font-semibold text-red-600 animate-pulse">
+          Vui lòng đăng nhập để xem thông tin cá nhân!
+        </p>
+      </div>
     );
   }
 
   if (!customer) {
-    return <p className="text-center text-gray-500 text-3xl">Đang tải...</p>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50">
+        <div className="flex items-center space-x-3">
+          <svg
+            className="animate-spin h-10 w-10 text-blue-600"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            ></circle>
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            ></path>
+          </svg>
+          <p className="text-xl text-gray-700">Đang tải...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-gray-50 min-h-screen">
-      <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold text-blue-800">Trang Cá Nhân</h1>
-        <p className="text-gray-600 mt-2">
-          Quản lý thông tin tài khoản của bạn
-        </p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 py-12 px-4 sm:px-6 lg:px-8">
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+        className="mt-12"
+        toastClassName="bg-white text-gray-900 rounded-xl shadow-lg p-4 flex items-center"
+        progressClassName="bg-blue-600"
+      />
+      <div className="max-w-4xl mx-auto">
+        <div className="text-center mb-12 animate-fade-in"></div>
 
-      <div className="bg-white shadow-lg rounded-lg p-6">
-        <div className="flex items-center gap-6 mb-6">
-          <div className="relative">
-            <img
-              src={avatarPreview}
-              alt="Avatar"
-              className="w-32 h-32 rounded-full object-cover border-4 border-blue-200"
-            />
-            {isEditing && (
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleAvatarChange}
-                className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700 transition cursor-pointer opacity-0 w-10 h-10"
-                style={{ zIndex: 1 }}
-                id="avatar-upload"
+        <div className="bg-white bg-opacity-80 backdrop-blur-lg shadow-2xl rounded-3xl overflow-hidden animate-slide-up">
+          {/* Header Section */}
+          <div className="bg-gradient-to-r from-sky-900 to-purple-800 p-8 flex flex-col sm:flex-row items-center sm:items-start space-y-6 sm:space-y-0 sm:space-x-6">
+            <div className="relative group">
+              <img
+                src={avatarPreview}
+                alt="Avatar"
+                className="w-28 h-28 rounded-full object-cover border-4 border-white shadow-xl transition-transform duration-300 group-hover:scale-105"
               />
-            )}
-            <button
-              className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700 transition"
-              onClick={() =>
-                document.querySelector('input[type="file"]').click()
-              }
-              disabled={!isEditing}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L15.232 5.232z"
-                />
-              </svg>
-            </button>
-          </div>
-          <div>
-            <h2 className="text-2xl font-semibold text-gray-800">
-              {customer.fullname || "Chưa cập nhật"}
-            </h2>
-            <p className="text-gray-600">
-              Mã khách hàng: {customer.customerCode || "Chưa cập nhật"}
-            </p>
-            <p className="text-gray-600">
-              Trạng thái: {customer.status ? "Hoạt động" : "Không hoạt động"}
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Tên đăng nhập
-              </label>
-              <p className="mt-1 text-gray-900">
-                {customer.username || "Chưa cập nhật"}
-              </p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Họ và tên
-              </label>
-              {isEditing ? (
+              {isEditing && (
                 <input
-                  type="text"
-                  name="fullname"
-                  value={formData.fullname}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarChange}
+                  className="absolute inset-0 opacity-0 cursor-pointer"
+                  id="avatar-upload"
+                  aria-label="Tải lên ảnh đại diện"
                 />
-              ) : (
-                <p className="mt-1 text-gray-900">
-                  {customer.fullname || "Chưa cập nhật"}
-                </p>
               )}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Email
-              </label>
-              {isEditing ? (
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              ) : (
-                <p className="mt-1 text-gray-900">
-                  {customer.email || "Chưa cập nhật"}
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Số điện thoại
-              </label>
-              {isEditing ? (
-                <input
-                  type="text"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              ) : (
-                <p className="mt-1 text-gray-900">
-                  {customer.phone || "Chưa cập nhật"}
-                </p>
-              )}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Ngày tạo tài khoản
-              </label>
-              <p className="mt-1 text-gray-900">
-                {customer.createDate
-                  ? new Date(customer.createDate).toLocaleDateString("vi-VN")
-                  : "Chưa cập nhật"}
-              </p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Cập nhật gần nhất
-              </label>
-              <p className="mt-1 text-gray-900">
-                {customer.updateDate
-                  ? new Date(customer.updateDate).toLocaleDateString("vi-VN")
-                  : "Chưa cập nhật"}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-2">
-            Địa chỉ mặc định
-          </h3>
-          {isEditing ? (
-            <div className="space-y-3">
-              <Select
-                options={userAddresses}
-                value={selectedAddress}
-                onChange={setSelectedAddress}
-                placeholder="Chọn địa chỉ mặc định"
-                className="text-gray-900"
-                isDisabled={isLoading}
-              />
               <button
-                onClick={() => setIsAddAddressModalOpen(true)}
-                className="flex items-center bg-blue-600 text-white px-4 py-2 rounded-md font-semibold hover:bg-blue-700 transition"
-                disabled={isLoading}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 mr-2"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 4v16m8-8H4"
-                  />
-                </svg>
-                Thêm địa chỉ mới
-              </button>
-            </div>
-          ) : selectedAddress ? (
-            <p className="text-gray-900">
-              {selectedAddress.fullAddress.address_detail},{" "}
-              {selectedAddress.fullAddress.ward_name},{" "}
-              {selectedAddress.fullAddress.district_name},{" "}
-              {selectedAddress.fullAddress.province_name}
-            </p>
-          ) : (
-            <p className="text-gray-600 italic">Chưa có địa chỉ mặc định</p>
-          )}
-          <a
-            href="/addresses"
-            className="text-blue-600 hover:underline text-sm mt-2 inline-block"
-          >
-            Quản lý địa chỉ
-          </a>
-        </div>
-
-        {isEditing && (
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">
-              Đổi mật khẩu (nếu cần)
-            </h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Mật khẩu cũ
-                </label>
-                <input
-                  type="password"
-                  name="oldPassword"
-                  value={formData.oldPassword}
-                  onChange={handleInputChange}
-                  placeholder="Nhập mật khẩu cũ"
-                  autoComplete="current-password"
-                  className="mt-1 block w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Mật khẩu mới
-                </label>
-                <input
-                  type="password"
-                  name="newPassword"
-                  value={formData.newPassword}
-                  onChange={handleInputChange}
-                  placeholder="Nhập mật khẩu mới"
-                  autoComplete="new-password"
-                  className="mt-1 block w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Xác nhận mật khẩu mới
-                </label>
-                <input
-                  type="password"
-                  name="confirmNewPassword"
-                  value={formData.confirmNewPassword}
-                  onChange={handleInputChange}
-                  placeholder="Xác nhận mật khẩu mới"
-                  autoComplete="new-password"
-                  className="mt-1 block w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className="flex gap-4">
-          {isEditing ? (
-            <>
-              <button
-                onClick={handleUpdate}
-                disabled={isLoading}
-                className={`bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition ${
-                  isLoading ? "opacity-50 cursor-not-allowed" : ""
+                className={`absolute bottom-0 right-0 p-2 rounded-full transition-all duration-300 ${
+                  isEditing
+                    ? "bg-blue-500 text-white hover:bg-blue-600 shadow-lg"
+                    : "bg-gray-300 text-gray-600 cursor-not-allowed"
                 }`}
-              >
-                {isLoading ? "Đang lưu..." : "Lưu thay đổi"}
-              </button>
-              <button
-                onClick={() => {
-                  setIsEditing(false);
-                  setAvatarFile(null);
-                  setAvatarPreview(
-                    customer.avatar || "https://via.placeholder.com/150"
-                  );
-                  setFormData({
-                    fullname: customer.fullname || "",
-                    email: customer.email || "",
-                    phone: customer.phone || "",
-                    oldPassword: "",
-                    newPassword: "",
-                    confirmNewPassword: "",
-                    customAddress: "",
-                  });
-                }}
-                className="bg-gray-300 text-gray-800 px-6 py-2 rounded-lg font-semibold hover:bg-gray-400 transition"
-              >
-                Hủy
-              </button>
-            </>
-          ) : (
-            <button
-              onClick={() => setIsEditing(true)}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition"
-            >
-              Chỉnh sửa thông tin
-            </button>
-          )}
-        </div>
-      </div>
-
-      {isAddAddressModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">
-                Thêm địa chỉ mới
-              </h3>
-              <button
-                onClick={() => {
-                  setIsAddAddressModalOpen(false);
-                  setFormData({ ...formData, customAddress: "" });
-                  setSelectedProvince(null);
-                  setSelectedDistrict(null);
-                  setSelectedWard(null);
-                  setDistricts([]);
-                  setWards([]);
-                }}
-                className="text-gray-500 hover:text-gray-700 transition"
+                onClick={() =>
+                  isEditing &&
+                  document.querySelector('input[type="file"]').click()
+                }
+                disabled={!isEditing}
+                aria-label="Chỉnh sửa ảnh đại diện"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -827,96 +642,534 @@ const PersonalPage = () => {
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
+                    strokeWidth="2"
+                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L15.232 5.232z"
                   />
                 </svg>
               </button>
             </div>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Tỉnh/Thành phố
-                </label>
-                <Select
-                  options={provinces}
-                  value={selectedProvince}
-                  onChange={handleProvinceChange}
-                  placeholder="Chọn tỉnh/thành phố"
-                  className="mt-1 text-gray-900"
-                  isDisabled={isLoading}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Quận/Huyện
-                </label>
-                <Select
-                  options={districts}
-                  value={selectedDistrict}
-                  onChange={handleDistrictChange}
-                  placeholder="Chọn quận/huyện"
-                  className="mt-1 text-gray-900"
-                  isDisabled={isLoading || !selectedProvince}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Phường/Xã
-                </label>
-                <Select
-                  options={wards}
-                  value={selectedWard}
-                  onChange={handleWardChange}
-                  placeholder="Chọn phường/xã"
-                  className="mt-1 text-gray-900"
-                  isDisabled={isLoading || !selectedDistrict}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Địa chỉ cụ thể
-                </label>
-                <input
-                  type="text"
-                  name="customAddress"
-                  value={formData.customAddress}
-                  onChange={handleInputChange}
-                  placeholder="Nhập số nhà, tên đường"
-                  className="mt-1 block w-full border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500"
-                  disabled={isLoading}
-                />
+            <div className="text-center sm:text-left">
+              <h2 className="text-3xl font-bold text-white">
+                {customer.fullname || "Chưa cập nhật"}
+              </h2>
+              <p className="text-blue-100 mt-1">
+                Mã khách hàng: {customer.customerCode || "Chưa cập nhật"}
+              </p>
+              <p className="text-blue-100">
+                Trạng thái: {customer.status ? "Hoạt động" : "Không hoạt động"}
+              </p>
+            </div>
+          </div>
+
+          {/* Profile Information */}
+          <div className="p-8">
+            <div className="bg-white bg-opacity-50 rounded-2xl p-6 mb-8 shadow-inner">
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">
+                Thông tin cá nhân
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Tên đăng nhập
+                    </label>
+                    <p className="mt-1 text-gray-900 font-medium">
+                      {customer.username || "Chưa cập nhật"}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Họ và tên
+                    </label>
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        name="fullname"
+                        value={formData.fullname}
+                        onChange={handleInputChange}
+                        className="mt-1 block w-full border border-gray-200 rounded-xl p-3 bg-white bg-opacity-70 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-300 shadow-sm hover:shadow-md"
+                        placeholder="Nhập họ và tên"
+                      />
+                    ) : (
+                      <p className="mt-1 text-gray-900 font-medium">
+                        {customer.fullname || "Chưa cập nhật"}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Email
+                    </label>
+                    {isEditing ? (
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        className="mt-1 block w-full border border-gray-200 rounded-xl p-3 bg-white bg-opacity-70 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-300 shadow-sm hover:shadow-md"
+                        placeholder="Nhập email"
+                      />
+                    ) : (
+                      <p className="mt-1 text-gray-900 font-medium">
+                        {customer.email || "Chưa cập nhật"}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Số điện thoại
+                    </label>
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        name="phone"
+                        value={formData.phone}
+                        onChange={handleInputChange}
+                        className="mt-1 block w-full border border-gray-200 rounded-xl p-3 bg-white bg-opacity-70 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-300 shadow-sm hover:shadow-md"
+                        placeholder="Nhập số điện thoại"
+                      />
+                    ) : (
+                      <p className="mt-1 text-gray-900 font-medium">
+                        {customer.phone || "Chưa cập nhật"}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Ngày tạo tài khoản
+                    </label>
+                    <p className="mt-1 text-gray-900 font-medium">
+                      {customer.createDate
+                        ? new Date(customer.createDate).toLocaleDateString(
+                            "vi-VN"
+                          )
+                        : "Chưa cập nhật"}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Cập nhật gần nhất
+                    </label>
+                    <p className="mt-1 text-gray-900 font-medium">
+                      {customer.updateDate
+                        ? new Date(customer.updateDate).toLocaleDateString(
+                            "vi-VN"
+                          )
+                        : "Chưa cập nhật"}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="flex justify-end gap-3 mt-6">
-              <button
-                onClick={() => {
-                  setIsAddAddressModalOpen(false);
-                  setFormData({ ...formData, customAddress: "" });
-                  setSelectedProvince(null);
-                  setSelectedDistrict(null);
-                  setSelectedWard(null);
-                  setDistricts([]);
-                  setWards([]);
-                }}
-                className="bg-gray-300 text-gray-800 px-4 py-2 rounded-md font-semibold hover:bg-gray-400 transition"
-                disabled={isLoading}
-              >
-                Hủy
-              </button>
-              <button
-                onClick={handleAddAddress}
-                disabled={isLoading}
-                className={`bg-blue-600 text-white px-4 py-2 rounded-md font-semibold hover:bg-blue-700 transition ${
-                  isLoading ? "opacity-50 cursor-not-allowed" : ""
-                }`}
-              >
-                {isLoading ? "Đang lưu..." : "Xác nhận"}
-              </button>
+
+            {/* Address Section */}
+            <div className="bg-white bg-opacity-50 rounded-2xl p-6 mb-8 shadow-inner">
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">
+                Địa chỉ mặc định
+              </h3>
+              {isEditing ? (
+                <div className="space-y-4">
+                  <Select
+                    options={userAddresses}
+                    value={selectedAddress}
+                    onChange={setSelectedAddress}
+                    placeholder="Chọn địa chỉ mặc định"
+                    className="text-gray-900"
+                    isDisabled={isLoading}
+                    formatOptionLabel={(option) => (
+                      <div className="flex justify-between items-center">
+                        <span className="truncate">{option.label}</span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteAddress(option.value);
+                          }}
+                          className="text-red-500 hover:text-red-700 transition duration-300"
+                          title="Xóa địa chỉ"
+                          aria-label={`Xóa địa chỉ ${option.label}`}
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-5 w-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M6 18L18 6M6 6l12 12"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                    )}
+                  />
+                  <button
+                    onClick={() => setIsAddAddressModalOpen(true)}
+                    className="flex items-center bg-gradient-to-r from-blue-600 to-purple-600 text-white px-5 py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+                    disabled={isLoading}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 mr-2"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 4v16m8-8H4"
+                      />
+                    </svg>
+                    Thêm địa chỉ mới
+                  </button>
+                </div>
+              ) : selectedAddress ? (
+                <p className="text-gray-900 font-medium">
+                  {selectedAddress.fullAddress.addressDetail},{" "}
+                  {selectedAddress.fullAddress.wardName},{" "}
+                  {selectedAddress.fullAddress.districtName},{" "}
+                  {selectedAddress.fullAddress.provinceName}
+                </p>
+              ) : (
+                <p className="text-gray-500 italic">Chưa có địa chỉ mặc định</p>
+              )}
+            </div>
+
+            {/* Password Change Section */}
+            {isEditing && (
+              <div className="bg-white bg-opacity-50 rounded-2xl p-6 mb-8 shadow-inner">
+                <h3 className="text-xl font-semibold text-gray-900 mb-4">
+                  Đổi mật khẩu
+                </h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Mật khẩu cũ
+                    </label>
+                    <input
+                      type="password"
+                      name="oldPassword"
+                      value={formData.oldPassword}
+                      onChange={handleInputChange}
+                      placeholder="Nhập mật khẩu cũ"
+                      autoComplete="current-password"
+                      className="mt-1 block w-full border border-gray-200 rounded-xl p-3 bg-white bg-opacity-70 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-300 shadow-sm hover:shadow-md"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Mật khẩu mới
+                    </label>
+                    <input
+                      type="password"
+                      name="newPassword"
+                      value={formData.newPassword}
+                      onChange={handleInputChange}
+                      placeholder="Nhập mật khẩu mới"
+                      autoComplete="new-password"
+                      className="mt-1 block w-full border border-gray-200 rounded-xl p-3 bg-white bg-opacity-70 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-300 shadow-sm hover:shadow-md"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Xác nhận mật khẩu mới
+                    </label>
+                    <input
+                      type="password"
+                      name="confirmNewPassword"
+                      value={formData.confirmNewPassword}
+                      onChange={handleInputChange}
+                      placeholder="Xác nhận mật khẩu mới"
+                      autoComplete="new-password"
+                      className="mt-1 block w-full border border-gray-200 rounded-xl p-3 bg-white bg-opacity-70 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-300 shadow-sm hover:shadow-md"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-4">
+              {isEditing ? (
+                <>
+                  <button
+                    onClick={handleUpdate}
+                    disabled={isLoading}
+                    className={`flex items-center bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl`}
+                  >
+                    {isLoading ? (
+                      <>
+                        <svg
+                          className="animate-spin h-5 w-5 mr-2 text-white"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          ></circle>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          ></path>
+                        </svg>
+                        Đang lưu...
+                      </>
+                    ) : (
+                      "Lưu thay đổi"
+                    )}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsEditing(false);
+                      setAvatarFile(null);
+                      setAvatarPreview(
+                        customer.avatar || "https://via.placeholder.com/150"
+                      );
+                      setFormData({
+                        fullname: customer.fullname || "",
+                        email: customer.email || "",
+                        phone: customer.phone || "",
+                        oldPassword: "",
+                        newPassword: "",
+                        confirmNewPassword: "",
+                        customAddress: "",
+                      });
+                    }}
+                    className="bg-white bg-opacity-70 text-gray-800 px-6 py-3 rounded-xl font-semibold hover:bg-opacity-90 transition duration-300 shadow-lg hover:shadow-xl"
+                  >
+                    Hủy
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition duration-300 shadow-lg hover:shadow-xl"
+                >
+                  Chỉnh sửa thông tin
+                </button>
+              )}
             </div>
           </div>
         </div>
-      )}
+
+        {/* Address Modal */}
+        {isAddAddressModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 transition-opacity duration-500">
+            <div className="bg-white bg-opacity-90 backdrop-blur-lg rounded-3xl p-8 w-full max-w-md shadow-2xl transform transition-all duration-500 animate-slide-up">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-2xl font-semibold text-gray-900">
+                  Thêm địa chỉ mới
+                </h3>
+                <button
+                  onClick={() => {
+                    setIsAddAddressModalOpen(false);
+                    setFormData({ ...formData, customAddress: "" });
+                    setSelectedProvince(null);
+                    setSelectedDistrict(null);
+                    setSelectedWard(null);
+                    setDistricts([]);
+                    setWards([]);
+                  }}
+                  className="text-gray-500 hover:text-gray-700 transition duration-300"
+                  aria-label="Đóng modal"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Tỉnh/Thành phố
+                  </label>
+                  <Select
+                    options={provinces}
+                    value={selectedProvince}
+                    onChange={handleProvinceChange}
+                    placeholder="Chọn tỉnh/thành phố"
+                    className="mt-1 text-gray-900"
+                    isDisabled={isLoading}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Quận/Huyện
+                  </label>
+                  <Select
+                    options={districts}
+                    value={selectedDistrict}
+                    onChange={handleDistrictChange}
+                    placeholder="Chọn quận/huyện"
+                    className="mt-1 text-gray-900"
+                    isDisabled={isLoading || !selectedProvince}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Phường/Xã
+                  </label>
+                  <Select
+                    options={wards}
+                    value={selectedWard}
+                    onChange={handleWardChange}
+                    placeholder="Chọn phường/xã"
+                    className="mt-1 text-gray-900"
+                    isDisabled={isLoading || !selectedDistrict}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Địa chỉ cụ thể
+                  </label>
+                  <input
+                    type="text"
+                    name="customAddress"
+                    value={formData.customAddress}
+                    onChange={handleInputChange}
+                    placeholder="Nhập số nhà, tên đường"
+                    className="mt-1 block w-full border border-gray-200 rounded-xl p-3 bg-white bg-opacity-70 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-300 shadow-sm hover:shadow-md"
+                    disabled={isLoading}
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-4 mt-8">
+                <button
+                  onClick={() => {
+                    setIsAddAddressModalOpen(false);
+                    setFormData({ ...formData, customAddress: "" });
+                    setSelectedProvince(null);
+                    setSelectedDistrict(null);
+                    setSelectedWard(null);
+                    setDistricts([]);
+                    setWards([]);
+                  }}
+                  className="bg-white bg-opacity-70 text-gray-800 px-5 py-3 rounded-xl font-semibold hover:bg-opacity-90 transition duration-300 shadow-lg hover:shadow-xl disabled:opacity-50"
+                  disabled={isLoading}
+                >
+                  Hủy
+                </button>
+                <button
+                  onClick={handleAddAddress}
+                  disabled={isLoading}
+                  className={`flex items-center bg-gradient-to-r from-blue-600 to-purple-600 text-white px-5 py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl`}
+                >
+                  {isLoading ? (
+                    <>
+                      <svg
+                        className="animate-spin h-5 w-5 mr-2 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      Đang lưu...
+                    </>
+                  ) : (
+                    "Xác nhận"
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Password Confirmation Modal */}
+        {isPasswordConfirmModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 transition-opacity duration-500">
+            <div className="bg-white bg-opacity-90 backdrop-blur-lg rounded-3xl p-8 w-full max-w-sm shadow-2xl transform transition-all duration-500 animate-slide-up">
+              <div className="text-center mb-6">
+                <h3 className="text-xl font-semibold text-gray-900">
+                  Xác nhận đổi mật khẩu
+                </h3>
+                <p className="mt-2 text-gray-600">
+                  Bạn có chắc chắn muốn đổi mật khẩu?
+                </p>
+              </div>
+              <div className="flex justify-center gap-4">
+                <button
+                  onClick={() => setIsPasswordConfirmModalOpen(false)}
+                  className="bg-white bg-opacity-70 text-gray-800 px-5 py-3 rounded-xl font-semibold hover:bg-opacity-90 transition duration-300 shadow-lg hover:shadow-xl"
+                  disabled={isLoading}
+                >
+                  Hủy
+                </button>
+                <button
+                  onClick={handleConfirmPasswordChange}
+                  disabled={isLoading}
+                  className={`flex items-center bg-gradient-to-r from-blue-600 to-purple-600 text-white px-5 py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl`}
+                >
+                  {isLoading ? (
+                    <>
+                      <svg
+                        className="animate-spin h-5 w-5 mr-2 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      Đang xử lý...
+                    </>
+                  ) : (
+                    "Xác nhận"
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
