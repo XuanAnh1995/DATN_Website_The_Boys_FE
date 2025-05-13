@@ -1006,7 +1006,7 @@ import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import OrderService from "../../services/OrderService";
-import { AiOutlineEye, AiOutlineSearch, AiOutlineReload } from "react-icons/ai";
+import { AiOutlineEye } from "react-icons/ai";
 
 // Các trạng thái đơn hàng
 const orderStatusMap = {
@@ -1029,17 +1029,16 @@ const getStatusClass = (status) => {
       : status === 1
         ? `${baseClasses} bg-blue-100 text-blue-800`
         : status === 2
-          ? `${baseClasses} bg-green-100 text-green-800`
+          ? `${baseClasses} bg-purple-100 text-purple-800`
           : status === 3
-            ? `${baseClasses} bg-purple-100 text-purple-800`
+            ? `${baseClasses} bg-indigo-100 text-indigo-800`
             : status === 4
               ? `${baseClasses} bg-orange-100 text-orange-800`
-              : `${baseClasses} bg-gray-100 text-gray-800`;
+              : `${baseClasses} bg-green-100 text-green-800`;
 };
 
-// Component Timeline (chỉ để xem, không tương tác)
+// Component Timeline
 const OrderTimeline = ({ currentStatus }) => {
-  // Mảng biểu tượng cho các trạng thái
   const statusIcons = {
     "-1": (
       <svg
@@ -1124,7 +1123,6 @@ const OrderTimeline = ({ currentStatus }) => {
     ),
   };
 
-  // Xác định trạng thái node
   const getNodeStatus = (status, currentStatus) => {
     const current = parseInt(currentStatus, 10);
     const step = parseInt(status, 10);
@@ -1141,7 +1139,6 @@ const OrderTimeline = ({ currentStatus }) => {
     return "disabled";
   };
 
-  // Lấy class cho node
   const getNodeClasses = (status) => {
     switch (status) {
       case "completed":
@@ -1155,7 +1152,6 @@ const OrderTimeline = ({ currentStatus }) => {
     }
   };
 
-  // Lấy class cho connector
   const getConnectorClasses = (status) => {
     switch (status) {
       case "completed":
@@ -1169,13 +1165,11 @@ const OrderTimeline = ({ currentStatus }) => {
     }
   };
 
-  // Định nghĩa luồng chạy chính và nhánh
   const mainFlow = ["0", "2", "3"];
   const branchFlow = ["4", "5"];
 
   return (
     <div className="mb-8">
-      {/* Trạng thái Đã Hủy hiển thị riêng nếu đơn hàng đã bị hủy */}
       {parseInt(currentStatus) === -1 && (
         <div className="flex justify-center mb-8">
           <div className="flex flex-col items-center">
@@ -1193,10 +1187,8 @@ const OrderTimeline = ({ currentStatus }) => {
         </div>
       )}
 
-      {/* Timeline chính */}
       {parseInt(currentStatus) !== -1 && (
         <div className="relative">
-          {/* Timeline chính */}
           <div className="flex items-center justify-between mb-12">
             {mainFlow.map((status, index) => {
               const nodeStatus = getNodeStatus(status, currentStatus);
@@ -1236,7 +1228,6 @@ const OrderTimeline = ({ currentStatus }) => {
             })}
           </div>
 
-          {/* Nhánh rẽ từ Đang giao hàng */}
           {parseInt(currentStatus) >= 3 && (
             <>
               <div className="absolute top-12 left-3/4 transform -translate-x-1/2 w-1 h-8 bg-gray-300"></div>
@@ -1276,7 +1267,6 @@ const OrderTimeline = ({ currentStatus }) => {
         </div>
       )}
 
-      {/* Mô tả trạng thái hiện tại */}
       <div className="mt-8 bg-gray-50 p-4 rounded-lg border border-gray-200">
         <h4 className="font-medium text-gray-700 mb-2 flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-blue-500"></span>
@@ -1288,9 +1278,9 @@ const OrderTimeline = ({ currentStatus }) => {
             : parseInt(currentStatus) === 0
               ? "Đơn hàng của bạn đang chờ được xác nhận. Số lượng sản phẩm chưa được trừ."
               : parseInt(currentStatus) === 2
-                ? "Đơn hàng đã được xác nhận và số lượng sản phẩm đã được trừ khỏi kho."
+                ? "Đơn hàng đã được xác nhận và đang chờ giao hàng."
                 : parseInt(currentStatus) === 3
-                  ? "Đơn hàng đang được giao đến địa chỉ của bạn."
+                  ? "Đơn hàng đang được vận chuyển đến địa chỉ của bạn."
                   : parseInt(currentStatus) === 4
                     ? "Đơn hàng không thể giao thành công. Có thể thử lại hoặc hủy đơn."
                     : "Đơn hàng đã được giao thành công. Cảm ơn bạn đã mua sắm!"}
@@ -1312,10 +1302,19 @@ const UserOrder = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [showCancelInput, setShowCancelInput] = useState(false);
   const [cancelNote, setCancelNote] = useState("");
+  const [activeTab, setActiveTab] = useState("all");
   const navigate = useNavigate();
 
-  // Lấy danh sách đơn hàng
-  const fetchOrders = async (page = 0, searchQuery = "") => {
+  const tabs = [
+    { key: "all", label: "Tất cả", status: null },
+    { key: "pending_payment", label: "Chờ thanh toán", status: 1 },
+    { key: "transporting", label: "Vận chuyển", status: 3 },
+    { key: "awaiting_delivery", label: "Chờ giao hàng", status: 2 },
+    { key: "completed", label: "Hoàn thành", status: 5 },
+    { key: "canceled", label: "Đã hủy", status: -1 },
+  ];
+
+  const fetchOrders = async (page = 0, searchQuery = "", status = null) => {
     if (!isLoggedIn || role !== "CUSTOMER") return;
 
     try {
@@ -1325,9 +1324,19 @@ const UserOrder = () => {
         page,
         pageSize,
         "id",
-        "desc"
+        "desc",
+        status
       );
-      setOrders(response.content || []);
+      let filteredOrders = response.content || [];
+
+      // Lọc phía client nếu API không hỗ trợ lọc trạng thái
+      if (status !== null) {
+        filteredOrders = filteredOrders.filter(
+          (order) => order.statusOrder === status
+        );
+      }
+
+      setOrders(filteredOrders);
       setTotalPages(response.totalPages || 1);
       setCurrentPage(response.number + 1);
     } catch (error) {
@@ -1340,7 +1349,6 @@ const UserOrder = () => {
     }
   };
 
-  // Xử lý xem chi tiết đơn hàng
   const handleViewOrderDetails = async (orderId) => {
     try {
       setIsLoading(true);
@@ -1357,22 +1365,28 @@ const UserOrder = () => {
     }
   };
 
-  // Xử lý tìm kiếm
   const handleSearch = (e) => {
     e.preventDefault();
     setCurrentPage(1);
-    fetchOrders(0, search);
+    const status = tabs.find((tab) => tab.key === activeTab)?.status;
+    fetchOrders(0, search, status);
   };
 
-  // Xử lý chuyển trang
+  const handleTabChange = (tabKey, status) => {
+    setActiveTab(tabKey);
+    setCurrentPage(1);
+    setSearch("");
+    fetchOrders(0, "", status);
+  };
+
   const handlePageChange = (page) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
-      fetchOrders(page - 1, search);
+      const status = tabs.find((tab) => tab.key === activeTab)?.status;
+      fetchOrders(page - 1, search, status);
     }
   };
 
-  // Xử lý hủy đơn hàng
   const handleCancelOrder = async () => {
     if (!cancelNote.trim()) {
       toast.error("Vui lòng nhập lý do hủy đơn hàng");
@@ -1384,7 +1398,8 @@ const UserOrder = () => {
       toast.success("Đơn hàng đã hủy thành công!");
       setShowCancelInput(false);
       setCancelNote("");
-      fetchOrders(currentPage - 1, search);
+      const status = tabs.find((tab) => tab.key === activeTab)?.status;
+      fetchOrders(currentPage - 1, search, status);
       const updatedOrder = await OrderService.getOnlineOrderDetails(
         selectedOrder.id
       );
@@ -1400,14 +1415,6 @@ const UserOrder = () => {
     }
   };
 
-  // Làm mới danh sách
-  const handleRefresh = () => {
-    setSearch("");
-    setCurrentPage(1);
-    fetchOrders(0, "");
-  };
-
-  // Tạo số trang hiển thị
   const getPageNumbers = () => {
     const pageNumbers = [];
     const maxPagesToShow = 5;
@@ -1425,7 +1432,6 @@ const UserOrder = () => {
     return pageNumbers;
   };
 
-  // Format tiền
   const formatCurrency = (amount) => {
     if (!amount && amount !== 0) return "N/A";
     return new Intl.NumberFormat("vi-VN", {
@@ -1434,7 +1440,6 @@ const UserOrder = () => {
     }).format(amount);
   };
 
-  // Format ngày
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
     const date = new Date(dateString);
@@ -1481,213 +1486,248 @@ const UserOrder = () => {
         theme="light"
       />
       <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-800">
-              Lịch sử mua hàng
-            </h1>
-            <p className="text-sm text-gray-500 mt-1">
-              Theo dõi và quản lý đơn hàng của bạn
-            </p>
+        <h1 className="text-2xl font-bold text-gray-800 mb-6">
+          Lịch sử mua hàng
+        </h1>
+
+        {/* Tabs */}
+        <section className="mb-6" role="tablist">
+          <div className="flex flex-wrap gap-2 border-b border-gray-200">
+            {tabs.map((tab) => (
+              <button
+                key={tab.key}
+                className={`px-4 py-2 text-sm font-medium ${
+                  activeTab === tab.key
+                    ? "border-b-2 border-blue-500 text-blue-600"
+                    : "text-gray-600 hover:text-blue-600"
+                }`}
+                role="tab"
+                aria-selected={activeTab === tab.key}
+                onClick={() => handleTabChange(tab.key, tab.status)}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
-          <div className="mt-4 md:mt-0">
-            <button
-              onClick={handleRefresh}
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg shadow hover:bg-blue-600 transition flex items-center"
-            >
-              <AiOutlineReload className="mr-2" /> Làm mới
-            </button>
-          </div>
-        </div>
+        </section>
 
         {/* Search Bar */}
-        <div className="bg-white rounded-lg shadow mb-6 p-4">
-          <div className="relative flex-1">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <AiOutlineSearch className="h-5 w-5 text-gray-400" />
-            </div>
-            <form onSubmit={handleSearch}>
+        <section className="mb-6">
+          <div className="relative flex items-center bg-white rounded-lg shadow p-2">
+            <svg
+              width="19px"
+              height="19px"
+              viewBox="0 0 19 19"
+              className="mr-2 text-gray-400"
+            >
+              <g strokeWidth="2" fill="none" fillRule="evenodd">
+                <g transform="translate(1, 1)">
+                  <circle cx="7" cy="7" r="7"></circle>
+                  <path
+                    d="M12,12 L16.9799555,16.919354"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  ></path>
+                </g>
+              </g>
+            </svg>
+            <form onSubmit={handleSearch} className="flex-1">
               <input
                 type="text"
-                placeholder="Tìm kiếm theo mã đơn hàng..."
+                role="search"
+                autoComplete="off"
+                placeholder="Bạn có thể tìm kiếm theo tên Shop, ID đơn hàng hoặc Tên Sản phẩm"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-10 p-3 w-full rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                className="w-full p-2 text-sm border-none focus:ring-0"
               />
             </form>
           </div>
-        </div>
+        </section>
 
         {/* Order List */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          {isLoading ? (
-            <div className="p-12 flex justify-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-            </div>
-          ) : orders.length === 0 ? (
-            <div className="p-12 text-center text-gray-500">
-              <p>Bạn chưa có đơn hàng nào</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      STT
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Mã đơn hàng
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Tổng tiền
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Trạng thái
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Hành động
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {orders.map((item, index) => (
-                    <tr
-                      key={item.id}
-                      className="hover:bg-gray-50 transition-colors"
-                    >
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {index + 1}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          {item.orderCode}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-700 font-medium">
-                        {formatCurrency(item.totalBill)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <span className={getStatusClass(item.statusOrder)}>
-                          {orderStatusMap[item.statusOrder.toString()] ||
-                            "Không xác định"}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <button
-                          className="text-blue-500 hover:text-blue-700 p-1 rounded-full hover:bg-blue-100 transition-colors"
-                          onClick={() => handleViewOrderDetails(item.id)}
-                          title="Xem chi tiết"
-                        >
-                          <AiOutlineEye size={20} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        {/* Pagination */}
-        {orders.length > 0 && (
-          <div className="bg-white p-4 rounded-lg shadow mt-6">
-            <div className="flex flex-wrap items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-700">Hiển thị:</span>
-                <select
-                  value={pageSize}
-                  onChange={(e) => {
-                    setPageSize(Number(e.target.value));
-                    setCurrentPage(1);
-                    fetchOrders(0, search);
-                  }}
-                  className="border border-gray-300 rounded-md text-sm p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="5">5</option>
-                  <option value="10">10</option>
-                  <option value="20">20</option>
-                  <option value="50">50</option>
-                </select>
-                <span className="text-sm text-gray-700 hidden sm:inline">
-                  Trang <span className="font-medium">{currentPage}</span> /{" "}
-                  <span className="font-medium">{totalPages}</span>
-                </span>
+        <main role="tabpanel" aria-labelledby={`tab-${activeTab}`}>
+          <section>
+            {isLoading ? (
+              <div className="p-12 flex justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
               </div>
-              <div className="flex items-center space-x-1 mt-4 sm:mt-0">
-                <button
-                  onClick={() => handlePageChange(1)}
-                  disabled={currentPage === 1}
-                  className={`p-2 border rounded-md ${
-                    currentPage === 1
-                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                      : "bg-white hover:bg-gray-50 text-gray-700"
-                  }`}
-                >
-                  «
-                </button>
-                <button
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className={`p-2 border rounded-md ${
-                    currentPage === 1
-                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                      : "bg-white hover:bg-gray-50 text-gray-700"
-                  }`}
-                ></button>
-                {getPageNumbers().map((number) => (
+            ) : orders.length === 0 ? (
+              <div className="p-12 text-center">
+                <div className="text-gray-500 text-lg font-semibold">
+                  Chưa có đơn hàng
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white rounded-lg shadow overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          STT
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          Mã đơn hàng
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          Tổng tiền
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          Trạng thái
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          Hành động
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {orders.map((item, index) => (
+                        <tr
+                          key={item.id}
+                          className="hover:bg-gray-50 transition-colors"
+                        >
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {index + 1}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900">
+                              {item.orderCode}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-700 font-medium">
+                            {formatCurrency(item.totalBill)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center">
+                            <span className={getStatusClass(item.statusOrder)}>
+                              {orderStatusMap[item.statusOrder.toString()] ||
+                                "Không xác định"}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center">
+                            <button
+                              className="text-blue-500 hover:text-blue-700 p-1 rounded-full hover:bg-blue-100 transition-colors"
+                              onClick={() => handleViewOrderDetails(item.id)}
+                              title="Xem chi tiết"
+                            >
+                              <AiOutlineEye size={20} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </section>
+
+          {/* Pagination */}
+          {orders.length > 0 && (
+            <div className="bg-white p-4 rounded-lg shadow mt-6">
+              <div className="flex flex-wrap items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-gray-700">Hiển thị:</span>
+                  <select
+                    value={pageSize}
+                    onChange={(e) => {
+                      setPageSize(Number(e.target.value));
+                      setCurrentPage(1);
+                      const status = tabs.find(
+                        (tab) => tab.key === activeTab
+                      )?.status;
+                      fetchOrders(0, search, status);
+                    }}
+                    className="border border-gray-300 rounded-md text-sm p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="5">5</option>
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                  </select>
+                  <span className="text-sm text-gray-700 hidden sm:inline">
+                    Trang <span className="font-medium">{currentPage}</span> /{" "}
+                    <span className="font-medium">{totalPages}</span>
+                  </span>
+                </div>
+                <div className="flex items-center space-x-1 mt-4 sm:mt-0">
                   <button
-                    key={number}
-                    onClick={() => handlePageChange(number)}
-                    className={`p-2 border rounded-md min-w-[40px] ${
-                      currentPage === number
-                        ? "bg-blue-500 text-white"
+                    onClick={() => handlePageChange(1)}
+                    disabled={currentPage === 1}
+                    className={`p-2 border rounded-md ${
+                      currentPage === 1
+                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                         : "bg-white hover:bg-gray-50 text-gray-700"
                     }`}
                   >
-                    {number}
+                    «
                   </button>
-                ))}
-                <button
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className={`p-2 border rounded-md ${
-                    currentPage === totalPages
-                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                      : "bg-white hover:bg-gray-50 text-gray-700"
-                  }`}
-                ></button>
-                <button
-                  onClick={() => handlePageChange(totalPages)}
-                  disabled={currentPage === totalPages}
-                  className={`p-2 border rounded-md ${
-                    currentPage === totalPages
-                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                      : "bg-white hover:bg-gray-50 text-gray-700"
-                  }`}
-                >
-                  »
-                </button>
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className={`p-2 border rounded-md ${
+                      currentPage === 1
+                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                        : "bg-white hover:bg-gray-50 text-gray-700"
+                    }`}
+                  >
+                    -
+                  </button>
+                  {getPageNumbers().map((number) => (
+                    <button
+                      key={number}
+                      onClick={() => handlePageChange(number)}
+                      className={`p-2 border rounded-md min-w-[40px] ${
+                        currentPage === number
+                          ? "bg-blue-500 text-white"
+                          : "bg-white hover:bg-gray-50 text-gray-700"
+                      }`}
+                    >
+                      {number}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className={`p-2 border rounded-md ${
+                      currentPage === totalPages
+                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                        : "bg-white hover:bg-gray-50 text-gray-700"
+                    }`}
+                  >
+                    +
+                  </button>
+                  <button
+                    onClick={() => handlePageChange(totalPages)}
+                    disabled={currentPage === totalPages}
+                    className={`p-2 border rounded-md ${
+                      currentPage === totalPages
+                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                        : "bg-white hover:bg-gray-50 text-gray-700"
+                    }`}
+                  >
+                    »
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </main>
       </div>
 
       {/* Order Details Modal */}
@@ -1740,9 +1780,9 @@ const UserOrder = () => {
                     Phương thức thanh toán
                   </p>
                   <p className="font-medium">
-                    {selectedOrder.paymentMethod === 11
+                    {selectedOrder.paymentMethod === 0
                       ? "Thanh toán khi nhận hàng"
-                      : selectedOrder.paymentMethod === 0
+                      : selectedOrder.paymentMethod === 1
                         ? "Thanh toán online"
                         : "N/A"}
                   </p>
