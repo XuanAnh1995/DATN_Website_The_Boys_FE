@@ -303,7 +303,6 @@ const UserOrder = () => {
   const [cancelNote, setCancelNote] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [customer, setCustomer] = useState(null);
-  const [isCustomerLoaded, setIsCustomerLoaded] = useState(false); // Thêm trạng thái để theo dõi tải customer
   const navigate = useNavigate();
 
   const tabs = [
@@ -329,8 +328,6 @@ const UserOrder = () => {
         toast.error(
           error.response?.data?.message || "Không thể tải thông tin khách hàng!"
         );
-      } finally {
-        setIsCustomerLoaded(true); // Đánh dấu rằng customer đã được tải
       }
     };
 
@@ -339,13 +336,14 @@ const UserOrder = () => {
 
   // Lấy danh sách đơn hàng
   useEffect(() => {
-    if (isCustomerLoaded) {
+    if (customer && isLoggedIn && role === "CUSTOMER") {
       fetchOrders();
     }
-  }, [isCustomerLoaded]);
+  }, [customer, isLoggedIn, role]);
 
   const fetchOrders = async (page = 0, searchQuery = "", status = null) => {
-    if (!isLoggedIn || role !== "CUSTOMER") return;
+    if (!isLoggedIn || role !== "CUSTOMER" || !customer || !customer.phone)
+      return;
 
     try {
       setIsLoading(true);
@@ -368,13 +366,11 @@ const UserOrder = () => {
 
       // Lọc đơn hàng theo phone với kiểm tra an toàn
       filteredOrders = filteredOrders.filter((order) => {
-        return (
-          order.customer &&
-          typeof order.customer === "object" &&
-          order.customer.phone &&
-          typeof order.customer.phone === "string" &&
-          order.customer.phone === customer.phone
-        );
+        if (!order.customer || !order.customer.phone) {
+          console.warn("Đơn hàng thiếu thông tin customer hoặc phone:", order);
+          return false;
+        }
+        return order.customer.phone === customer.phone;
       });
 
       // Lọc phía client nếu API không hỗ trợ lọc trạng thái
