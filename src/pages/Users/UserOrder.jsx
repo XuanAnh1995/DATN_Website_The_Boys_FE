@@ -5,6 +5,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import OrderService from "../../services/OrderService";
 import { AiOutlineEye } from "react-icons/ai";
+import LoginInfoService from "../../services/LoginInfoService";
 
 // Các trạng thái đơn hàng
 const orderStatusMap = {
@@ -289,7 +290,7 @@ const OrderTimeline = ({ currentStatus }) => {
 };
 
 const UserOrder = () => {
-  const { isLoggedIn, role } = useSelector((state) => state.user);
+  const { isLoggedIn, role } = useSelector((state) => state.user); // Lấy thêm customer từ state
   const [orders, setOrders] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -301,6 +302,8 @@ const UserOrder = () => {
   const [showCancelInput, setShowCancelInput] = useState(false);
   const [cancelNote, setCancelNote] = useState("");
   const [activeTab, setActiveTab] = useState("all");
+  const [customer, setCustomer] = useState(null);
+  const [isCustomerLoaded, setIsCustomerLoaded] = useState(false); // Thêm trạng thái để theo dõi tải customer
   const navigate = useNavigate();
 
   const tabs = [
@@ -311,6 +314,35 @@ const UserOrder = () => {
     { key: "completed", label: "Hoàn thành", status: 5 },
     { key: "canceled", label: "Đã hủy", status: -1 },
   ];
+
+  // Lấy và in dữ liệu khách hàng
+  useEffect(() => {
+    const fetchCustomerData = async () => {
+      if (!isLoggedIn || role !== "CUSTOMER") return;
+
+      try {
+        const customerData = await LoginInfoService.getCurrentUser();
+        console.log("Dữ liệu khách hàng:", customerData);
+        setCustomer(customerData);
+      } catch (error) {
+        console.error("Lỗi khi lấy dữ liệu khách hàng:", error);
+        toast.error(
+          error.response?.data?.message || "Không thể tải thông tin khách hàng!"
+        );
+      } finally {
+        setIsCustomerLoaded(true); // Đánh dấu rằng customer đã được tải
+      }
+    };
+
+    fetchCustomerData();
+  }, [isLoggedIn, role]);
+
+  // Lấy danh sách đơn hàng
+  useEffect(() => {
+    if (isCustomerLoaded) {
+      fetchOrders();
+    }
+  }, [isCustomerLoaded]);
 
   const fetchOrders = async (page = 0, searchQuery = "", status = null) => {
     if (!isLoggedIn || role !== "CUSTOMER") return;
@@ -327,6 +359,24 @@ const UserOrder = () => {
       );
       let filteredOrders = response.content || [];
 
+      // Log dữ liệu để kiểm tra
+      console.log("Dữ liệu từ API:", filteredOrders);
+
+      // Log thông tin customer hiện tại
+      console.log("Thông tin customer hiện tại:", customer);
+      console.log("Số điện thoại của customer:", customer.phone);
+
+      // Lọc đơn hàng theo phone với kiểm tra an toàn
+      filteredOrders = filteredOrders.filter((order) => {
+        return (
+          order.customer &&
+          typeof order.customer === "object" &&
+          order.customer.phone &&
+          typeof order.customer.phone === "string" &&
+          order.customer.phone === customer.phone
+        );
+      });
+
       // Lọc phía client nếu API không hỗ trợ lọc trạng thái
       if (status !== null) {
         filteredOrders = filteredOrders.filter(
@@ -335,13 +385,24 @@ const UserOrder = () => {
       }
 
       setOrders(filteredOrders);
-      setTotalPages(response.totalPages || 1);
-      setCurrentPage(response.number + 1);
+      const newTotalPages = response.totalPages > 0 ? response.totalPages : 1;
+      setTotalPages(newTotalPages);
+
+      // Điều chỉnh currentPage nếu vượt quá totalPages
+      if (currentPage > newTotalPages) {
+        setCurrentPage(newTotalPages);
+        if (page !== newTotalPages - 1) {
+          fetchOrders(newTotalPages - 1, searchQuery, status);
+        }
+      }
     } catch (error) {
       console.error("Lỗi khi lấy danh sách đơn hàng:", error);
       toast.error(
         error.response?.data?.message || "Không thể tải danh sách đơn hàng!"
       );
+      setOrders([]);
+      setTotalPages(1);
+      setCurrentPage(1);
     } finally {
       setIsLoading(false);
     }
@@ -427,7 +488,7 @@ const UserOrder = () => {
       }
       for (let i = startPage; i <= endPage; i++) pageNumbers.push(i);
     }
-    return pageNumbers;
+    return pageNumbers.length > 0 ? pageNumbers : [1];
   };
 
   const formatCurrency = (amount) => {
@@ -648,6 +709,7 @@ const UserOrder = () => {
 
           {/* Pagination */}
           {orders.length > 0 && (
+            // Trong phần render phân trang:
             <div className="bg-white p-4 rounded-lg shadow mt-6">
               <div className="flex flex-wrap items-center justify-between">
                 <div className="flex items-center space-x-2">
@@ -655,7 +717,8 @@ const UserOrder = () => {
                   <select
                     value={pageSize}
                     onChange={(e) => {
-                      setPageSize(Number(e.target.value));
+                      const newPageSize = Number(e.target.value);
+                      setPageSize(newPageSize);
                       setCurrentPage(1);
                       const status = tabs.find(
                         (tab) => tab.key === activeTab
@@ -677,9 +740,9 @@ const UserOrder = () => {
                 <div className="flex items-center space-x-1 mt-4 sm:mt-0">
                   <button
                     onClick={() => handlePageChange(1)}
-                    disabled={currentPage === 1}
+                    disabled={currentPage === 1 || isLoading}
                     className={`p-2 border rounded-md ${
-                      currentPage === 1
+                      currentPage === 1 || isLoading
                         ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                         : "bg-white hover:bg-gray-50 text-gray-700"
                     }`}
@@ -688,9 +751,9 @@ const UserOrder = () => {
                   </button>
                   <button
                     onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
+                    disabled={currentPage === 1 || isLoading}
                     className={`p-2 border rounded-md ${
-                      currentPage === 1
+                      currentPage === 1 || isLoading
                         ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                         : "bg-white hover:bg-gray-50 text-gray-700"
                     }`}
@@ -701,10 +764,13 @@ const UserOrder = () => {
                     <button
                       key={number}
                       onClick={() => handlePageChange(number)}
+                      disabled={isLoading}
                       className={`p-2 border rounded-md min-w-[40px] ${
                         currentPage === number
                           ? "bg-blue-500 text-white"
-                          : "bg-white hover:bg-gray-50 text-gray-700"
+                          : isLoading
+                            ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                            : "bg-white hover:bg-gray-50 text-gray-700"
                       }`}
                     >
                       {number}
@@ -712,9 +778,9 @@ const UserOrder = () => {
                   ))}
                   <button
                     onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
+                    disabled={currentPage === totalPages || isLoading}
                     className={`p-2 border rounded-md ${
-                      currentPage === totalPages
+                      currentPage === totalPages || isLoading
                         ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                         : "bg-white hover:bg-gray-50 text-gray-700"
                     }`}
@@ -723,9 +789,9 @@ const UserOrder = () => {
                   </button>
                   <button
                     onClick={() => handlePageChange(totalPages)}
-                    disabled={currentPage === totalPages}
+                    disabled={currentPage === totalPages || isLoading}
                     className={`p-2 border rounded-md ${
-                      currentPage === totalPages
+                      currentPage === totalPages || isLoading
                         ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                         : "bg-white hover:bg-gray-50 text-gray-700"
                     }`}
