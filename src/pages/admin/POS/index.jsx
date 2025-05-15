@@ -615,7 +615,7 @@ const SalePOSPage = () => {
   };
 
   // thêm sản phẩm vào giỏ hàng
-  const handleAddToCart = (product) => {
+  const handleAddToCart = async (product) => {
     console.log("🛒 [ADD TO CART] Bắt đầu thêm sản phẩm vào giỏ hàng...");
     if (activeOrderIndex === null || activeOrderIndex >= orders.length) {
       alert("Vui lòng tạo hóa đơn trước!");
@@ -631,53 +631,65 @@ const SalePOSPage = () => {
       return;
     }
 
-    setOrders((prevOrders) => {
-      const updatedOrders = [...prevOrders];
-      const currentOrder = updatedOrders[activeOrderIndex];
+    const orderId = orders[activeOrderIndex].id;
+    const productData = { productDetailId: product.id, quantity: 1 };
 
-      console.log("📌 [ORDER] Đơn hàng hiện tại:", currentOrder);
-
-      // Kiểm tra sản phẩm đã tồn tại trong giỏ hàng chưa
-      const existingItemIndex = currentOrder.items.findIndex(
-        (item) => item.id === product.id
+    try {
+      // Gọi API để thêm sản phẩm vào backend
+      await SalePOS.addProductToCart(orderId, productData);
+      console.log(
+        `✅ [ADD TO CART] Đã thêm sản phẩm ${product.id} vào đơn hàng #${orderId} trên backend.`
       );
-      if (existingItemIndex !== -1) {
-        const existingItem = currentOrder.items[existingItemIndex];
 
-        // Kiểm tra nếu số lượng vượt quá tồn kho
-        if (existingItem.quantity >= product.quantity) {
-          alert(
-            `Sản phẩm "${product.product?.productName}" chỉ còn ${product.quantity} sản phẩm trong kho.`
+      // Cập nhật trạng thái frontend
+      setOrders((prevOrders) => {
+        const updatedOrders = [...prevOrders];
+        const currentOrder = updatedOrders[activeOrderIndex];
+
+        console.log("📌 [ORDER] Đơn hàng hiện tại:", currentOrder);
+
+        const existingItemIndex = currentOrder.items.findIndex(
+          (item) => item.id === product.id
+        );
+        if (existingItemIndex !== -1) {
+          const existingItem = currentOrder.items[existingItemIndex];
+          if (existingItem.quantity >= product.quantity) {
+            alert(
+              `Sản phẩm "${product.product?.productName}" chỉ còn ${product.quantity} sản phẩm trong kho.`
+            );
+            return updatedOrders;
+          }
+          console.log(
+            `🔄 [UPDATE] Sản phẩm ${product.id} đã có trong giỏ hàng, tăng số lượng lên.`
           );
-          return updatedOrders;
+          currentOrder.items[existingItemIndex].quantity += 1;
+        } else {
+          console.log(`➕ [NEW] Thêm sản phẩm mới:`, product);
+          currentOrder.items.push({
+            ...product,
+            quantity: 1,
+            quantityAvailable: product.quantity,
+          });
         }
 
+        // Cập nhật totalAmount của đơn hàng trên frontend
+        currentOrder.totalAmount = currentOrder.items.reduce((sum, item) => {
+          const salePrice = Number(item.salePrice) || 0;
+          const discountPercent = Number(item.promotion?.promotionPercent) || 0;
+          const discountedPrice = salePrice * (1 - discountPercent / 100);
+          return sum + discountedPrice * item.quantity;
+        }, 0);
+
         console.log(
-          `🔄 [UPDATE] Sản phẩm ${product.id} đã có trong giỏ hàng, tăng số lượng lên.`
+          "💰 [TOTAL] Tổng tiền đơn hàng sau khi thêm sản phẩm:",
+          currentOrder.totalAmount
         );
-        currentOrder.items[existingItemIndex].quantity += 1;
-      } else {
-        console.log(`➕ [NEW] Thêm sản phẩm mới:`, product);
-        currentOrder.items.push({
-          ...product,
-          quantity: 1,
-          quantityAvailable: product.quantity, // Lưu số lượng tồn kho
-        });
-      }
-
-      currentOrder.totalAmount = currentOrder.items.reduce((sum, item) => {
-        const salePrice = Number(item.salePrice) || 0;
-        const discountPercent = Number(item.promotion?.promotionPercent) || 0;
-        const discountedPrice = salePrice * (1 - discountPercent / 100);
-        return sum + discountedPrice * item.quantity;
-      }, 0);
-
-      console.log(
-        "💰 [TOTAL] Tổng tiền đơn hàng sau khi thêm sản phẩm:",
-        currentOrder.totalAmount
-      );
-      return updatedOrders;
-    });
+        return updatedOrders;
+      });
+    } catch (error) {
+      console.error("❌ Lỗi khi thêm sản phẩm vào giỏ hàng:", error);
+      alert("Có lỗi xảy ra khi thêm sản phẩm: " + error.message);
+    }
   };
 
   // quá trình xóa sản phẩm khỏi giỏ hàng.
@@ -1685,22 +1697,6 @@ const SalePOSPage = () => {
                 level="H"
                 includeMargin={true}
               />
-              <div style={{ marginTop: "10px" }}>
-                <a href={paymentUrl} target="_blank" rel="noopener noreferrer">
-                  <button
-                    style={{
-                      padding: "10px 20px",
-                      backgroundColor: "#007bff",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "5px",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Mở URL thanh toán trực tiếp
-                  </button>
-                </a>
-              </div>
             </div>
           )}
         </div>
