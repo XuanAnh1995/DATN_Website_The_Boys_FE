@@ -1685,7 +1685,7 @@ const SalePOSPage = () => {
                 level="H"
                 includeMargin={true}
               />
-              <div style={{ marginTop: "10px" }}>
+              {/* <div style={{ marginTop: "10px" }}>
                 <a href={paymentUrl} target="_blank" rel="noopener noreferrer">
                   <button
                     style={{
@@ -1700,7 +1700,7 @@ const SalePOSPage = () => {
                     Mở URL thanh toán trực tiếp
                   </button>
                 </a>
-              </div>
+              </div> */}
             </div>
           )}
         </div>
