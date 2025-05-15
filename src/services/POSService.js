@@ -187,23 +187,41 @@ const SalePOS = {
         console.log("✅ Sử dụng orderId đã có:", orderId);
       }
 
-      // Kiểm tra xem đơn hàng đã có sản phẩm chưa
+      // Lấy chi tiết đơn hàng hiện tại từ backend
       const existingOrder = await SalePOS.getOrderDetails(orderId);
-      const hasProducts =
-        existingOrder.orderDetails && existingOrder.orderDetails.length > 0;
-
-      // Thêm sản phẩm vào đơn hàng nếu chưa có sản phẩm
-      if (
-        !hasProducts &&
-        orderData.orderDetails &&
-        orderData.orderDetails.length > 0
-      ) {
+      const existingProducts = existingOrder.orderDetails || [];
+      // So sánh orderDetails từ frontend với dữ liệu từ backend
+      const productsToAdd = [];
+      if (orderData.orderDetails && orderData.orderDetails.length > 0) {
         for (let item of orderData.orderDetails) {
+          const existingItem = existingProducts.find(
+            (existing) => existing.productDetail.id === item.productDetailId
+          );
+          if (!existingItem) {
+            // Nếu sản phẩm chưa có trong đơn hàng, thêm vào danh sách cần thêm
+            productsToAdd.push(item);
+          } else {
+            // Nếu sản phẩm đã có, kiểm tra xem số lượng có thay đổi không
+            if (existingItem.quantity !== item.quantity) {
+              // Cập nhật số lượng nếu cần (hoặc xử lý theo yêu cầu)
+              console.log(
+                `🔄 Sản phẩm ${item.productDetailId} đã có, nhưng số lượng thay đổi. Cũ: ${existingItem.quantity}, Mới: ${item.quantity}`
+              );
+              // Gọi API để cập nhật số lượng (nếu backend hỗ trợ)
+              // await SalePOS.updateProductQuantity(orderId, item);
+            }
+          }
+        }
+      }
+
+      // Thêm các sản phẩm mới vào đơn hàng (nếu có)
+      if (productsToAdd.length > 0) {
+        for (let item of productsToAdd) {
           await SalePOS.addProductToCart(orderId, item);
         }
-        console.log("✅ Tất cả sản phẩm đã được thêm vào đơn hàng.");
+        console.log("✅ Đã thêm các sản phẩm mới vào đơn hàng:", productsToAdd);
       } else {
-        console.log("✅ Đơn hàng đã có sản phẩm, bỏ qua bước thêm sản phẩm.");
+        console.log("✅ Không có sản phẩm mới để thêm vào đơn hàng.");
       }
 
       // Cập nhật customerId và voucherId
