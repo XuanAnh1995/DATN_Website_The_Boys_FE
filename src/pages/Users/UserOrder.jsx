@@ -889,6 +889,9 @@ const UserOrder = () => {
                       <th className="py-3 px-4 text-center">Màu sắc</th>
                       <th className="py-3 px-4 text-center">Size</th>
                       <th className="py-3 px-4 text-right">Đơn giá</th>
+                      <th className="py-3 px-4 text-right">
+                        Giảm giá sản phẩm
+                      </th>
                       <th className="py-3 px-4 text-right">Thành tiền</th>
                     </tr>
                   </thead>
@@ -904,11 +907,27 @@ const UserOrder = () => {
                         const sizeName =
                           detail.productDetail?.size?.name ??
                           "Không có kích thước";
-                        const price =
+                        const salePrice =
                           detail.productDetail?.salePrice ??
                           product?.salePrice ??
                           0;
-                        const totalPrice = price * quantity;
+                        const importPrice =
+                          detail.productDetail?.importPrice ??
+                          product?.importPrice ??
+                          salePrice;
+                        const promotionPercent =
+                          detail.productDetail?.promotion?.promotionPercent ??
+                          0;
+                        const discountPrice = promotionPercent
+                          ? salePrice * (1 - promotionPercent / 100)
+                          : salePrice;
+                        const discountAmount =
+                          importPrice > salePrice
+                            ? importPrice - salePrice
+                            : promotionPercent
+                              ? salePrice - discountPrice
+                              : 0;
+                        const totalPrice = discountPrice * quantity;
 
                         return (
                           <tr
@@ -941,7 +960,12 @@ const UserOrder = () => {
                               {sizeName}
                             </td>
                             <td className="py-3 px-4 text-right font-medium text-green-600">
-                              {formatCurrency(price)}
+                              {formatCurrency(salePrice)}
+                            </td>
+                            <td className="py-3 px-4 text-right font-medium text-red-600">
+                              {discountAmount > 0
+                                ? formatCurrency(discountAmount)
+                                : "-"}
                             </td>
                             <td className="py-3 px-4 text-right font-semibold text-gray-900">
                               {formatCurrency(totalPrice)}
@@ -952,7 +976,7 @@ const UserOrder = () => {
                     ) : (
                       <tr>
                         <td
-                          colSpan="6"
+                          colSpan="7"
                           className="py-3 px-4 text-center text-gray-500"
                         >
                           Không có sản phẩm nào trong đơn hàng
@@ -962,7 +986,7 @@ const UserOrder = () => {
                   </tbody>
                   <tfoot className="bg-gray-100 text-gray-800 font-bold border-t">
                     <tr>
-                      <td colSpan="4" className="py-4 px-4 text-right">
+                      <td colSpan="5" className="py-4 px-4 text-right">
                         Tổng tiền hàng:
                       </td>
                       <td
@@ -973,7 +997,7 @@ const UserOrder = () => {
                       </td>
                     </tr>
                     <tr>
-                      <td colSpan="4" className="py-4 px-4 text-right">
+                      <td colSpan="5" className="py-4 px-4 text-right">
                         Phí giao hàng:
                       </td>
                       <td
@@ -984,8 +1008,8 @@ const UserOrder = () => {
                       </td>
                     </tr>
                     <tr>
-                      <td colSpan="4" className="py-4 px-4 text-right">
-                        Giảm giá:
+                      <td colSpan="5" className="py-4 px-4 text-right">
+                        Giảm giá hóa đơn:
                       </td>
                       <td
                         colSpan="2"
@@ -1000,7 +1024,7 @@ const UserOrder = () => {
                       </td>
                     </tr>
                     <tr>
-                      <td colSpan="4" className="py-4 px-4 text-right">
+                      <td colSpan="5" className="py-4 px-4 text-right">
                         Tổng thanh toán:
                       </td>
                       <td

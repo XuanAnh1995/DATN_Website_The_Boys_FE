@@ -9,7 +9,6 @@ const orderStatusMap = {
   0: "Chờ xác nhận",
   2: "Đã xác nhận",
   3: "Đang giao hàng",
-  4: "Giao thất bại",
   5: "Hoàn thành",
 };
 
@@ -23,10 +22,8 @@ const getStatusClass = (status) => {
       : status === 2
         ? `${baseClasses} bg-green-100 text-green-800`
         : status === 3
-          ? `${baseClasses} bg-purple-100 text-purple-800`
-          : status === 4
-            ? `${baseClasses} bg-orange-100 text-orange-800`
-            : `${baseClasses} bg-teal-100 text-teal-800`;
+          ? `${baseClasses} bg-orange-100 text-orange-800`
+          : `${baseClasses} bg-teal-100 text-teal-800`;
 };
 
 // Component Timeline
@@ -96,20 +93,6 @@ const OrderTimeline = ({ currentStatus, fetchOrderDetails }) => {
         <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0115.95 16H17a1 1 0 001-1v-5a1 1 0 00-.293-.707l-2-2A1 1 0 0015 7h-1z" />
       </svg>
     ),
-    4: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className="h-5 w-5"
-        viewBox="0 0 20 20"
-        fill="currentColor"
-      >
-        <path
-          fillRule="evenodd"
-          d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-          clipRule="evenodd"
-        />
-      </svg>
-    ),
     5: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -132,19 +115,16 @@ const OrderTimeline = ({ currentStatus, fetchOrderDetails }) => {
     const next = parseInt(nextStatus, 10);
     console.log("Validating:", current, "->", next);
 
-    if (isNaN(current) || isNaN(next) || current === -1 || current === 5) {
-      return false;
-    }
+    if (isNaN(current) || isNaN(next)) return false;
+    if (current === -1 || current === 5) return false;
 
     switch (current) {
       case 0:
         return next === 2 || next === -1;
       case 2:
-        return next === 3 || next === -1;
+        return next === 3;
       case 3:
-        return next === 4 || next === 5;
-      case 4:
-        return next === 3 || next === -1;
+        return next === 5;
       default:
         return false;
     }
@@ -156,17 +136,12 @@ const OrderTimeline = ({ currentStatus, fetchOrderDetails }) => {
     const step = parseInt(status, 10);
 
     if (isNaN(current) || isNaN(step)) return "disabled";
-
-    if (current === -1 && step === 5) return "hidden";
-    if (current === -1 && status === "-1") return "arningcompleted";
-    if (current === -1) return "disabled";
+    if (current === -1 && step !== -1) return "disabled";
+    if (current === -1 && step === -1) return "completed";
 
     if (step === current) return "current";
     if (step < current || (current === 5 && step !== -1)) return "completed";
     if (isValidNextStatus(currentStatus, status)) return "available";
-
-    if (current === 4 && step === 5) return "disabled";
-    if (current === 5 && step === 4) return "disabled";
 
     return "disabled";
   };
@@ -180,8 +155,6 @@ const OrderTimeline = ({ currentStatus, fetchOrderDetails }) => {
         return "bg-blue-500 text-white border-blue-500 shadow-lg shadow-blue-200 ring-4 ring-blue-100";
       case "available":
         return "bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400";
-      case "hidden":
-        return "hidden";
       default:
         return "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed";
     }
@@ -195,8 +168,6 @@ const OrderTimeline = ({ currentStatus, fetchOrderDetails }) => {
       case "current":
       case "available":
         return "bg-gray-300";
-      case "hidden":
-        return "hidden";
       default:
         return "bg-gray-200";
     }
@@ -270,8 +241,7 @@ const OrderTimeline = ({ currentStatus, fetchOrderDetails }) => {
   };
 
   // Định nghĩa luồng chạy chính và nhánh
-  const mainFlow = ["0", "2", "3"];
-  const branchFlow = ["4", "5"];
+  const mainFlow = ["0", "2", "3", "5"];
 
   return (
     <div className="mb-8">
@@ -300,7 +270,6 @@ const OrderTimeline = ({ currentStatus, fetchOrderDetails }) => {
           <div className="flex items-center justify-between mb-12">
             {mainFlow.map((status, index) => {
               const nodeStatus = getNodeStatus(status, currentStatus);
-              if (nodeStatus === "hidden") return null;
               return (
                 <div
                   key={status}
@@ -315,11 +284,11 @@ const OrderTimeline = ({ currentStatus, fetchOrderDetails }) => {
                     title={
                       isValidNextStatus(currentStatus, status)
                         ? status === "2"
-                          ? "Cập nhật sang Đã xác nhận (số lượng sản phẩm sẽ được trừ)"
-                          : status === "-1"
-                            ? "Hủy đơn hàng (số lượng sản phẩm sẽ được hoàn lại nếu đã xác nhận)"
-                            : `Cập nhật sang ${orderStatusMap[status]}`
-                        : "Trạng thái không hợp lệ"
+                          ? "Xác nhận đơn hàng (trừ kho)"
+                          : status === "5"
+                            ? "Giao hàng thành công"
+                            : `Chuyển sang ${orderStatusMap[status]}`
+                        : "Không thể chuyển sang trạng thái này"
                     }
                   >
                     {statusIcons[status]}
@@ -347,72 +316,19 @@ const OrderTimeline = ({ currentStatus, fetchOrderDetails }) => {
             })}
           </div>
 
-          {/* Nhánh rẽ từ Đang giao hàng */}
-          {parseInt(currentStatus) >= 3 && (
-            <>
-              <div className="absolute top-12 left-3/4 transform -translate-x-1/2 w-1 h-8 bg-gray-300"></div>
-              <div className="flex justify-center gap-32 relative mt-8">
-                {branchFlow.map((status) => {
-                  const nodeStatus = getNodeStatus(status, currentStatus);
-                  if (nodeStatus === "hidden") return null;
-                  return (
-                    <div
-                      key={status}
-                      className="flex flex-col items-center relative z-10"
-                    >
-                      <button
-                        className={`w-12 h-12 flex items-center justify-center rounded-full border-2 font-medium text-sm transition-all duration-300 ${getNodeClasses(
-                          nodeStatus
-                        )}`}
-                        onClick={() => handleStatusClick(status)}
-                        disabled={nodeStatus !== "available"}
-                        title={
-                          isValidNextStatus(currentStatus, status)
-                            ? `Cập nhật sang ${orderStatusMap[status]}`
-                            : "Trạng thái không hợp lệ"
-                        }
-                      >
-                        {statusIcons[status]}
-                      </button>
-                      <span
-                        className={`mt-2 text-sm font-medium ${
-                          nodeStatus === "current"
-                            ? "text-blue-600"
-                            : nodeStatus === "completed"
-                              ? "text-green-600"
-                              : "text-gray-600"
-                        }`}
-                      >
-                        {orderStatusMap[status]}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </>
+          {/* Nút Hủy đơn hàng */}
+          {parseInt(currentStatus) === 0 && (
+            <div className="mt-12 flex justify-center">
+              <button
+                className={`px-4 py-2 rounded-full border-2 font-medium text-sm transition-all duration-300 flex items-center gap-2 bg-white text-red-700 border-red-300 hover:bg-red-50`}
+                onClick={() => handleStatusClick("-1")}
+                title="Hủy đơn hàng (yêu cầu lý do)"
+              >
+                {statusIcons["-1"]}
+                Hủy đơn hàng
+              </button>
+            </div>
           )}
-
-          {(parseInt(currentStatus) === 0 ||
-            parseInt(currentStatus) === 2 ||
-            parseInt(currentStatus) === 3 ||
-            parseInt(currentStatus) === 4) &&
-            parseInt(currentStatus) !== -1 && (
-              <div className="mt-12 flex justify-center">
-                <button
-                  className={`px-4 py-2 rounded-full border-2 font-medium text-sm transition-all duration-300 flex items-center gap-2 ${
-                    isValidNextStatus(currentStatus, "-1")
-                      ? "bg-white text-red-700 border-red-300 hover:bg-red-50"
-                      : "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
-                  }`}
-                  onClick={() => handleStatusClick("-1")}
-                  disabled={!isValidNextStatus(currentStatus, "-1")}
-                  title="Hủy đơn hàng (số lượng sản phẩm sẽ được hoàn lại nếu đã xác nhận)"
-                >
-                  {statusIcons["-1"]}
-                  Hủy đơn hàng
-                </button>
-              </div>
-            )}
 
           {/* Ô nhập ghi chú */}
           {showNoteInput && (
@@ -423,7 +339,7 @@ const OrderTimeline = ({ currentStatus, fetchOrderDetails }) => {
               <textarea
                 className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                 placeholder={
-                  selectedStatus == -1
+                  selectedStatus === -1
                     ? "Vui lòng nhập lý do hủy đơn hàng (bắt buộc)"
                     : "Nhập ghi chú (tùy chọn)"
                 }
@@ -458,7 +374,7 @@ const OrderTimeline = ({ currentStatus, fetchOrderDetails }) => {
               <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">
                   {confirmStatus === "-1"
-                    ? "Bạn có muốn hủy đơn hàng không? Số lượng sản phẩm sẽ được hoàn lại nếu đã xác nhận."
+                    ? "Bạn có muốn hủy đơn hàng không?"
                     : confirmStatus === "2"
                       ? "Bạn có muốn xác nhận đơn hàng không? Số lượng sản phẩm sẽ được trừ khỏi kho."
                       : `Bạn có muốn chuyển trạng thái sang "${orderStatusMap[confirmStatus]}" không?`}
@@ -480,29 +396,27 @@ const OrderTimeline = ({ currentStatus, fetchOrderDetails }) => {
               </div>
             </div>
           )}
+
+          {/* Mô tả trạng thái hiện tại */}
+          <div className="mt-8 bg-gray-50 p-4 rounded-lg border border-gray-200">
+            <h4 className="font-medium text-gray-700 mb-2 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+              Trạng thái hiện tại: {orderStatusMap[currentStatus]}
+            </h4>
+            <p className="text-sm text-gray-600">
+              {parseInt(currentStatus) === -1
+                ? "Đơn hàng đã bị h  và số lượng sản phẩm đã được hoàn lại nếu trước đó đã xác nhận."
+                : parseInt(currentStatus) === 0
+                  ? "Đơn hàng đang chờ được xác nhận. Số lượng sản phẩm chưa được trừ."
+                  : parseInt(currentStatus) === 2
+                    ? "Đơn hàng đã được xác nhận và số lượng sản phẩm đã được trừ khỏi kho."
+                    : parseInt(currentStatus) === 3
+                      ? "Đơn hàng đang được giao đến địa chỉ của bạn."
+                      : "Đơn hàng đã được giao thành công. Cảm ơn bạn đã mua sắm!"}
+            </p>
+          </div>
         </div>
       )}
-
-      {/* Mô tả trạng thái hiện tại */}
-      <div className="mt-8 bg-gray-50 p-4 rounded-lg border border-gray-200">
-        <h4 className="font-medium text-gray-700 mb-2 flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-          Trạng thái hiện tại: {orderStatusMap[currentStatus]}
-        </h4>
-        <p className="text-sm text-gray-600">
-          {parseInt(currentStatus) === -1
-            ? "Đơn hàng đã bị hủy và số lượng sản phẩm đã được hoàn lại nếu trước đó đã xác nhận."
-            : parseInt(currentStatus) === 0
-              ? "Đơn hàng của bạn đang chờ được xác nhận. Số lượng sản phẩm chưa được trừ."
-              : parseInt(currentStatus) === 2
-                ? "Đơn hàng đã được xác nhận và số lượng sản phẩm đã được trừ khỏi kho."
-                : parseInt(currentStatus) === 3
-                  ? "Đơn hàng đang được giao đến địa chỉ của bạn."
-                  : parseInt(currentStatus) === 4
-                    ? "Đơn hàng không thể giao thành công. Có thể thử lại hoặc hủy đơn."
-                    : "Đơn hàng đã được giao thành công. Cảm ơn bạn đã mua sắm!"}
-        </p>
-      </div>
     </div>
   );
 };
@@ -821,6 +735,7 @@ const OrderDetail = () => {
                     <th className="py-3 px-4 text-center">Màu Sắc</th>
                     <th className="py-3 px-4 text-center">Size</th>
                     <th className="py-3 px-4 text-right">Đơn giá</th>
+                    <th className="py-3 px-4 text-right">Giảm giá sản phẩm</th>
                     <th className="py-3 px-4 text-right">Thành tiền</th>
                   </tr>
                 </thead>
@@ -845,11 +760,26 @@ const OrderDetail = () => {
                       const sizeName =
                         detail.productDetail?.size?.name ??
                         "Không có kích thước";
-                      const price =
+                      const salePrice =
                         detail.productDetail?.salePrice ??
                         product?.salePrice ??
                         0;
-                      const totalPrice = price * quantity;
+                      const importPrice =
+                        detail.productDetail?.importPrice ??
+                        product?.importPrice ??
+                        salePrice;
+                      const promotionPercent =
+                        detail.productDetail?.promotion?.promotionPercent ?? 0;
+                      const discountPrice = promotionPercent
+                        ? salePrice * (1 - promotionPercent / 100)
+                        : salePrice;
+                      const discountAmount =
+                        importPrice > salePrice
+                          ? importPrice - salePrice
+                          : promotionPercent
+                            ? salePrice - discountPrice
+                            : 0;
+                      const totalPrice = discountPrice * quantity;
 
                       return (
                         <tr
@@ -882,7 +812,12 @@ const OrderDetail = () => {
                             {sizeName}
                           </td>
                           <td className="py-3 px-4 text-right font-medium text-green-600">
-                            {formatCurrency(price)}
+                            {formatCurrency(salePrice)}
+                          </td>
+                          <td className="py-3 px-4 text-right font-medium text-red-600">
+                            {discountAmount > 0
+                              ? formatCurrency(discountAmount)
+                              : "-"}
                           </td>
                           <td className="py-3 px-4 text-right font-semibold text-gray-900">
                             {formatCurrency(totalPrice)}
@@ -903,7 +838,7 @@ const OrderDetail = () => {
                 </tbody>
                 <tfoot className="bg-gray-100 text-gray-800 font-bold border-t">
                   <tr>
-                    <td colSpan="4" className="py-4 px-4 text-right">
+                    <td colSpan="5" className="py-4 px-4 text-right">
                       Tổng tiền trước khi áp voucher:
                     </td>
                     <td
@@ -914,7 +849,7 @@ const OrderDetail = () => {
                     </td>
                   </tr>
                   <tr>
-                    <td colSpan="4" className="py-4 px-4 text-right">
+                    <td colSpan="5" className="py-4 px-4 text-right">
                       Số tiền giảm giá:
                     </td>
                     <td
@@ -930,7 +865,7 @@ const OrderDetail = () => {
                     </td>
                   </tr>
                   <tr>
-                    <td colSpan="4" className="py-4 px-4 text-right">
+                    <td colSpan="5" className="py-4 px-4 text-right">
                       Phí giao hàng:
                     </td>
                     <td
@@ -940,9 +875,8 @@ const OrderDetail = () => {
                       {formatCurrency(orderDetails.shipfee ?? 0)}
                     </td>
                   </tr>
-
                   <tr>
-                    <td colSpan="4" className="py-4 px-4 text-right">
+                    <td colSpan="5" className="py-4 px-4 text-right">
                       Tổng tiền sau khi áp voucher:
                     </td>
                     <td
