@@ -5,7 +5,7 @@ import SizeService from "../../../services/SizeService";
 import CustomerService from "../../../services/CustomerService";
 import { FaShoppingCart, FaTrash, FaPlus, FaTimes } from "react-icons/fa";
 import QRCode from "react-qr-code"; // Import thư viện qrcode.react
-import Toast from "../../../components/ui/Toast";
+import Toast from "../../../components/ui/ToastModal";
 import { debounce } from "lodash";
 import { data } from "autoprefixer";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
