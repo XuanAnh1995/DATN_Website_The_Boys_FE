@@ -14,6 +14,8 @@ function Cart() {
         const items = await CartService.getAllCartItems();
         setCartItems(items);
 
+        console.log("Fetched Cart Items:", items); // Debugging line
+
         const initialQuantities = {};
         items.forEach((item) => {
           initialQuantities[item.id] = item.quantity;
@@ -118,23 +120,30 @@ function Cart() {
     }
   };
 
+  const calculateTotalAmount = () => {
+    return cartItems.reduce((total, item) => {
+      const quantity = parseInt(localQuantities[item.id]) || item.quantity;
+      return total + item.discountPrice * quantity;
+    }, 0);
+  };
 
 
   const proceedToPayment = () => {
-    const totalAmount = cartItems.reduce(
-      (total, item) => total + item.price * item.quantity,
-      0
-    );
+    const totalAmount = calculateTotalAmount();
     const checkoutState = {
       items: cartItems,
       totalAmount: totalAmount,
-      totalItems: cartItems.reduce((total, item) => total + item.quantity, 0),
+      totalItems: cartItems.reduce((total, item) => {
+        const quantity = parseInt(localQuantities[item.id]) || item.quantity;
+        return total + quantity;
+      }, 0),
     };
 
-    console.log("Checkout State:", checkoutState); // Debugging line
+    console.log("Checkout State:", checkoutState);
 
     navigate("/pay", { state: checkoutState });
   };
+
 
   if (cartItems.length === 0) {
     return (
@@ -193,6 +202,15 @@ function Cart() {
                         <p className="text-sm text-gray-500">
                           Thương hiệu: {item.brandName}
                         </p>
+
+                        <div className="mt-1 flex items-center gap-2">
+                          <span className="text-sm text-gray-400 line-through">
+                            {item.price.toLocaleString()}₫
+                          </span>
+                          <span className="text-base font-semibold text-red-600">
+                            {item.discountPrice.toLocaleString()}₫
+                          </span>
+                        </div>
                       </div>
 
                       <div className="flex items-center">
@@ -266,26 +284,16 @@ function Cart() {
                   <div className="flex justify-between items-center">
                     <p className="text-gray-600">Tổng tạm tính</p>
                     <p className="text-gray-900 font-medium">
-                      {cartItems
-                        .reduce(
-                          (total, item) => total + item.price * item.quantity,
-                          0
-                        )
-                        .toLocaleString()}
-                      ₫
+                    {calculateTotalAmount().toLocaleString()}₫
                     </p>
                   </div>
                   <div className="border-t border-gray-200 pt-4 mt-4">
                     <div className="flex justify-between items-center text-lg font-bold">
                       <p className="text-gray-900">Tổng tiền</p>
                       <p className="text-2xl text-orange-600">
-                        {cartItems
-                          .reduce(
-                            (total, item) => total + item.price * item.quantity,
-                            0
-                          )
-                          .toLocaleString()}
-                        ₫
+                        <p className="text-gray-900 font-medium">
+                          {calculateTotalAmount().toLocaleString()}₫
+                        </p>
                       </p>
                     </div>
                   </div>

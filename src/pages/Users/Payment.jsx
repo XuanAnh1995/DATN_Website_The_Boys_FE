@@ -434,52 +434,61 @@ function Payment() {
                 </span>
               </div>
               <div className="divide-y divide-gray-200">
-                {items.map((item) => (
-                  <div key={item.id} className="py-4 flex items-center">
-                    <div className="relative">
-                      <img
-                        src={item.photo}
-                        alt={item.productName}
-                        className="w-20 h-20 object-cover rounded-md mr-4"
-                      />
+                {items.map((item) => {
+                  const unitPrice = item.discountPrice || item.price;
+                  const totalPrice = unitPrice * item.quantity;
+
+                  return (
+                    <div key={item.id} className="py-4 flex items-center">
+                      <div className="relative">
+                        <img
+                          src={item.photo}
+                          alt={item.productName}
+                          className="w-20 h-20 object-cover rounded-md mr-4"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-sm font-medium text-gray-900">
+                          {item.productName}
+                        </h3>
+                        <p className="text-xs text-gray-500 mt-1">{item.productDetailName}</p>
+                        <p className="text-xs text-gray-500">
+                          Thương hiệu: {item.brandName}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-gray-500">
+                          Giá:{" "}
+                          {item.discountPrice ? (
+                            <>
+                              <span className="text-red-500 font-semibold">
+                                {item.discountPrice.toLocaleString()}₫
+                              </span>{" "}
+                              <span className="line-through text-gray-400 text-xs">
+                                {item.price.toLocaleString()}₫
+                              </span>
+                            </>
+                          ) : (
+                            <>{item.price.toLocaleString()}₫</>
+                          )}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Số lượng: {item.quantity?.toLocaleString()}
+                        </p>
+                        <p className="text-sm font-medium text-gray-900">
+                          Tổng: {totalPrice.toLocaleString()}₫
+                        </p>
+                        {item.discountPrice && (
+                          <p className="text-xs text-gray-500 line-through mt-1">
+                            {(item.price * item.quantity).toLocaleString()}₫
+                          </p>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <h3 className="text-sm font-medium text-gray-900">
-                        {item.productName}
-                      </h3>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {item.productDetailName}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        Thương hiệu: {item.brandName}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs text-gray-500">
-                        Giá:{" "}
-                        {item.originalPrice
-                          ? item.originalPrice.toLocaleString() + "₫"
-                          : ""}
-                        {item.price.toLocaleString()}₫
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        Số lượng:{" "}
-                        {item.quantity ? item.quantity.toLocaleString() : ""}
-                      </p>
-                      <p className="text-sm font-medium text-gray-900">
-                        Tổng: {(item.price * item.quantity).toLocaleString()}₫
-                      </p>
-                      <p className="text-xs text-gray-500 line-through mt-1">
-                        {item.originalPrice
-                          ? (
-                              item.originalPrice * item.quantity
-                            ).toLocaleString() + "₫"
-                          : ""}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
+
             </div>
 
             {/* Payment Methods */}
@@ -631,11 +640,10 @@ function Payment() {
               <div className="space-y-3">
                 <button
                   onClick={handleSubmit}
-                  className={`w-full py-3 text-lg font-medium rounded-md transition-colors flex items-center justify-center ${
-                    isOrdering
+                  className={`w-full py-3 text-lg font-medium rounded-md transition-colors flex items-center justify-center ${isOrdering
                       ? "bg-gray-400 cursor-not-allowed"
                       : "bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white"
-                  }`}
+                    }`}
                   disabled={isOrdering}
                 >
                   {isOrdering ? (
