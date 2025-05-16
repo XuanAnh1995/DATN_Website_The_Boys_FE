@@ -22,7 +22,7 @@ export default function Voucher() {
   });
   const [percentFilter, setPercentFilter] = useState("");
   const [minConditionFilter, setMinConditionFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState(""); // Thêm bộ lọc trạng thái
+  const [statusFilter, setStatusFilter] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [sortConfig, setSortConfig] = useState({
     key: "id",
@@ -64,7 +64,11 @@ export default function Voucher() {
         sortConfig.direction
       );
 
-      let filteredVouchers = response.content;
+      // Normalize voucherName to prevent null/undefined
+      let filteredVouchers = response.content.map((voucher) => ({
+        ...voucher,
+        voucherName: voucher.voucherName || "",
+      }));
 
       if (dateFilter.startDate || dateFilter.endDate) {
         filteredVouchers = filteredVouchers.filter((voucher) => {
@@ -132,7 +136,13 @@ export default function Voucher() {
   const fetchCustomers = async () => {
     try {
       const response = await CustomerService.getAll("", 0, 1000);
-      setCustomers(response.content);
+      // Normalize customer data
+      const normalizedCustomers = response.content.map((customer) => ({
+        ...customer,
+        fullname: customer.fullname || "",
+        email: customer.email || "",
+      }));
+      setCustomers(normalizedCustomers);
     } catch (error) {
       console.error("Failed to fetch customers:", error);
       toast.error("Không thể tải danh sách khách hàng");
@@ -235,10 +245,12 @@ export default function Voucher() {
       .filter((customer) => customer.email)
       .filter(
         (customer) =>
-          customer.fullname
-            .toLowerCase()
-            .includes(customerSearch.toLowerCase()) ||
-          customer.email.toLowerCase().includes(customerSearch.toLowerCase())
+          (customer.fullname &&
+            customer.fullname
+              .toLowerCase()
+              .includes(customerSearch.toLowerCase())) ||
+          (customer.email &&
+            customer.email.toLowerCase().includes(customerSearch.toLowerCase()))
       );
     const allCustomerIds = filteredCustomers.map((customer) => customer.id);
     setSelectedCustomerIds(allCustomerIds);
@@ -266,7 +278,7 @@ export default function Voucher() {
     if (invalidCustomers.length > 0) {
       toast.error(
         "Có khách hàng không có email: " +
-          invalidCustomers.map((c) => c.fullname).join(", ")
+          invalidCustomers.map((c) => c.fullname || "Không tên").join(", ")
       );
       return;
     }
@@ -606,12 +618,14 @@ export default function Voucher() {
                   .filter((customer) => customer.email)
                   .filter(
                     (customer) =>
-                      customer.fullname
-                        .toLowerCase()
-                        .includes(customerSearch.toLowerCase()) ||
-                      customer.email
-                        .toLowerCase()
-                        .includes(customerSearch.toLowerCase())
+                      (customer.fullname &&
+                        customer.fullname
+                          .toLowerCase()
+                          .includes(customerSearch.toLowerCase())) ||
+                      (customer.email &&
+                        customer.email
+                          .toLowerCase()
+                          .includes(customerSearch.toLowerCase()))
                   )
                   .map((customer) => (
                     <div
@@ -625,7 +639,7 @@ export default function Voucher() {
                         className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                       />
                       <span>
-                        {customer.fullname} ({customer.email})
+                        {customer.fullname || "Không tên"} ({customer.email})
                       </span>
                     </div>
                   ))}
