@@ -253,13 +253,23 @@ const SalePOSPage = () => {
         discountValue: calculateDiscount(voucher, currentOrder.totalAmount),
       }));
 
-      // Sắp xếp theo giá trị giảm giá giảm dần
-      const sortedVouchers = vouchersWithDiscount.sort(
-        (a, b) => b.discountValue - a.discountValue
+      // Tìm giá trị giảm giá lớn nhất
+      const maxDiscountValue = Math.max(
+        ...vouchersWithDiscount.map((v) => v.discountValue),
+        0
       );
 
-      // Lấy voucher tối ưu (giảm giá nhiều nhất)
-      const bestVoucher = sortedVouchers[0];
+      // Lọc các voucher có giá trị giảm giá lớn nhất
+      const bestVouchers = vouchersWithDiscount.filter(
+        (v) => v.discountValue === maxDiscountValue
+      );
+
+      // Chọn ngẫu nhiên một voucher từ danh sách bestVouchers
+      const bestVoucher =
+        bestVouchers.length > 0
+          ? bestVouchers[Math.floor(Math.random() * bestVouchers.length)]
+          : null;
+
       setOptimalVoucher(bestVoucher || null);
 
       // Chỉ tự động áp dụng nếu chưa có voucher được chọn thủ công
@@ -268,6 +278,14 @@ const SalePOSPage = () => {
       } else if (!bestVoucher) {
         setSelectedVoucher(""); // Reset nếu không có voucher hợp lệ
         setCalculatedDiscount(0);
+      }
+
+      // (Tùy chọn) Hiển thị thông báo nếu có nhiều voucher với cùng mức giảm giá
+      if (bestVouchers.length > 1) {
+        setNotification({
+          type: "info",
+          message: `Có ${bestVouchers.length} voucher với mức giảm giá bằng nhau. Đã chọn ngẫu nhiên voucher "${bestVoucher?.voucherName}".`,
+        });
       }
     } else {
       setOptimalVoucher(null);
@@ -423,10 +441,8 @@ const SalePOSPage = () => {
   // Hàm tính giá trị giảm giá thực tế cho một voucher
   const calculateDiscount = (voucher, totalAmount) => {
     if (!voucher || totalAmount < voucher.minCondition) return 0;
-    return Math.min(
-      (totalAmount * voucher.reducedPercent) / 100,
-      voucher.maxDiscount
-    );
+    const discount = (totalAmount * voucher.reducedPercent) / 100;
+    return Math.min(discount, voucher.maxDiscount || discount);
   };
 
   const handleAddNewCustomerClick = () => {
@@ -1701,7 +1717,10 @@ const SalePOSPage = () => {
                     b,
                     currentOrder.totalAmount
                   );
-                  return discountB - discountA; // Voucher tối ưu lên đầu
+                  if (discountB !== discountA) {
+                    return discountB - discountA; // Ưu tiên giảm giá cao hơn
+                  }
+                  return a.voucherCode.localeCompare(b.voucherCode); // Sắp xếp theo voucherCode nếu giảm giá bằng nhau
                 })
                 .map((v) => (
                   <option key={v.id} value={v.voucherCode}>
