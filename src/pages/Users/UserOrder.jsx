@@ -1442,9 +1442,9 @@ const OrderTimeline = ({ currentStatus, onCancelOrder }) => {
               {parseInt(currentStatus) === -1
                 ? "Đơn hàng đã bị hủy và số lượng sản phẩm đã được hoàn lại nếu trước đó đã xác nhận."
                 : parseInt(currentStatus) === 0
-                  ? "Đơn hàng đang chờ được xác nhận. Số lượng sản phẩm chưa được trừ."
+                  ? "Đơn hàng đang chờ được xác nhận."
                   : parseInt(currentStatus) === 2
-                    ? "Đơn hàng đã được xác nhận và số lượng sản phẩm đã được trừ khỏi kho."
+                    ? "Đơn hàng đã được xác nhận."
                     : parseInt(currentStatus) === 3
                       ? "Đơn hàng đang được giao đến địa chỉ của bạn."
                       : parseInt(currentStatus) === 4
