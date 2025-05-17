@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import ProductDetailService from "../../../../services/ProductDetailService";
 import UploadFileService from "../../../../services/UploadFileService";
 import PromotionService from "../../../../services/PromotionServices";
+import Barcode from "react-barcode";
 
 export default function ProductUpdateModal({
   modalVisible,
@@ -251,9 +252,19 @@ export default function ProductUpdateModal({
                   <p className="text-gray-400 text-sm">Hỗ trợ: jpeg, png</p>
                 </div>
               )}
+            </div>  
+
+            {/* Mã vạch sản phẩm */}
+            <div className="mt-6 flex flex-col items-center justify-center  ">
+              <h3 className="text-lg font-semibold text-gray-700 mb-2 ">Mã vạch sản phẩm</h3>
+              {currentProduct?.productDetailCode && (
+                <Barcode value={currentProduct.productDetailCode} />
+              )}
             </div>
           </div>
+
         </div>
+
 
         {/* Nút hành động */}
         <div className="flex justify-end space-x-4 mt-6">
