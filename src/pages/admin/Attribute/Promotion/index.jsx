@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from "react";
 import PromotionService from "../../../../services/PromotionServices";
 import { toast } from "react-toastify";
 import { AiOutlineEdit } from "react-icons/ai";
-import Switch from "react-switch";
 import CreatePromotionModal from "./components/CreateModal";
 import UpdateModal from "./components/UpdateModal";
 
@@ -18,7 +17,7 @@ export default function Promotion() {
   });
   const [dateRange, setDateRange] = useState({ start: "", end: "" });
   const [percentRange, setPercentRange] = useState({ min: "", max: "" });
-  const [statusFilter, setStatusFilter] = useState(""); // Thêm bộ lọc trạng thái
+  const [statusFilter, setStatusFilter] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [updateModal, setUpdateModal] = useState(false);
   const [selectedPromotion, setSelectedPromotion] = useState(null);
@@ -35,7 +34,12 @@ export default function Promotion() {
         endDate: dateRange.end,
         minPercent: percentRange.min,
         maxPercent: percentRange.max,
-        status: statusFilter,
+        status:
+          statusFilter === "active"
+            ? true
+            : statusFilter === "inactive"
+              ? false
+              : null, // Sửa logic statusFilter để khớp với BE
       });
 
       const { content, totalPages } = await PromotionService.getAllPromotions(
@@ -47,56 +51,16 @@ export default function Promotion() {
         dateRange.start || null,
         dateRange.end || null,
         percentRange.min ? Number(percentRange.min) : null,
-        percentRange.max ? Number(percentRange.max) : null
+        percentRange.max ? Number(percentRange.max) : null,
+        statusFilter === "active"
+          ? true
+          : statusFilter === "inactive"
+            ? false
+            : null // Sửa statusFilter để gửi đúng định dạng Boolean
       );
 
-      let filteredPromotions = content.map((promo) => ({
-        ...promo,
-        status:
-          new Date(promo.startDate) <= new Date() &&
-          new Date(promo.endDate) >= new Date(),
-      }));
-
-      // Lọc theo tên
-      if (search) {
-        filteredPromotions = filteredPromotions.filter((promo) =>
-          promo.promotionName.toLowerCase().includes(search.toLowerCase())
-        );
-      }
-
-      // Lọc theo khoảng ngày
-      if (dateRange.start) {
-        filteredPromotions = filteredPromotions.filter(
-          (promo) => new Date(promo.startDate) >= new Date(dateRange.start)
-        );
-      }
-      if (dateRange.end) {
-        filteredPromotions = filteredPromotions.filter(
-          (promo) => new Date(promo.endDate) <= new Date(dateRange.end)
-        );
-      }
-
-      // Lọc theo phần trăm
-      if (percentRange.min) {
-        filteredPromotions = filteredPromotions.filter(
-          (promo) => promo.promotionPercent >= Number(percentRange.min)
-        );
-      }
-      if (percentRange.max) {
-        filteredPromotions = filteredPromotions.filter(
-          (promo) => promo.promotionPercent <= Number(percentRange.max)
-        );
-      }
-
-      // Lọc theo trạng thái
-      if (statusFilter) {
-        filteredPromotions = filteredPromotions.filter(
-          (promo) => promo.status === (statusFilter === "active")
-        );
-      }
-
-      setPromotions(filteredPromotions);
-      setTotalPages(Math.ceil(filteredPromotions.length / pageSize) || 1);
+      setPromotions(content);
+      setTotalPages(totalPages || 1);
     } catch (error) {
       console.error("Error fetching promotions:", error);
       toast.error("Lỗi khi tải dữ liệu khuyến mãi");
@@ -156,7 +120,6 @@ export default function Promotion() {
         Quản lý Khuyến mãi
       </h1>
 
-      {/* Bộ lọc đẹp hơn */}
       <div className="mb-6 bg-white p-4 rounded-lg shadow-md border border-gray-200">
         <h2 className="text-lg font-semibold text-gray-700 mb-4">Bộ Lọc</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -251,7 +214,6 @@ export default function Promotion() {
         </div>
       </div>
 
-      {/* Bảng danh sách khuyến mãi */}
       <table className="table-auto w-full bg-white rounded-lg shadow-lg text-center text-sm border-separate border-spacing-0">
         <thead>
           <tr className="bg-blue-100 text-gray-700 text-xs uppercase tracking-wider">
@@ -304,17 +266,6 @@ export default function Promotion() {
                     >
                       <AiOutlineEdit size={20} />
                     </button>
-                    <Switch
-                      onChange={() =>
-                        console.log("Toggling status for:", item.id)
-                      }
-                      checked={item.status}
-                      height={20}
-                      width={40}
-                      onColor="#10B981"
-                      offColor="#EF4444"
-                      disabled
-                    />
                   </div>
                 </td>
               </tr>
@@ -322,7 +273,6 @@ export default function Promotion() {
         </tbody>
       </table>
 
-      {/* Phân trang */}
       <div className="flex items-center justify-between mt-6">
         <div className="flex items-center gap-2">
           <label htmlFor="entries" className="text-sm text-gray-700">

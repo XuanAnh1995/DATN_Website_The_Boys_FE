@@ -4,15 +4,40 @@ const API_URL = "/api/promotion"; // Đường dẫn tương đối vì baseURL 
 
 const PromotionService = {
   // Lấy danh sách khuyến mãi
-  getAllPromotions: async (search = "", page = 0, size = 10, sortBy = "id", sortDir = "asc") => {
+  getAllPromotions: async (
+    search = "",
+    page = 0,
+    size = 10,
+    sortBy = "id",
+    sortDir = "asc",
+    startDate = null,
+    endDate = null,
+    minPercent = null,
+    maxPercent = null,
+    status = null
+  ) => {
     try {
       const response = await api.get(API_URL, {
-        params: { search, page, size, sortBy, sortDir },
+        params: {
+          search,
+          page,
+          size,
+          sortBy,
+          sortDir,
+          startDate, // Thêm tham số startDate
+          endDate, // Thêm tham số endDate
+          minPercent,
+          maxPercent,
+          status, // Thêm tham số status để khớp với BE
+        },
       });
       console.log("Danh sách khuyến mãi: ", response.data.data);
       return response.data.data; // Trả về dữ liệu từ API
     } catch (error) {
-      console.error("❌ Lỗi khi lấy danh sách khuyến mãi:", error.response?.data || error.message);
+      console.error(
+        "❌ Lỗi khi lấy danh sách khuyến mãi:",
+        error.response?.data || error.message
+      );
       throw error; // Ném lỗi để phía gọi xử lý tiếp
     }
   },
@@ -24,7 +49,10 @@ const PromotionService = {
       console.log(`Khuyến mãi ${id}:`, response.data);
       return response.data; // Trả về dữ liệu khuyến mãi
     } catch (error) {
-      console.error(`❌ Lỗi khi lấy khuyến mãi ${id}:`, error.response?.data || error.message);
+      console.error(
+        `❌ Lỗi khi lấy khuyến mãi ${id}:`,
+        error.response?.data || error.message
+      );
       throw error;
     }
   },
@@ -36,7 +64,10 @@ const PromotionService = {
       console.log("Khuyến mãi đã tạo:", response.data);
       return response.data; // Trả về dữ liệu khuyến mãi vừa tạo
     } catch (error) {
-      console.error("❌ Lỗi khi tạo khuyến mãi:", error.response?.data || error.message);
+      console.error(
+        "❌ Lỗi khi tạo khuyến mãi:",
+        error.response?.data || error.message
+      );
       throw error;
     }
   },
@@ -48,19 +79,10 @@ const PromotionService = {
       console.log(`Khuyến mãi ${id} đã cập nhật:`, response.data);
       return response.data; // Trả về dữ liệu khuyến mãi đã cập nhật
     } catch (error) {
-      console.error(`❌ Lỗi khi cập nhật khuyến mãi ${id}:`, error.response?.data || error.message);
-      throw error;
-    }
-  },
-
-  // Chuyển đổi trạng thái khuyến mãi
-  toggleStatusPromotion: async (id) => {
-    try {
-      const response = await api.put(`${API_URL}/${id}/toggle-status`);
-      console.log(`Trạng thái khuyến mãi ${id} đã thay đổi:`, response.data);
-      return response.data; // Trả về dữ liệu sau khi thay đổi trạng thái
-    } catch (error) {
-      console.error(`❌ Lỗi khi thay đổi trạng thái khuyến mãi ${id}:`, error.response?.data || error.message);
+      console.error(
+        `❌ Lỗi khi cập nhật khuyến mãi ${id}:`,
+        error.response?.data || error.message
+      );
       throw error;
     }
   },
@@ -72,7 +94,10 @@ const PromotionService = {
       console.log(`Khuyến mãi ${id} đã xóa:`, response.data);
       return response.data; // Trả về dữ liệu phản hồi từ server
     } catch (error) {
-      console.error(`❌ Lỗi khi xóa khuyến mãi ${id}:`, error.response?.data || error.message);
+      console.error(
+        `❌ Lỗi khi xóa khuyến mãi ${id}:`,
+        error.response?.data || error.message
+      );
       throw error;
     }
   },
