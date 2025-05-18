@@ -12,6 +12,7 @@ export default function CreateModal({ isOpen, onCancel, fetchPromotions }) {
     description: "",
     startDate: "",
     endDate: "",
+    status: true, // Sửa từ 1 thành true
   });
   const [errors, setErrors] = useState({});
 
@@ -42,31 +43,27 @@ export default function CreateModal({ isOpen, onCancel, fetchPromotions }) {
       }
     }
 
-    if (promotion.description && promotion.description.length > 500) {
+    if (!promotion.description.trim()) {
+      newErrors.description = "Mô tả không được để trống!";
+    } else if (promotion.description.length > 500) {
       newErrors.description = "Mô tả không được vượt quá 500 ký tự!";
     }
 
     if (!promotion.startDate) {
       newErrors.startDate = "Ngày bắt đầu không được để trống!";
     } else if (isNaN(new Date(promotion.startDate).getTime())) {
-      newErrors.startDate = "Ngày bắt đầu không hợp lệ!";
+      newErrors.startDate = "Ngày và giờ bắt đầu không hợp lệ!";
     }
 
     if (!promotion.endDate) {
       newErrors.endDate = "Ngày kết thúc không được để trống!";
     } else if (isNaN(new Date(promotion.endDate).getTime())) {
-      newErrors.endDate = "Ngày kết thúc không hợp lệ!";
+      newErrors.endDate = "Ngày và giờ kết thúc không hợp lệ!";
     } else if (promotion.startDate && promotion.endDate) {
       const start = new Date(promotion.startDate);
       const end = new Date(promotion.endDate);
-      const today = new Date(); // Sử dụng thời gian hiện tại
-      today.setHours(0, 0, 0, 0); // Đặt giờ hiện tại để kiểm tra chính xác
-      if (start > end) {
-        newErrors.endDate =
-          "Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu!";
-      }
-      if (start < today) {
-        newErrors.startDate = "Ngày bắt đầu không được nhỏ hơn ngày hiện tại!";
+      if (end <= start) {
+        newErrors.endDate = "Ngày và giờ kết thúc phải sau ngày bắt đầu!";
       }
     }
 
@@ -85,13 +82,13 @@ export default function CreateModal({ isOpen, onCancel, fetchPromotions }) {
         promotionName: promotion.promotionName,
         promotionPercent: parseInt(promotion.promotionPercent),
         description: promotion.description,
-        startDate: new Date(promotion.startDate).toISOString().split("T")[0], // Sửa định dạng thành yyyy-MM-dd để khớp với BE
-        endDate: new Date(promotion.endDate).toISOString().split("T")[0], // Sửa định dạng thành yyyy-MM-dd để khớp với BE
+        startDate: new Date(promotion.startDate).toISOString(), // Gửi ISO 8601
+        endDate: new Date(promotion.endDate).toISOString(), // Gửi ISO 8601
+        status: promotion.status,
       };
 
       console.log("Dữ liệu gửi API:", formattedPromotion);
-      const response =
-        await PromotionService.createPromotion(formattedPromotion);
+      await PromotionService.createPromotion(formattedPromotion);
       toast.success("Thêm khuyến mãi thành công!");
       setPromotion({
         promotionName: "",
@@ -99,6 +96,7 @@ export default function CreateModal({ isOpen, onCancel, fetchPromotions }) {
         description: "",
         startDate: "",
         endDate: "",
+        status: true,
       });
       setErrors({});
       fetchPromotions();
@@ -180,10 +178,10 @@ export default function CreateModal({ isOpen, onCancel, fetchPromotions }) {
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            Ngày bắt đầu
+            Ngày và giờ bắt đầu
           </label>
           <input
-            type="date"
+            type="datetime-local"
             name="startDate"
             className={`border p-2 rounded w-full bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
               errors.startDate ? "border-red-500" : "border-gray-300"
@@ -197,10 +195,10 @@ export default function CreateModal({ isOpen, onCancel, fetchPromotions }) {
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            Ngày kết thúc
+            Ngày và giờ kết thúc
           </label>
           <input
-            type="date"
+            type="datetime-local"
             name="endDate"
             className={`border p-2 rounded w-full bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
               errors.endDate ? "border-red-500" : "border-gray-300"
@@ -211,6 +209,25 @@ export default function CreateModal({ isOpen, onCancel, fetchPromotions }) {
           {errors.endDate && (
             <p className="text-red-500 text-xs mt-1">{errors.endDate}</p>
           )}
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Trạng thái
+          </label>
+          <select
+            name="status"
+            value={promotion.status}
+            onChange={(e) =>
+              setPromotion((prev) => ({
+                ...prev,
+                status: e.target.value === "true",
+              }))
+            }
+            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 border-gray-300"
+          >
+            <option value={true}>Kích hoạt</option>
+            <option value={false}>Không kích hoạt</option>
+          </select>
         </div>
       </div>
 

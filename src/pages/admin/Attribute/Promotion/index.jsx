@@ -39,7 +39,7 @@ export default function Promotion() {
             ? true
             : statusFilter === "inactive"
               ? false
-              : null, // Sửa logic statusFilter để khớp với BE
+              : null,
       });
 
       const { content, totalPages } = await PromotionService.getAllPromotions(
@@ -48,15 +48,15 @@ export default function Promotion() {
         pageSize,
         sortConfig.key,
         sortConfig.direction,
-        dateRange.start || null,
-        dateRange.end || null,
+        dateRange.start ? new Date(dateRange.start).toISOString() : null,
+        dateRange.end ? new Date(dateRange.end).toISOString() : null,
         percentRange.min ? Number(percentRange.min) : null,
         percentRange.max ? Number(percentRange.max) : null,
         statusFilter === "active"
           ? true
           : statusFilter === "inactive"
             ? false
-            : null // Sửa statusFilter để gửi đúng định dạng Boolean
+            : null
       );
 
       setPromotions(content);
@@ -140,7 +140,7 @@ export default function Promotion() {
               Ngày bắt đầu từ
             </label>
             <input
-              type="date"
+              type="datetime-local"
               className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               value={dateRange.start}
               onChange={handleDateFilter("start")}
@@ -151,7 +151,7 @@ export default function Promotion() {
               Ngày kết thúc đến
             </label>
             <input
-              type="date"
+              type="datetime-local"
               className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               value={dateRange.end}
               onChange={handleDateFilter("end")}
@@ -221,8 +221,8 @@ export default function Promotion() {
             <th className="px-4 py-3">Tên KM</th>
             <th className="px-4 py-3">Mô tả</th>
             <th className="px-4 py-3">Phần trăm giảm</th>
-            <th className="px-4 py-3">Ngày bắt đầu</th>
-            <th className="px-4 py-3">Ngày kết thúc</th>
+            <th className="px-4 py-3">Ngày và giờ bắt đầu</th>
+            <th className="px-4 py-3">Ngày và giờ kết thúc</th>
             <th className="px-4 py-3">Trạng thái</th>
             <th className="px-4 py-3 rounded-tr-lg">Hành động</th>
           </tr>
@@ -246,10 +246,22 @@ export default function Promotion() {
                 </td>
                 <td className="px-4 py-3">{item.promotionPercent}%</td>
                 <td className="px-4 py-3 text-gray-600">
-                  {new Date(item.startDate).toLocaleDateString("vi-VN")}
+                  {new Date(item.startDate).toLocaleString("vi-VN", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </td>
                 <td className="px-4 py-3 text-gray-600">
-                  {new Date(item.endDate).toLocaleDateString("vi-VN")}
+                  {new Date(item.endDate).toLocaleString("vi-VN", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </td>
                 <td
                   className={`px-4 py-3 font-semibold ${

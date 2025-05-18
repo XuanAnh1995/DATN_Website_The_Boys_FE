@@ -17,6 +17,7 @@ const UpdateModal = ({
     description: "",
     startDate: "",
     endDate: "",
+    status: true,
   });
   const [errors, setErrors] = useState({});
 
@@ -27,11 +28,12 @@ const UpdateModal = ({
         promotionPercent: selectedPromotion.promotionPercent || "",
         description: selectedPromotion.description || "",
         startDate: selectedPromotion.startDate
-          ? new Date(selectedPromotion.startDate).toISOString().split("T")[0] // Định dạng thành yyyy-MM-dd
+          ? new Date(selectedPromotion.startDate).toISOString().slice(0, 16) // Định dạng yyyy-MM-ddThh:mm cho datetime-local
           : "",
         endDate: selectedPromotion.endDate
-          ? new Date(selectedPromotion.endDate).toISOString().split("T")[0] // Định dạng thành yyyy-MM-dd
+          ? new Date(selectedPromotion.endDate).toISOString().slice(0, 16)
           : "",
+        status: selectedPromotion.status ?? true,
       });
       setErrors({});
     }
@@ -64,29 +66,27 @@ const UpdateModal = ({
       }
     }
 
-    if (promotion.description && promotion.description.length > 500) {
+    if (!promotion.description.trim()) {
+      newErrors.description = "Mô tả không được để trống!";
+    } else if (promotion.description.length > 500) {
       newErrors.description = "Mô tả không được vượt quá 500 ký tự!";
     }
 
     if (!promotion.startDate) {
       newErrors.startDate = "Ngày bắt đầu không được để trống!";
-    } else {
-      const start = new Date(promotion.startDate);
-      const today = new Date(); // Sử dụng thời gian hiện tại
-      today.setHours(0, 0, 0, 0); // Đặt giờ hiện tại
-      if (start < today) {
-        newErrors.startDate = "Ngày bắt đầu không được nhỏ hơn ngày hiện tại!";
-      }
+    } else if (isNaN(new Date(promotion.startDate).getTime())) {
+      newErrors.startDate = "Ngày và giờ bắt đầu không hợp lệ!";
     }
 
     if (!promotion.endDate) {
       newErrors.endDate = "Ngày kết thúc không được để trống!";
+    } else if (isNaN(new Date(promotion.endDate).getTime())) {
+      newErrors.endDate = "Ngày và giờ kết thúc không hợp lệ!";
     } else if (promotion.startDate) {
       const start = new Date(promotion.startDate);
       const end = new Date(promotion.endDate);
-      if (end < start) {
-        newErrors.endDate =
-          "Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu!";
+      if (end <= start) {
+        newErrors.endDate = "Ngày và giờ kết thúc phải sau ngày bắt đầu!";
       }
     }
 
@@ -107,10 +107,12 @@ const UpdateModal = ({
         promotionName: promotion.promotionName,
         promotionPercent: parseInt(promotion.promotionPercent),
         description: promotion.description,
-        startDate: new Date(promotion.startDate).toISOString().split("T")[0], // Định dạng thành yyyy-MM-dd
-        endDate: new Date(promotion.endDate).toISOString().split("T")[0], // Định dạng thành yyyy-MM-dd
+        startDate: new Date(promotion.startDate).toISOString(), // Gửi ISO 8601
+        endDate: new Date(promotion.endDate).toISOString(), // Gửi ISO 8601
+        status: promotion.status,
       };
 
+      console.log("Dữ liệu gửi API:", updatedPromotion);
       await PromotionService.updatePromotion(
         selectedPromotion.id,
         updatedPromotion
@@ -119,8 +121,10 @@ const UpdateModal = ({
       fetchPromotions();
       setUpdateModal(false);
     } catch (error) {
-      console.error(error);
-      toast.error("Lỗi khi cập nhật khuyến mãi!");
+      console.error("Lỗi khi cập nhật khuyến mãi:", error);
+      const errorMessage =
+        error.response?.data?.message || "Lỗi không xác định từ server!";
+      toast.error(`Lỗi khi cập nhật khuyến mãi: ${errorMessage}`);
     }
   };
 
@@ -194,10 +198,10 @@ const UpdateModal = ({
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Ngày bắt đầu
+              Ngày và giờ bắt đầu
             </label>
             <input
-              type="date"
+              type="datetime-local"
               name="startDate"
               value={promotion.startDate}
               onChange={handleChange}
@@ -211,10 +215,10 @@ const UpdateModal = ({
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Ngày kết thúc
+              Ngày và giờ kết thúc
             </label>
             <input
-              type="date"
+              type="datetime-local"
               name="endDate"
               value={promotion.endDate}
               onChange={handleChange}
@@ -226,6 +230,25 @@ const UpdateModal = ({
               <p className="text-red-500 text-xs mt-1">{errors.endDate}</p>
             )}
           </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Trạng thái
+          </label>
+          <select
+            name="status"
+            value={promotion.status}
+            onChange={(e) =>
+              setPromotion((prev) => ({
+                ...prev,
+                status: e.target.value === "true",
+              }))
+            }
+            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 border-gray-300"
+          >
+            <option value={true}>Kích hoạt</option>
+            <option value={false}>Không kích hoạt</option>
+          </select>
         </div>
         <div className="flex justify-end space-x-4">
           <button
