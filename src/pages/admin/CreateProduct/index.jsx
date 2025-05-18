@@ -57,7 +57,7 @@ export default function CreateProduct() {
   const fetchSelectOptions = async () => {
     try {
       const productData = await ProductService.getAllProducts(0, 1000);
-      setProducts(productData.content); 
+      setProducts(productData.content);
 
       const collarData = await CollarService.getAllCollars();
       setCollars(collarData.content);
@@ -72,7 +72,18 @@ export default function CreateProduct() {
       setSleeves(sleeveData.content);
 
       const promotionData = await PromotionService.getAllPromotions();
-      setPromotions(promotionData.content);
+
+      const today = new Date();
+
+      // Lọc các khuyến mãi còn hiệu lực
+      const validPromotions = promotionData.content.filter((promotion) => {
+        const end = new Date(promotion.endDate);
+        return promotion.status === true && end >= today;
+      });
+
+
+      setPromotions(validPromotions);
+
     } catch (error) {
       console.error("Error fetching select options:", error);
     }
@@ -246,7 +257,11 @@ export default function CreateProduct() {
                 <label className="block text-xs font-medium text-black mb-1">Khuyến mãi</label>
                 <Select
                   name="promotion"
-                  options={promotions.map(promotion => ({ value: promotion.id, label: promotion.promotionName }))}
+                  options={promotions.map(promotion => ({
+                    value: promotion.id,
+                    label: `${promotion.promotionName} - ${promotion.promotionPercent}% (${new Date(promotion.startDate).toLocaleDateString("vi-VN")} -> ${new Date(promotion.endDate).toLocaleDateString("vi-VN")})`
+                  }))}
+
                   value={promotions
                     .filter(promotion => generateData.promotionId === promotion.id)
                     .map(promotion => ({ value: promotion.id, label: promotion.promotionName }))}
