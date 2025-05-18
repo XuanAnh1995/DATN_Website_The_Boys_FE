@@ -15,7 +15,7 @@ export default function ProductUpdateModal({
   sleeves,
   colors,
   sizes,
-  promotions
+  promotions,
 }) {
   const [quantity, setQuantity] = useState("");
   const [importPrice, setImportPrice] = useState("");
@@ -37,11 +37,40 @@ export default function ProductUpdateModal({
       setSalePrice(currentProduct.salePrice || "");
       setDescription(currentProduct.description || "");
       setPhoto(currentProduct.photo || "");
-      setCollar(currentProduct.collar ? { value: currentProduct.collar.id, label: currentProduct.collar.name } : null);
-      setSleeve(currentProduct.sleeve ? { value: currentProduct.sleeve.id, label: currentProduct.sleeve.sleeveName } : null);
-      setColor(currentProduct.color ? { value: currentProduct.color.id, label: currentProduct.color.name } : null);
-      setSize(currentProduct.size ? { value: currentProduct.size.id, label: currentProduct.size.name } : null);
-      setPromotion(currentProduct.promotion ? { value: currentProduct.promotion.id, label: currentProduct.promotion.promotionName } : null);
+      setCollar(
+        currentProduct.collar
+          ? {
+              value: currentProduct.collar.id,
+              label: currentProduct.collar.name,
+            }
+          : null
+      );
+      setSleeve(
+        currentProduct.sleeve
+          ? {
+              value: currentProduct.sleeve.id,
+              label: currentProduct.sleeve.sleeveName,
+            }
+          : null
+      );
+      setColor(
+        currentProduct.color
+          ? { value: currentProduct.color.id, label: currentProduct.color.name }
+          : null
+      );
+      setSize(
+        currentProduct.size
+          ? { value: currentProduct.size.id, label: currentProduct.size.name }
+          : null
+      );
+      setPromotion(
+        currentProduct.promotion
+          ? {
+              value: currentProduct.promotion.id,
+              label: `${currentProduct.promotion.promotionName} (${currentProduct.promotion.promotionPercent}%)`,
+            }
+          : null
+      );
     }
   }, [currentProduct]);
 
@@ -61,13 +90,16 @@ export default function ProductUpdateModal({
     };
 
     try {
-      const result = await ProductDetailService.updateProductDetail(currentProduct.id, productData);
+      const result = await ProductDetailService.updateProductDetail(
+        currentProduct.id,
+        productData
+      );
       onUpdate(result);
       toast.success("Cập nhật sản phẩm thành công!");
       setPreviewImage("");
       onClose();
     } catch (error) {
-      console.error("Update failed", error);
+      console.error("Cập nhật thất bại", error);
       toast.error("Cập nhật thất bại. Vui lòng thử lại!");
     }
   };
@@ -120,78 +152,99 @@ export default function ProductUpdateModal({
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-gray-500 bg-opacity-50 z-50">
       <div className="bg-white p-8 rounded-lg shadow-lg w-11/12 md:w-3/4 lg:w-2/3">
-        <h2 className="text-2xl font-semibold mb-6 text-gray-800 text-center">Cập nhật chi tiết sản phẩm</h2>
+        <h2 className="text-2xl font-semibold mb-6 text-gray-800 text-center">
+          Cập nhật chi tiết sản phẩm
+        </h2>
 
         <div className="grid grid-cols-3 gap-6">
           {/* Thông tin sản phẩm */}
           <div className="grid grid-cols-2 gap-4 col-span-2">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Cổ áo</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Cổ áo
+              </label>
               <Select
                 value={collar}
                 onChange={(option) => setCollar(option)}
-                options={collars.map(item => ({
+                options={collars.map((item) => ({
                   value: item.id,
-                  label: item.collarName
+                  label: item.collarName,
                 }))}
                 className="w-full"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Tay áo</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Tay áo
+              </label>
               <Select
                 value={sleeve}
                 onChange={(option) => setSleeve(option)}
-                options={sleeves.map(item => ({
+                options={sleeves.map((item) => ({
                   value: item.id,
-                  label: item.sleeveName
+                  label: item.sleeveName,
                 }))}
                 className="w-full"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Màu sắc</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Màu sắc
+              </label>
               <Select
                 value={color}
                 onChange={(option) => setColor(option)}
-                options={colors.map(item => ({
+                options={colors.map((item) => ({
                   value: item.id,
-                  label: item.colorName
+                  label: item.colorName,
                 }))}
                 className="w-full"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Kích thước</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Kích thước
+              </label>
               <Select
                 value={size}
                 onChange={(option) => setSize(option)}
-                options={sizes.map(item => ({
+                options={sizes.map((item) => ({
                   value: item.id,
-                  label: item.sizeName
+                  label: item.sizeName,
                 }))}
                 className="w-full"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Khuyến mãi</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Khuyến mãi
+              </label>
               <Select
                 value={promotion}
                 onChange={(option) => setPromotion(option)}
-                options={promotions.map(item => ({
-                  value: item.id,
-                  label: item.promotionName
-                }))}
+                options={promotions
+                  .filter((item) => item.status === true)
+                  .map((item) => ({
+                    value: item.id,
+                    label: `${item.promotionName} (${item.promotionPercent}%)`,
+                  }))}
+                placeholder={
+                  promotions.filter((item) => item.status === true).length > 0
+                    ? "Chọn khuyến mãi"
+                    : "Không có khuyến mãi hoạt động"
+                }
                 className="w-full"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Số lượng</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Số lượng
+              </label>
               <input
                 type="number"
                 value={quantity}
@@ -200,7 +253,9 @@ export default function ProductUpdateModal({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Giá nhập</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Giá nhập
+              </label>
               <input
                 type="number"
                 value={importPrice}
@@ -209,7 +264,9 @@ export default function ProductUpdateModal({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Đơn giá</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Đơn giá
+              </label>
               <input
                 type="number"
                 value={salePrice}
@@ -218,7 +275,9 @@ export default function ProductUpdateModal({
               />
             </div>
             <div className="col-span-2">
-              <label className="block text-sm font-medium text-gray-700">Mô tả</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Mô tả
+              </label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -229,7 +288,9 @@ export default function ProductUpdateModal({
 
           {/* Hình ảnh sản phẩm */}
           <div>
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">Hình ảnh</h3>
+            <h3 className="text-lg font-semibold text-gray-700 mb-2">
+              Hình ảnh
+            </h3>
             <div className="bg-blue-50 p-4 rounded-lg border-2 border-dashed border-blue-300 relative">
               <input
                 type="file"
@@ -241,35 +302,50 @@ export default function ProductUpdateModal({
                 <img
                   src={previewImage || photo}
                   className="h-40 w-full object-contain rounded-lg"
-                  onError={() => previewImage ? setPreviewImage(null) : setPhoto(null)}
+                  onError={() =>
+                    previewImage ? setPreviewImage(null) : setPhoto(null)
+                  }
                   alt="Product Image"
                 />
               ) : (
                 <div className="flex flex-col items-center justify-center h-32">
-                  <p className="text-gray-500">Thả hình ảnh vào đây hoặc{" "}
-                    <span className="text-blue-500 cursor-pointer">chọn ảnh</span>
+                  <p className="text-gray-500">
+                    Thả hình ảnh vào đây hoặc{" "}
+                    <span className="text-blue-500 cursor-pointer">
+                      chọn ảnh
+                    </span>
                   </p>
                   <p className="text-gray-400 text-sm">Hỗ trợ: jpeg, png</p>
                 </div>
               )}
-            </div>  
+            </div>
 
             {/* Mã vạch sản phẩm */}
             <div className="mt-6 flex flex-col items-center justify-center  ">
-              <h3 className="text-lg font-semibold text-gray-700 mb-2 ">Mã vạch sản phẩm</h3>
+              <h3 className="text-lg font-semibold text-gray-700 mb-2 ">
+                Mã vạch sản phẩm
+              </h3>
               {currentProduct?.productDetailCode && (
                 <Barcode value={currentProduct.productDetailCode} />
               )}
             </div>
           </div>
-
         </div>
-
 
         {/* Nút hành động */}
         <div className="flex justify-end space-x-4 mt-6">
-          <button onClick={handleClose} className="px-6 py-3 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition duration-200">Hủy</button>
-          <button onClick={handleUpdateSubmit} className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-200">Cập nhật</button>
+          <button
+            onClick={handleClose}
+            className="px-6 py-3 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition duration-200"
+          >
+            Hủy
+          </button>
+          <button
+            onClick={handleUpdateSubmit}
+            className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-200"
+          >
+            Cập nhật
+          </button>
         </div>
       </div>
     </div>
