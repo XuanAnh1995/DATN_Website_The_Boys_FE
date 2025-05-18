@@ -168,7 +168,7 @@ export default function ProductUpdateModal({
                 onChange={(option) => setCollar(option)}
                 options={collars.map((item) => ({
                   value: item.id,
-                  label: item.collarName,
+                  label: item.name,
                 }))}
                 className="w-full"
               />
@@ -198,7 +198,7 @@ export default function ProductUpdateModal({
                 onChange={(option) => setColor(option)}
                 options={colors.map((item) => ({
                   value: item.id,
-                  label: item.colorName,
+                  label: item.name,
                 }))}
                 className="w-full"
               />
@@ -213,7 +213,7 @@ export default function ProductUpdateModal({
                 onChange={(option) => setSize(option)}
                 options={sizes.map((item) => ({
                   value: item.id,
-                  label: item.sizeName,
+                  label: item.name,
                 }))}
                 className="w-full"
               />
