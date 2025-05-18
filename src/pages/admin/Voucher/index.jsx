@@ -11,132 +11,146 @@ import Modal from "react-modal";
 Modal.setAppElement("#root");
 
 export default function Voucher() {
-  const [vouchers, setVouchers] = useState([]);
+  const [allVouchers, setAllVouchers] = useState([]); // Lưu toàn bộ dữ liệu gốc
+  const [filteredVouchers, setFilteredVouchers] = useState([]); // Lưu dữ liệu đã lọc
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [search, setSearch] = useState("");
-  const [dateFilter, setDateFilter] = useState({
-    startDate: "",
-    endDate: "",
-  });
+  const [dateFilter, setDateFilter] = useState({ startDate: "", endDate: "" });
   const [percentFilter, setPercentFilter] = useState("");
   const [minConditionFilter, setMinConditionFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [sortConfig, setSortConfig] = useState({
     key: "id",
     direction: "desc",
   });
-  const [currentVoucher, setCurrentVoucher] = useState(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [updateModal, setUpdateModal] = useState(false);
-  const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [selectedVoucher, setSelectedVoucher] = useState(null);
   const [customers, setCustomers] = useState([]);
+  const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [selectedCustomerIds, setSelectedCustomerIds] = useState([]);
   const [customerSearch, setCustomerSearch] = useState("");
 
-  const updateVoucherStatus = useCallback(async (voucher) => {
-    const currentDate = new Date();
-    const startDate = new Date(voucher.startDate);
-    const endDate = new Date(voucher.endDate);
-    const shouldBeActive = currentDate >= startDate && currentDate <= endDate;
-
-    if (shouldBeActive !== voucher.status) {
-      try {
-        await VoucherService.toggleStatusVoucher(voucher.id);
-        return true;
-      } catch (error) {
-        console.error("Auto status update error:", error);
-        return false;
-      }
-    }
-    return false;
-  }, []);
-
+  // Lấy toàn bộ voucher từ API (không gửi tham số lọc)
   const fetchVouchers = useCallback(async () => {
     try {
+      console.log("Fetching all vouchers...");
       const response = await VoucherService.getAllVouchers(
-        search,
-        currentPage,
-        pageSize,
-        sortConfig.key,
-        sortConfig.direction
+        "",
+        0,
+        1000,
+        "id",
+        "desc"
       );
+      const content = Array.isArray(response.content) ? response.content : [];
+      console.log("API response:", content);
 
-      // Normalize voucherName to prevent null/undefined
-      let filteredVouchers = response.content.map((voucher) => ({
+      // Chuẩn hóa dữ liệu
+      const normalizedVouchers = content.map((voucher) => ({
         ...voucher,
         voucherName: voucher.voucherName || "",
+        voucherCode: voucher.voucherCode || "",
+        description: voucher.description || "",
+        minCondition: voucher.minCondition || 0,
+        maxDiscount: voucher.maxDiscount || 0,
+        reducedPercent: voucher.reducedPercent || 0,
+        startDate: voucher.startDate || "",
+        endDate: voucher.endDate || "",
+        status: voucher.status || false,
       }));
 
-      if (dateFilter.startDate || dateFilter.endDate) {
-        filteredVouchers = filteredVouchers.filter((voucher) => {
-          const startDate = new Date(voucher.startDate);
-          const endDate = new Date(voucher.endDate);
-          const filterStart = dateFilter.startDate
-            ? new Date(dateFilter.startDate)
-            : null;
-          const filterEnd = dateFilter.endDate
-            ? new Date(dateFilter.endDate)
-            : null;
-          return (
-            (!filterStart || startDate >= filterStart) &&
-            (!filterEnd || endDate <= filterEnd)
-          );
-        });
-      }
-
-      if (percentFilter) {
-        filteredVouchers = filteredVouchers.filter(
-          (voucher) => voucher.reducedPercent >= Number(percentFilter)
-        );
-      }
-
-      if (minConditionFilter) {
-        filteredVouchers = filteredVouchers.filter(
-          (voucher) => voucher.minCondition >= Number(minConditionFilter)
-        );
-      }
-
-      if (statusFilter) {
-        filteredVouchers = filteredVouchers.filter(
-          (voucher) => voucher.status === (statusFilter === "active")
-        );
-      }
-
-      const updatedVouchers = await Promise.all(
-        filteredVouchers.map(async (voucher) => {
-          const statusUpdated = await updateVoucherStatus(voucher);
-          if (statusUpdated) {
-            return { ...voucher, status: !voucher.status };
-          }
-          return voucher;
-        })
-      );
-
-      setVouchers(updatedVouchers);
-      setTotalPages(response.totalPages);
+      setAllVouchers(normalizedVouchers);
+      setFilteredVouchers(normalizedVouchers);
+      setTotalPages(Math.ceil(normalizedVouchers.length / pageSize) || 1);
     } catch (error) {
-      console.error(error);
-      toast.error("Failed to fetch vouchers");
+      console.error(
+        "Error fetching vouchers:",
+        error.response?.data || error.message
+      );
+      toast.error("Lỗi khi tải dữ liệu voucher");
+      setAllVouchers([]);
+      setFilteredVouchers([]);
+      setTotalPages(1);
     }
+  }, [pageSize]);
+
+  // Lọc voucher trên frontend
+  const applyFilters = useCallback(() => {
+    let filtered = [...allVouchers];
+
+    // Lọc theo từ khóa tìm kiếm
+    if (search) {
+      filtered = filtered.filter(
+        (voucher) =>
+          voucher.voucherName?.toLowerCase().includes(search.toLowerCase()) ||
+          voucher.voucherCode?.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+
+    // Lọc theo khoảng ngày
+    if (dateFilter.startDate) {
+      filtered = filtered.filter(
+        (voucher) =>
+          new Date(voucher.startDate) >= new Date(dateFilter.startDate)
+      );
+    }
+    if (dateFilter.endDate) {
+      filtered = filtered.filter(
+        (voucher) => new Date(voucher.endDate) <= new Date(dateFilter.endDate)
+      );
+    }
+
+    // Lọc theo phần trăm giảm
+    if (percentFilter) {
+      filtered = filtered.filter(
+        (voucher) => voucher.reducedPercent >= Number(percentFilter)
+      );
+    }
+
+    // Lọc theo điều kiện tối thiểu
+    if (minConditionFilter) {
+      filtered = filtered.filter(
+        (voucher) => voucher.minCondition >= Number(minConditionFilter)
+      );
+    }
+
+    // Lọc theo trạng thái
+    if (statusFilter) {
+      filtered = filtered.filter(
+        (voucher) => voucher.status === (statusFilter === "active")
+      );
+    }
+
+    // Sắp xếp dữ liệu
+    filtered.sort((a, b) => {
+      const key = sortConfig.key;
+      const direction = sortConfig.direction === "asc" ? 1 : -1;
+      if (a[key] < b[key]) return -direction;
+      if (a[key] > b[key]) return direction;
+      return 0;
+    });
+
+    console.log("Filtered vouchers:", filtered);
+    setFilteredVouchers(filtered);
+    setTotalPages(Math.ceil(filtered.length / pageSize) || 1);
+    setCurrentPage(0); // Reset về trang đầu tiên sau khi lọc
   }, [
+    allVouchers,
     search,
-    currentPage,
-    pageSize,
-    sortConfig,
     dateFilter,
     percentFilter,
     minConditionFilter,
     statusFilter,
-    updateVoucherStatus,
+    sortConfig,
+    pageSize,
   ]);
 
+  // Lấy danh sách khách hàng
   const fetchCustomers = async () => {
     try {
       const response = await CustomerService.getAll("", 0, 1000);
-      // Normalize customer data
       const normalizedCustomers = response.content.map((customer) => ({
         ...customer,
         fullname: customer.fullname || "",
@@ -151,14 +165,15 @@ export default function Voucher() {
 
   useEffect(() => {
     fetchVouchers();
-    const interval = setInterval(fetchVouchers, 60000);
     fetchCustomers();
-    return () => clearInterval(interval);
   }, [fetchVouchers]);
+
+  useEffect(() => {
+    applyFilters();
+  }, [applyFilters]);
 
   const handleSearch = (event) => {
     setSearch(event.target.value);
-    setCurrentPage(0);
   };
 
   const handleDateFilter = (event) => {
@@ -166,22 +181,18 @@ export default function Voucher() {
       ...dateFilter,
       [event.target.name]: event.target.value,
     });
-    setCurrentPage(0);
   };
 
   const handlePercentFilter = (event) => {
     setPercentFilter(event.target.value);
-    setCurrentPage(0);
   };
 
   const handleMinConditionFilter = (event) => {
     setMinConditionFilter(event.target.value);
-    setCurrentPage(0);
   };
 
   const handleStatusFilter = (event) => {
     setStatusFilter(event.target.value);
-    setCurrentPage(0);
   };
 
   const handleResetFilters = () => {
@@ -194,30 +205,24 @@ export default function Voucher() {
   };
 
   const handleUpdateVoucher = (voucher) => {
-    setCurrentVoucher(voucher);
+    setSelectedVoucher(voucher);
     setUpdateModal(true);
-  };
-
-  const handlePageChange = (direction) => {
-    setCurrentPage((prev) =>
-      Math.max(0, Math.min(prev + direction, totalPages - 1))
-    );
   };
 
   const handleToggleStatus = async (id, currentStatus) => {
     try {
-      setVouchers((prevVouchers) =>
-        prevVouchers.map((voucher) =>
+      setFilteredVouchers((prev) =>
+        prev.map((voucher) =>
           voucher.id === id ? { ...voucher, status: !currentStatus } : voucher
         )
       );
       await VoucherService.toggleStatusVoucher(id);
       toast.success("Cập nhật trạng thái thành công");
-      await fetchVouchers();
+      fetchVouchers(); // Gọi lại để đồng bộ với backend
     } catch (error) {
       console.error("Toggle error:", error);
-      setVouchers((prevVouchers) =>
-        prevVouchers.map((voucher) =>
+      setFilteredVouchers((prev) =>
+        prev.map((voucher) =>
           voucher.id === id ? { ...voucher, status: currentStatus } : voucher
         )
       );
@@ -245,12 +250,10 @@ export default function Voucher() {
       .filter((customer) => customer.email)
       .filter(
         (customer) =>
-          (customer.fullname &&
-            customer.fullname
-              .toLowerCase()
-              .includes(customerSearch.toLowerCase())) ||
-          (customer.email &&
-            customer.email.toLowerCase().includes(customerSearch.toLowerCase()))
+          customer.fullname
+            .toLowerCase()
+            .includes(customerSearch.toLowerCase()) ||
+          customer.email.toLowerCase().includes(customerSearch.toLowerCase())
       );
     const allCustomerIds = filteredCustomers.map((customer) => customer.id);
     setSelectedCustomerIds(allCustomerIds);
@@ -300,7 +303,7 @@ export default function Voucher() {
       console.log("Dữ liệu gửi email:", emailData);
       await VoucherService.sendVoucherEmail(emailData);
       toast.success(
-        `Đã gửi voucher ${selectedVoucher.voucherCode} đến ${selectedCustomerIds.length} khách hàng từ aduc79176@gmail.com`
+        `Đã gửi voucher ${selectedVoucher.voucherCode} đến ${selectedCustomerIds.length} khách hàng`
       );
       setEmailModalOpen(false);
       setSelectedCustomerIds([]);
@@ -319,7 +322,6 @@ export default function Voucher() {
         Quản lý Voucher
       </h1>
 
-      {/* Bộ lọc đồng bộ theme với Promotion */}
       <div className="mb-6 bg-white p-4 rounded-lg shadow-md border border-gray-200">
         <h2 className="text-lg font-semibold text-gray-700 mb-4">Bộ Lọc</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -433,74 +435,108 @@ export default function Voucher() {
           </tr>
         </thead>
         <tbody>
-          {vouchers.map((item, index) => (
-            <tr
-              key={item.id}
-              className="bg-white hover:bg-gray-50 transition-colors duration-200 border-b border-gray-200 last:border-b-0"
-            >
-              <td className="px-4 py-3">{index + 1}</td>
-              <td className="px-4 py-3 font-medium text-gray-800">
-                {item.voucherCode}
-              </td>
-              <td className="px-4 py-3 text-gray-700">{item.voucherName}</td>
-              <td className="px-4 py-3 text-gray-600 italic">
-                {item.description}
-              </td>
-              <td className="px-4 py-3">
-                {item.minCondition.toLocaleString()}đ
-              </td>
-              <td className="px-4 py-3">
-                {item.maxDiscount.toLocaleString()}đ
-              </td>
-              <td className="px-4 py-3">{item.reducedPercent}%</td>
-              <td className="px-4 py-3 text-gray-600">
-                {new Date(item.startDate).toLocaleDateString("vi-VN")}
-              </td>
-              <td className="px-4 py-3 text-gray-600">
-                {new Date(item.endDate).toLocaleDateString("vi-VN")}
-              </td>
-              <td
-                className={`px-4 py-3 font-semibold ${
-                  item.status ? "text-green-600" : "text-red-600"
-                }`}
-              >
-                {item.status ? "Kích hoạt" : "Không kích hoạt"}
-              </td>
-              <td className="px-4 py-3">
-                <div className="flex justify-center items-center gap-3 min-w-[120px]">
-                  <button
-                    className="text-blue-600 hover:text-blue-800 transition-colors duration-150"
-                    onClick={() => handleUpdateVoucher(item)}
-                    title="Chỉnh sửa"
-                  >
-                    <AiOutlineEdit size={20} />
-                  </button>
-                  <Switch
-                    onChange={() => handleToggleStatus(item.id, item.status)}
-                    checked={item.status}
-                    height={20}
-                    width={40}
-                    onColor="#10B981"
-                    offColor="#EF4444"
-                    uncheckedIcon={false}
-                    checkedIcon={false}
-                    className="react-switch"
-                  />
-                  <div className="w-5">
-                    {item.status && (
-                      <button
-                        className="text-green-600 hover:text-green-800 transition-colors duration-150"
-                        onClick={() => handleOpenEmailModal(item)}
-                        title="Gửi email"
-                      >
-                        <AiOutlineMail size={20} />
-                      </button>
-                    )}
-                  </div>
-                </div>
+          {filteredVouchers.length === 0 ? (
+            <tr>
+              <td colSpan="11" className="px-4 py-3 text-gray-600">
+                Không tìm thấy voucher nào
               </td>
             </tr>
-          ))}
+          ) : (
+            filteredVouchers
+              .slice(currentPage * pageSize, (currentPage + 1) * pageSize)
+              .map((item, index) => (
+                <tr
+                  key={item.id}
+                  className="bg-white hover:bg-gray-50 transition-colors duration-200 border-b border-gray-200 last:border-b-0"
+                >
+                  <td className="px-4 py-3">
+                    {currentPage * pageSize + index + 1}
+                  </td>
+                  <td className="px-4 py-3 font-medium text-gray-800">
+                    {item.voucherCode || "N/A"}
+                  </td>
+                  <td className="px-4 py-3 text-gray-700">
+                    {item.voucherName || "N/A"}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600 italic">
+                    {item.description || "Không có mô tả"}
+                  </td>
+                  <td className="px-4 py-3">
+                    {item.minCondition
+                      ? item.minCondition.toLocaleString() + "đ"
+                      : "N/A"}
+                  </td>
+                  <td className="px-4 py-3">
+                    {item.maxDiscount
+                      ? item.maxDiscount.toLocaleString() + "đ"
+                      : "N/A"}
+                  </td>
+                  <td className="px-4 py-3">
+                    {item.reducedPercent ? `${item.reducedPercent}%` : "N/A"}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600">
+                    {item.startDate
+                      ? new Date(item.startDate).toLocaleDateString("vi-VN", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                        })
+                      : "N/A"}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600">
+                    {item.endDate
+                      ? new Date(item.endDate).toLocaleDateString("vi-VN", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                        })
+                      : "N/A"}
+                  </td>
+                  <td
+                    className={`px-4 py-3 font-semibold ${
+                      item.status ? "text-green-600" : "text-red-600"
+                    }`}
+                  >
+                    {item.status ? "Kích hoạt" : "Không kích hoạt"}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex justify-center items-center gap-3 min-w-[120px]">
+                      <button
+                        className="text-blue-600 hover:text-blue-800 transition-colors duration-150"
+                        onClick={() => handleUpdateVoucher(item)}
+                        title="Chỉnh sửa"
+                      >
+                        <AiOutlineEdit size={20} />
+                      </button>
+                      <Switch
+                        onChange={() =>
+                          handleToggleStatus(item.id, item.status)
+                        }
+                        checked={item.status}
+                        height={20}
+                        width={40}
+                        onColor="#10B981"
+                        offColor="#EF4444"
+                        uncheckedIcon={false}
+                        checkedIcon={false}
+                        className="react-switch"
+                      />
+                      <div className="w-5">
+                        {item.status && (
+                          <button
+                            className="text-green-600 hover:text-green-800 transition-colors duration-150"
+                            onClick={() => handleOpenEmailModal(item)}
+                            title="Gửi email"
+                          >
+                            <AiOutlineMail size={20} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              ))
+          )}
         </tbody>
       </table>
 
@@ -513,7 +549,10 @@ export default function Voucher() {
             id="entries"
             className="border rounded-lg px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             value={pageSize}
-            onChange={(e) => setPageSize(Number(e.target.value))}
+            onChange={(e) => {
+              setPageSize(Number(e.target.value));
+              setCurrentPage(0);
+            }}
           >
             {[5, 10, 20].map((size) => (
               <option key={size} value={size}>
@@ -526,25 +565,28 @@ export default function Voucher() {
         <div className="flex items-center gap-2">
           <button
             className="px-3 py-1 border rounded-lg bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:opacity-50"
-            onClick={() => handlePageChange(-1)}
+            onClick={() => setCurrentPage((prev) => Math.max(0, prev - 1))}
             disabled={currentPage === 0}
           >
             {"<"}
           </button>
           <span className="text-sm font-semibold text-gray-700">
-            Trang {currentPage + 1} / {totalPages}
+            {totalPages > 0
+              ? `Trang ${currentPage + 1} / ${totalPages}`
+              : "Không có dữ liệu"}
           </span>
           <button
             className="px-3 py-1 border rounded-lg bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:opacity-50"
-            onClick={() => handlePageChange(1)}
-            disabled={currentPage === totalPages - 1}
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(prev + 1, totalPages - 1))
+            }
+            disabled={currentPage >= totalPages - 1 || totalPages === 0}
           >
             {">"}
           </button>
         </div>
       </div>
 
-      {/* Modal gửi email */}
       <Modal
         isOpen={emailModalOpen}
         onRequestClose={() => setEmailModalOpen(false)}
@@ -618,14 +660,12 @@ export default function Voucher() {
                   .filter((customer) => customer.email)
                   .filter(
                     (customer) =>
-                      (customer.fullname &&
-                        customer.fullname
-                          .toLowerCase()
-                          .includes(customerSearch.toLowerCase())) ||
-                      (customer.email &&
-                        customer.email
-                          .toLowerCase()
-                          .includes(customerSearch.toLowerCase()))
+                      customer.fullname
+                        .toLowerCase()
+                        .includes(customerSearch.toLowerCase()) ||
+                      customer.email
+                        .toLowerCase()
+                        .includes(customerSearch.toLowerCase())
                   )
                   .map((customer) => (
                     <div
@@ -675,7 +715,7 @@ export default function Voucher() {
         isOpen={updateModal}
         setUpdateModal={setUpdateModal}
         fetchVouchers={fetchVouchers}
-        selectedVoucher={currentVoucher}
+        selectedVoucher={selectedVoucher}
       />
     </div>
   );

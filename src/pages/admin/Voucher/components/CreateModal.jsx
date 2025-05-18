@@ -25,20 +25,18 @@ export default function CreateModal({ isOpen, onCancel, fetchVouchers }) {
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
-    setErrors((prev) => ({ ...prev, [name]: "" })); // Xóa lỗi khi người dùng nhập
+    setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const validateVoucher = () => {
     const newErrors = {};
 
-    // Validate voucherName
     if (!voucher.voucherName.trim()) {
       newErrors.voucherName = "Tên voucher không được để trống!";
     } else if (voucher.voucherName.length > 100) {
       newErrors.voucherName = "Tên voucher không được vượt quá 100 ký tự!";
     }
 
-    // Validate minCondition
     if (voucher.minCondition === "") {
       newErrors.minCondition = "Điều kiện tối thiểu không được để trống!";
     } else {
@@ -48,7 +46,6 @@ export default function CreateModal({ isOpen, onCancel, fetchVouchers }) {
       }
     }
 
-    // Validate maxDiscount
     if (voucher.maxDiscount === "") {
       newErrors.maxDiscount = "Mức giảm tối đa không được để trống!";
     } else {
@@ -58,7 +55,6 @@ export default function CreateModal({ isOpen, onCancel, fetchVouchers }) {
       }
     }
 
-    // Validate reducedPercent
     if (voucher.reducedPercent === "") {
       newErrors.reducedPercent = "Phần trăm giảm giá không được để trống!";
     } else {
@@ -68,12 +64,10 @@ export default function CreateModal({ isOpen, onCancel, fetchVouchers }) {
       }
     }
 
-    // Validate description (nếu có)
     if (voucher.description && voucher.description.length > 500) {
       newErrors.description = "Mô tả không được vượt quá 500 ký tự!";
     }
 
-    // Validate startDate
     if (!voucher.startDate) {
       newErrors.startDate = "Ngày bắt đầu không được để trống!";
     } else {
@@ -85,7 +79,6 @@ export default function CreateModal({ isOpen, onCancel, fetchVouchers }) {
       }
     }
 
-    // Validate endDate
     if (!voucher.endDate) {
       newErrors.endDate = "Ngày kết thúc không được để trống!";
     } else if (voucher.startDate) {
@@ -135,7 +128,10 @@ export default function CreateModal({ isOpen, onCancel, fetchVouchers }) {
       fetchVouchers();
       onCancel();
     } catch (error) {
-      console.error(error);
+      console.error(
+        "Error creating voucher:",
+        error.response?.data || error.message
+      );
       toast.error("Không thể thêm voucher. Vui lòng thử lại!");
     }
   };
@@ -153,7 +149,7 @@ export default function CreateModal({ isOpen, onCancel, fetchVouchers }) {
       </h2>
       <div className="grid grid-cols-2 gap-4">
         {[
-          { name: "voucherCode", label: "Mã voucher" },
+          { name: "voucherCode", label: "Mã voucher", disabled: true },
           { name: "voucherName", label: "Tên voucher" },
           { name: "description", label: "Mô tả" },
           {
@@ -177,9 +173,10 @@ export default function CreateModal({ isOpen, onCancel, fetchVouchers }) {
               name={field.name}
               value={voucher[field.name]}
               onChange={handleChange}
+              disabled={field.disabled}
               className={`border rounded-lg px-4 py-2 w-full bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                 errors[field.name] ? "border-red-500" : "border-gray-300"
-              }`}
+              } ${field.disabled ? "bg-gray-100" : ""}`}
             />
             {errors[field.name] && (
               <p className="text-red-500 text-xs mt-1">{errors[field.name]}</p>
@@ -187,15 +184,15 @@ export default function CreateModal({ isOpen, onCancel, fetchVouchers }) {
           </div>
         ))}
         {[
-          { name: "startDate", label: "Ngày bắt đầu" },
-          { name: "endDate", label: "Ngày kết thúc" },
+          { name: "startDate", label: "Ngày bắt đầu", type: "date" },
+          { name: "endDate", label: "Ngày kết thúc", type: "date" },
         ].map((field) => (
           <div key={field.name}>
             <label className="block text-sm font-medium text-gray-700">
               {field.label}:
             </label>
             <input
-              type="datetime-local"
+              type={field.type}
               name={field.name}
               value={voucher[field.name]}
               onChange={handleChange}

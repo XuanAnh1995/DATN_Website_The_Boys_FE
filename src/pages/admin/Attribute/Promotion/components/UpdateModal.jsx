@@ -23,15 +23,24 @@ const UpdateModal = ({
 
   useEffect(() => {
     if (selectedPromotion) {
+      // Helper function to format date to YYYY-MM-DD in local timezone
+      const formatLocalDate = (dateStr) => {
+        const date = new Date(dateStr);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+      };
+
       setPromotion({
         promotionName: selectedPromotion.promotionName || "",
         promotionPercent: selectedPromotion.promotionPercent || "",
         description: selectedPromotion.description || "",
         startDate: selectedPromotion.startDate
-          ? new Date(selectedPromotion.startDate).toISOString().slice(0, 16) // Định dạng yyyy-MM-ddThh:mm cho datetime-local
+          ? formatLocalDate(selectedPromotion.startDate)
           : "",
         endDate: selectedPromotion.endDate
-          ? new Date(selectedPromotion.endDate).toISOString().slice(0, 16)
+          ? formatLocalDate(selectedPromotion.endDate)
           : "",
         status: selectedPromotion.status ?? true,
       });
@@ -75,18 +84,18 @@ const UpdateModal = ({
     if (!promotion.startDate) {
       newErrors.startDate = "Ngày bắt đầu không được để trống!";
     } else if (isNaN(new Date(promotion.startDate).getTime())) {
-      newErrors.startDate = "Ngày và giờ bắt đầu không hợp lệ!";
+      newErrors.startDate = "Ngày bắt đầu không hợp lệ!";
     }
 
     if (!promotion.endDate) {
       newErrors.endDate = "Ngày kết thúc không được để trống!";
     } else if (isNaN(new Date(promotion.endDate).getTime())) {
-      newErrors.endDate = "Ngày và giờ kết thúc không hợp lệ!";
+      newErrors.endDate = "Ngày kết thúc không hợp lệ!";
     } else if (promotion.startDate) {
       const start = new Date(promotion.startDate);
       const end = new Date(promotion.endDate);
-      if (end <= start) {
-        newErrors.endDate = "Ngày và giờ kết thúc phải sau ngày bắt đầu!";
+      if (end < start) {
+        newErrors.endDate = "Ngày kết thúc phải sau ngày bắt đầu!";
       }
     }
 
@@ -107,8 +116,8 @@ const UpdateModal = ({
         promotionName: promotion.promotionName,
         promotionPercent: parseInt(promotion.promotionPercent),
         description: promotion.description,
-        startDate: new Date(promotion.startDate).toISOString(), // Gửi ISO 8601
-        endDate: new Date(promotion.endDate).toISOString(), // Gửi ISO 8601
+        startDate: new Date(promotion.startDate).toISOString(),
+        endDate: new Date(promotion.endDate).toISOString(),
         status: promotion.status,
       };
 
@@ -137,7 +146,7 @@ const UpdateModal = ({
       overlayClassName="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
     >
       <h2 className="text-xl font-semibold mb-6 text-center text-gray-800">
-        Cập Nhật Khuyến Mãi
+        C.markup Nhật Khuyến Mãi
       </h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
@@ -198,10 +207,10 @@ const UpdateModal = ({
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Ngày và giờ bắt đầu
+              Ngày bắt đầu
             </label>
             <input
-              type="datetime-local"
+              type="date"
               name="startDate"
               value={promotion.startDate}
               onChange={handleChange}
@@ -215,10 +224,10 @@ const UpdateModal = ({
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Ngày và giờ kết thúc
+              Ngày kết thúc
             </label>
             <input
-              type="datetime-local"
+              type="date"
               name="endDate"
               value={promotion.endDate}
               onChange={handleChange}

@@ -12,7 +12,7 @@ export default function CreateModal({ isOpen, onCancel, fetchPromotions }) {
     description: "",
     startDate: "",
     endDate: "",
-    status: true, // Sửa từ 1 thành true
+    status: true,
   });
   const [errors, setErrors] = useState({});
 
@@ -52,18 +52,18 @@ export default function CreateModal({ isOpen, onCancel, fetchPromotions }) {
     if (!promotion.startDate) {
       newErrors.startDate = "Ngày bắt đầu không được để trống!";
     } else if (isNaN(new Date(promotion.startDate).getTime())) {
-      newErrors.startDate = "Ngày và giờ bắt đầu không hợp lệ!";
+      newErrors.startDate = "Ngày bắt đầu không hợp lệ!";
     }
 
     if (!promotion.endDate) {
       newErrors.endDate = "Ngày kết thúc không được để trống!";
     } else if (isNaN(new Date(promotion.endDate).getTime())) {
-      newErrors.endDate = "Ngày và giờ kết thúc không hợp lệ!";
+      newErrors.endDate = "Ngày kết thúc không hợp lệ!";
     } else if (promotion.startDate && promotion.endDate) {
       const start = new Date(promotion.startDate);
       const end = new Date(promotion.endDate);
-      if (end <= start) {
-        newErrors.endDate = "Ngày và giờ kết thúc phải sau ngày bắt đầu!";
+      if (end < start) {
+        newErrors.endDate = "Ngày kết thúc phải sau ngày bắt đầu!";
       }
     }
 
@@ -82,8 +82,8 @@ export default function CreateModal({ isOpen, onCancel, fetchPromotions }) {
         promotionName: promotion.promotionName,
         promotionPercent: parseInt(promotion.promotionPercent),
         description: promotion.description,
-        startDate: new Date(promotion.startDate).toISOString(), // Gửi ISO 8601
-        endDate: new Date(promotion.endDate).toISOString(), // Gửi ISO 8601
+        startDate: new Date(promotion.startDate).toISOString(),
+        endDate: new Date(promotion.endDate).toISOString(),
         status: promotion.status,
       };
 
@@ -178,10 +178,10 @@ export default function CreateModal({ isOpen, onCancel, fetchPromotions }) {
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            Ngày và giờ bắt đầu
+            Ngày bắt đầu
           </label>
           <input
-            type="datetime-local"
+            type="date"
             name="startDate"
             className={`border p-2 rounded w-full bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
               errors.startDate ? "border-red-500" : "border-gray-300"
@@ -195,10 +195,10 @@ export default function CreateModal({ isOpen, onCancel, fetchPromotions }) {
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            Ngày và giờ kết thúc
+            Ngày kết thúc
           </label>
           <input
-            type="datetime-local"
+            type="date"
             name="endDate"
             className={`border p-2 rounded w-full bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
               errors.endDate ? "border-red-500" : "border-gray-300"
