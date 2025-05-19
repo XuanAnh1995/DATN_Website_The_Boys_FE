@@ -7,6 +7,7 @@ import UpdateModal from "./components/UpdateModal";
 
 // Hàm định dạng thời gian sang yyyy-MM-dd HH:mm:ss
 const formatDateTime = (date) => {
+  if (isNaN(date.getTime())) return null; // Kiểm tra nếu date không hợp lệ
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
@@ -35,24 +36,6 @@ export default function Promotion() {
 
   const fetchPromotions = useCallback(async () => {
     try {
-      console.log("Fetching with params:", {
-        search,
-        currentPage,
-        pageSize,
-        sortKey: sortConfig.key,
-        sortDirection: sortConfig.direction,
-        startDate: dateRange.start,
-        endDate: dateRange.end,
-        minPercent: percentRange.min,
-        maxPercent: percentRange.max,
-        status:
-          statusFilter === "active"
-            ? true
-            : statusFilter === "inactive"
-              ? false
-              : null,
-      });
-
       const startDateFormatted = dateRange.start
         ? formatDateTime(new Date(dateRange.start))
         : null;
@@ -77,11 +60,13 @@ export default function Promotion() {
             : null
       );
 
-      setPromotions(content);
+      setPromotions(content || []);
       setTotalPages(totalPages || 1);
     } catch (error) {
-      console.error("Error fetching promotions:", error);
+      console.error("Lỗi khi tải dữ liệu khuyến mãi", error);
       toast.error("Lỗi khi tải dữ liệu khuyến mãi");
+      setPromotions([]);
+      setTotalPages(1);
     }
   }, [
     search,
@@ -104,6 +89,7 @@ export default function Promotion() {
 
   const handleDateFilter = (field) => (event) => {
     const value = event.target.value;
+    console.log(`Input ${field}_date:`, value); // Thêm console log để hiển thị giá trị start_date hoặc end_date
     setDateRange((prev) => ({ ...prev, [field]: value }));
     setCurrentPage(0);
   };
@@ -153,7 +139,7 @@ export default function Promotion() {
               onChange={handleSearch}
             />
           </div>
-          <div>
+          {/* <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Ngày bắt đầu từ
             </label>
@@ -174,7 +160,7 @@ export default function Promotion() {
               value={dateRange.end}
               onChange={handleDateFilter("end")}
             />
-          </div>
+          </div> */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Phần trăm giảm
