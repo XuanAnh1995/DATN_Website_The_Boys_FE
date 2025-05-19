@@ -22,24 +22,40 @@ const UpdateModal = ({
   });
   const [errors, setErrors] = useState({});
 
-  // Hàm chuyển đổi ngày từ ISO string sang YYYY-MM-DD theo múi giờ local
+  // Convert ISO date (UTC) to YYYY-MM-DD in local timezone (UTC+7)
   const formatDateToLocal = (isoDate) => {
     if (!isoDate) return "";
-    const date = new Date(isoDate);
-    // Điều chỉnh múi giờ local (UTC+7)
-    const offset = date.getTimezoneOffset();
-    const adjustedDate = new Date(date.getTime() - offset * 60 * 1000);
-    return adjustedDate.toISOString().split("T")[0];
+    try {
+      const date = new Date(isoDate);
+      if (isNaN(date.getTime())) return "";
+      return date
+        .toLocaleDateString("sv-SE", {
+          timeZone: "Asia/Ho_Chi_Minh",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+        })
+        .replace(/\//g, "-");
+    } catch (error) {
+      console.error("Error parsing date:", isoDate, error);
+      return "";
+    }
   };
 
   useEffect(() => {
     if (selectedVoucher) {
       console.log("Dữ liệu nhận từ API:", selectedVoucher);
+      const formattedStartDate = formatDateToLocal(selectedVoucher.startDate);
+      const formattedEndDate = formatDateToLocal(selectedVoucher.endDate);
+      console.log("Formatted startDate:", formattedStartDate);
+      console.log("Formatted endDate:", formattedEndDate);
       setVoucher({
         ...selectedVoucher,
-        startDate: formatDateToLocal(selectedVoucher.startDate),
-        endDate: formatDateToLocal(selectedVoucher.endDate),
+        startDate: formattedStartDate,
+        endDate: formattedEndDate,
+        status: selectedVoucher.status ?? false,
       });
+      setErrors({});
     }
   }, [selectedVoucher]);
 
@@ -51,6 +67,8 @@ const UpdateModal = ({
 
   const validateVoucher = () => {
     const newErrors = {};
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Normalize to start of day
 
     if (!voucher.voucherName.trim()) {
       newErrors.voucherName = "Tên voucher không được để trống!";
@@ -91,15 +109,41 @@ const UpdateModal = ({
 
     if (!voucher.startDate) {
       newErrors.startDate = "Ngày bắt đầu không được để trống!";
+    } else if (isNaN(new Date(voucher.startDate).getTime())) {
+      newErrors.startDate = "Ngày bắt đầu không hợp lệ!";
+    } else {
+      const start = new Date(voucher.startDate);
+      start.setHours(0, 0, 0, 0);
     }
 
     if (!voucher.endDate) {
       newErrors.endDate = "Ngày kết thúc không được để trống!";
+    } else if (isNaN(new Date(voucher.endDate).getTime())) {
+      newErrors.endDate = "Ngày kết thúc không hợp lệ!";
     } else if (voucher.startDate) {
       const start = new Date(voucher.startDate);
       const end = new Date(voucher.endDate);
-      if (end <= start) {
-        newErrors.endDate = "Ngày kết thúc phải lớn hơn ngày bắt đầu!";
+      start.setHours(0, 0, 0, 0);
+      end.setHours(0, 0, 0, 0);
+      if (end < start) {
+        newErrors.endDate = "Ngày kết thúc phải bằng hoặc sau ngày bắt đầu!";
+      }
+    }
+
+    // Validate status based on date range
+    if (
+      voucher.startDate &&
+      voucher.endDate &&
+      !newErrors.startDate &&
+      !newErrors.endDate
+    ) {
+      const start = new Date(voucher.startDate);
+      const end = new Date(voucher.endDate);
+      start.setHours(0, 0, 0, 0);
+      end.setHours(0, 0, 0, 0);
+      if (today < start || today > end) {
+        setVoucher((prev) => ({ ...prev, status: false }));
+        console.log("Status set to false: Today outside date range");
       }
     }
 
@@ -116,13 +160,22 @@ const UpdateModal = ({
     }
 
     try {
+      console.log("Input startDate:", voucher.startDate);
+      console.log("Input endDate:", voucher.endDate);
+
+      const startDateObj = new Date(voucher.startDate);
+      const endDateObj = new Date(voucher.endDate);
+
+      console.log("Parsed startDate:", startDateObj);
+      console.log("Parsed endDate:", endDateObj);
+
       const formattedVoucher = {
         ...voucher,
         minCondition: Number(voucher.minCondition) || 0,
         maxDiscount: Number(voucher.maxDiscount) || 0,
         reducedPercent: Number(voucher.reducedPercent) || 0,
-        startDate: new Date(voucher.startDate + "T00:00:00").toISOString(),
-        endDate: new Date(voucher.endDate + "T00:00:00").toISOString(),
+        startDate: startDateObj.toISOString(),
+        endDate: endDateObj.toISOString(),
       };
 
       console.log("Dữ liệu gửi lên API:", formattedVoucher);

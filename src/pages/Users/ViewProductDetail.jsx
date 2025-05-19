@@ -1170,9 +1170,7 @@ const ViewProductDetail = () => {
               <span className="bg-indigo-50 text-indigo-600 text-xs font-medium px-2 py-0.5 rounded-full">
                 Mới
               </span>
-              <span className="bg-green-50 text-green-600 text-xs font-medium px-2 py-0.5 rounded-full">
-                Freeship
-              </span>
+              <span className="bg-green-50 text-green-600 text-xs font-medium px-2 py-0.5 rounded-full"></span>
             </div>
           </div>
 

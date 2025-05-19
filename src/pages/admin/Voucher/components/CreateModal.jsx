@@ -30,6 +30,8 @@ export default function CreateModal({ isOpen, onCancel, fetchVouchers }) {
 
   const validateVoucher = () => {
     const newErrors = {};
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Normalize to start of day
 
     if (!voucher.voucherName.trim()) {
       newErrors.voucherName = "Tên voucher không được để trống!";
@@ -70,22 +72,44 @@ export default function CreateModal({ isOpen, onCancel, fetchVouchers }) {
 
     if (!voucher.startDate) {
       newErrors.startDate = "Ngày bắt đầu không được để trống!";
+    } else if (isNaN(new Date(voucher.startDate).getTime())) {
+      newErrors.startDate = "Ngày bắt đầu không hợp lệ!";
     } else {
       const start = new Date(voucher.startDate);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      start.setHours(0, 0, 0, 0);
       if (start < today) {
-        newErrors.startDate = "Ngày bắt đầu không được nhỏ hơn ngày hiện tại!";
+        newErrors.startDate = "Ngày bắt đầu không được trước hôm nay!";
       }
     }
 
     if (!voucher.endDate) {
       newErrors.endDate = "Ngày kết thúc không được để trống!";
+    } else if (isNaN(new Date(voucher.endDate).getTime())) {
+      newErrors.endDate = "Ngày kết thúc không hợp lệ!";
     } else if (voucher.startDate) {
       const start = new Date(voucher.startDate);
       const end = new Date(voucher.endDate);
-      if (end <= start) {
-        newErrors.endDate = "Ngày kết thúc phải lớn hơn ngày bắt đầu!";
+      start.setHours(0, 0, 0, 0);
+      end.setHours(0, 0, 0, 0);
+      if (end < start) {
+        newErrors.endDate = "Ngày kết thúc phải bằng hoặc sau ngày bắt đầu!";
+      }
+    }
+
+    // Validate isActive based on date range
+    if (
+      voucher.startDate &&
+      voucher.endDate &&
+      !newErrors.startDate &&
+      !newErrors.endDate
+    ) {
+      const start = new Date(voucher.startDate);
+      const end = new Date(voucher.endDate);
+      start.setHours(0, 0, 0, 0);
+      end.setHours(0, 0, 0, 0);
+      if (today < start || today > end) {
+        setVoucher((prev) => ({ ...prev, isActive: false }));
+        console.log("isActive set to false: Today outside date range");
       }
     }
 

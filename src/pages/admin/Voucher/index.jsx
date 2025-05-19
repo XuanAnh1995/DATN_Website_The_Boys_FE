@@ -11,8 +11,8 @@ import Modal from "react-modal";
 Modal.setAppElement("#root");
 
 export default function Voucher() {
-  const [allVouchers, setAllVouchers] = useState([]); // Lưu toàn bộ dữ liệu gốc
-  const [filteredVouchers, setFilteredVouchers] = useState([]); // Lưu dữ liệu đã lọc
+  const [allVouchers, setAllVouchers] = useState([]);
+  const [filteredVouchers, setFilteredVouchers] = useState([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [pageSize, setPageSize] = useState(10);
@@ -33,7 +33,18 @@ export default function Voucher() {
   const [selectedCustomerIds, setSelectedCustomerIds] = useState([]);
   const [customerSearch, setCustomerSearch] = useState("");
 
-  // Lấy toàn bộ voucher từ API (không gửi tham số lọc)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Normalize to start of day in local timezone (UTC+7)
+
+  const isVoucherActiveByDate = (voucher) => {
+    if (!voucher.startDate || !voucher.endDate) return false;
+    const start = new Date(voucher.startDate);
+    const end = new Date(voucher.endDate);
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+    return today >= start && today <= end;
+  };
+
   const fetchVouchers = useCallback(async () => {
     try {
       console.log("Fetching all vouchers...");
@@ -47,7 +58,6 @@ export default function Voucher() {
       const content = Array.isArray(response.content) ? response.content : [];
       console.log("API response:", content);
 
-      // Chuẩn hóa dữ liệu
       const normalizedVouchers = content.map((voucher) => ({
         ...voucher,
         voucherName: voucher.voucherName || "",
@@ -76,11 +86,9 @@ export default function Voucher() {
     }
   }, [pageSize]);
 
-  // Lọc voucher trên frontend
   const applyFilters = useCallback(() => {
     let filtered = [...allVouchers];
 
-    // Lọc theo từ khóa tìm kiếm
     if (search) {
       filtered = filtered.filter(
         (voucher) =>
@@ -89,41 +97,40 @@ export default function Voucher() {
       );
     }
 
-    // Lọc theo khoảng ngày
     if (dateFilter.startDate) {
       filtered = filtered.filter(
         (voucher) =>
-          new Date(voucher.startDate) >= new Date(dateFilter.startDate)
+          new Date(voucher.startDate).toDateString() >=
+          new Date(dateFilter.startDate).toDateString()
       );
     }
     if (dateFilter.endDate) {
       filtered = filtered.filter(
-        (voucher) => new Date(voucher.endDate) <= new Date(dateFilter.endDate)
+        (voucher) =>
+          new Date(voucher.endDate).toDateString() <=
+          new Date(dateFilter.endDate).toDateString()
       );
     }
 
-    // Lọc theo phần trăm giảm
     if (percentFilter) {
       filtered = filtered.filter(
         (voucher) => voucher.reducedPercent >= Number(percentFilter)
       );
     }
 
-    // Lọc theo điều kiện tối thiểu
     if (minConditionFilter) {
       filtered = filtered.filter(
         (voucher) => voucher.minCondition >= Number(minConditionFilter)
       );
     }
 
-    // Lọc theo trạng thái
     if (statusFilter) {
-      filtered = filtered.filter(
-        (voucher) => voucher.status === (statusFilter === "active")
-      );
+      filtered = filtered.filter((voucher) => {
+        const isActive = isVoucherActiveByDate(voucher) && voucher.status;
+        return statusFilter === "active" ? isActive : !isActive;
+      });
     }
 
-    // Sắp xếp dữ liệu
     filtered.sort((a, b) => {
       const key = sortConfig.key;
       const direction = sortConfig.direction === "asc" ? 1 : -1;
@@ -135,7 +142,7 @@ export default function Voucher() {
     console.log("Filtered vouchers:", filtered);
     setFilteredVouchers(filtered);
     setTotalPages(Math.ceil(filtered.length / pageSize) || 1);
-    setCurrentPage(0); // Reset về trang đầu tiên sau khi lọc
+    setCurrentPage(0);
   }, [
     allVouchers,
     search,
@@ -147,7 +154,6 @@ export default function Voucher() {
     pageSize,
   ]);
 
-  // Lấy danh sách khách hàng
   const fetchCustomers = async () => {
     try {
       const response = await CustomerService.getAll("", 0, 1000);
@@ -218,7 +224,7 @@ export default function Voucher() {
       );
       await VoucherService.toggleStatusVoucher(id);
       toast.success("Cập nhật trạng thái thành công");
-      fetchVouchers(); // Gọi lại để đồng bộ với backend
+      fetchVouchers();
     } catch (error) {
       console.error("Toggle error:", error);
       setFilteredVouchers((prev) =>
@@ -444,98 +450,104 @@ export default function Voucher() {
           ) : (
             filteredVouchers
               .slice(currentPage * pageSize, (currentPage + 1) * pageSize)
-              .map((item, index) => (
-                <tr
-                  key={item.id}
-                  className="bg-white hover:bg-gray-50 transition-colors duration-200 border-b border-gray-200 last:border-b-0"
-                >
-                  <td className="px-4 py-3">
-                    {currentPage * pageSize + index + 1}
-                  </td>
-                  <td className="px-4 py-3 font-medium text-gray-800">
-                    {item.voucherCode || "N/A"}
-                  </td>
-                  <td className="px-4 py-3 text-gray-700">
-                    {item.voucherName || "N/A"}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600 italic">
-                    {item.description || "Không có mô tả"}
-                  </td>
-                  <td className="px-4 py-3">
-                    {item.minCondition
-                      ? item.minCondition.toLocaleString() + "đ"
-                      : "N/A"}
-                  </td>
-                  <td className="px-4 py-3">
-                    {item.maxDiscount
-                      ? item.maxDiscount.toLocaleString() + "đ"
-                      : "N/A"}
-                  </td>
-                  <td className="px-4 py-3">
-                    {item.reducedPercent ? `${item.reducedPercent}%` : "N/A"}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600">
-                    {item.startDate
-                      ? new Date(item.startDate).toLocaleDateString("vi-VN", {
-                          day: "2-digit",
-                          month: "2-digit",
-                          year: "numeric",
-                        })
-                      : "N/A"}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600">
-                    {item.endDate
-                      ? new Date(item.endDate).toLocaleDateString("vi-VN", {
-                          day: "2-digit",
-                          month: "2-digit",
-                          year: "numeric",
-                        })
-                      : "N/A"}
-                  </td>
-                  <td
-                    className={`px-4 py-3 font-semibold ${
-                      item.status ? "text-green-600" : "text-red-600"
-                    }`}
+              .map((item, index) => {
+                const displayStatus =
+                  isVoucherActiveByDate(item) && item.status;
+                return (
+                  <tr
+                    key={item.id}
+                    className="bg-white hover:bg-gray-50 transition-colors duration-200 border-b border-gray-200 last:border-b-0"
                   >
-                    {item.status ? "Kích hoạt" : "Không kích hoạt"}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex justify-center items-center gap-3 min-w-[120px]">
-                      <button
-                        className="text-blue-600 hover:text-blue-800 transition-colors duration-150"
-                        onClick={() => handleUpdateVoucher(item)}
-                        title="Chỉnh sửa"
-                      >
-                        <AiOutlineEdit size={20} />
-                      </button>
-                      <Switch
-                        onChange={() =>
-                          handleToggleStatus(item.id, item.status)
-                        }
-                        checked={item.status}
-                        height={20}
-                        width={40}
-                        onColor="#10B981"
-                        offColor="#EF4444"
-                        uncheckedIcon={false}
-                        checkedIcon={false}
-                        className="react-switch"
-                      />
-                      <div className="w-5">
-                        {item.status && (
-                          <button
-                            className="text-green-600 hover:text-green-800 transition-colors duration-150"
-                            onClick={() => handleOpenEmailModal(item)}
-                            title="Gửi email"
-                          >
-                            <AiOutlineMail size={20} />
-                          </button>
-                        )}
+                    <td className="px-4 py-3">
+                      {currentPage * pageSize + index + 1}
+                    </td>
+                    <td className="px-4 py-3 font-medium text-gray-800">
+                      {item.voucherCode || "N/A"}
+                    </td>
+                    <td className="px-4 py-3 text-gray-700">
+                      {item.voucherName || "N/A"}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600 italic">
+                      {item.description || "Không có mô tả"}
+                    </td>
+                    <td className="px-4 py-3">
+                      {item.minCondition
+                        ? item.minCondition.toLocaleString() + "đ"
+                        : "N/A"}
+                    </td>
+                    <td className="px-4 py-3">
+                      {item.maxDiscount
+                        ? item.maxDiscount.toLocaleString() + "đ"
+                        : "N/A"}
+                    </td>
+                    <td className="px-4 py-3">
+                      {item.reducedPercent ? `${item.reducedPercent}%` : "N/A"}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600">
+                      {item.startDate
+                        ? new Date(item.startDate).toLocaleDateString("vi-VN", {
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                            timeZone: "Asia/Ho_Chi_Minh",
+                          })
+                        : "N/A"}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600">
+                      {item.endDate
+                        ? new Date(item.endDate).toLocaleDateString("vi-VN", {
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                            timeZone: "Asia/Ho_Chi_Minh",
+                          })
+                        : "N/A"}
+                    </td>
+                    <td
+                      className={`px-4 py-3 font-semibold ${
+                        displayStatus ? "text-green-600" : "text-red-600"
+                      }`}
+                    >
+                      {displayStatus ? "Kích hoạt" : "Không kích hoạt"}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex justify-center items-center gap-3 min-w-[120px]">
+                        <button
+                          className="text-blue-600 hover:text-blue-800 transition-colors duration-150"
+                          onClick={() => handleUpdateVoucher(item)}
+                          title="Chỉnh sửa"
+                        >
+                          <AiOutlineEdit size={20} />
+                        </button>
+                        <Switch
+                          onChange={() =>
+                            handleToggleStatus(item.id, item.status)
+                          }
+                          checked={item.status}
+                          height={20}
+                          width={40}
+                          onColor="#10B981"
+                          offColor="#EF4444"
+                          uncheckedIcon={false}
+                          checkedIcon={false}
+                          className="react-switch"
+                        />
+                        <div className="w-5">
+                          {displayStatus && (
+                            <button
+                              className="text-green-600 hover:text-green-800 transition-colors duration-150"
+                              onClick={() => handleOpenEmailModal(item)}
+                              title="Gửi email"
+                            >
+                              <AiOutlineMail size={20} />
+                            </button>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                </tr>
-              ))
+                    </td>
+                  </tr>
+                );
+              })
           )}
         </tbody>
       </table>
