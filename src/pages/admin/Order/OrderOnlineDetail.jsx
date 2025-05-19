@@ -850,6 +850,17 @@ const OrderDetail = () => {
                   </tr>
                   <tr>
                     <td colSpan="5" className="py-4 px-4 text-right">
+                      Phí giao hàng:
+                    </td>
+                    <td
+                      colSpan="2"
+                      className="py-4 px-4 text-right text-xl text-blue-600"
+                    >
+                      {formatCurrency(orderDetails.shipfee ?? 0)}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td colSpan="5" className="py-4 px-4 text-right">
                       Số tiền giảm giá:
                     </td>
                     <td
@@ -862,17 +873,6 @@ const OrderDetail = () => {
                           (orderDetails.shipfee ?? 0) -
                           orderDetails.totalBill
                       )}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td colSpan="5" className="py-4 px-4 text-right">
-                      Phí giao hàng:
-                    </td>
-                    <td
-                      colSpan="2"
-                      className="py-4 px-4 text-right text-xl text-blue-600"
-                    >
-                      {formatCurrency(orderDetails.shipfee ?? 0)}
                     </td>
                   </tr>
                   <tr>

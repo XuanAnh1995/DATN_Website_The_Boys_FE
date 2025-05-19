@@ -446,24 +446,15 @@ const OrderPOSDetail = () => {
                 <tfoot className="bg-gray-100 text-gray-800 font-bold border-t">
                   <tr>
                     <td colSpan="5" className="py-4 px-4 text-right">
-                      Tổng tiền trước khi áp khuyến mãi:
+                      Tổng tiền trước khi áp voucher:
                     </td>
                     <td
                       colSpan="2"
                       className="py-4 px-4 text-right text-xl text-gray-700"
                     >
-                      {formatCurrency(calculateOriginalTotal())}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td colSpan="5" className="py-4 px-4 text-right">
-                      Giảm giá sản phẩm (khuyến mãi):
-                    </td>
-                    <td
-                      colSpan="2"
-                      className="py-4 px-4 text-right text-xl text-red-600"
-                    >
-                      -{formatCurrency(calculateTotalDiscount())}
+                      {formatCurrency(
+                        calculateOriginalTotal() - calculateTotalDiscount()
+                      )}
                     </td>
                   </tr>
                   <tr>
