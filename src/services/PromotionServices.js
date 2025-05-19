@@ -17,6 +17,18 @@ const PromotionService = {
     status = null
   ) => {
     try {
+      console.log("Gửi request với params:", {
+        search,
+        page,
+        size,
+        sortBy,
+        sortDir,
+        startDate,
+        endDate,
+        minPercent,
+        maxPercent,
+        status,
+      });
       const response = await api.get(API_URL, {
         params: {
           search,

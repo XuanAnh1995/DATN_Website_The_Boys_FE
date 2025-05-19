@@ -5,6 +5,18 @@ import { AiOutlineEdit } from "react-icons/ai";
 import CreatePromotionModal from "./components/CreateModal";
 import UpdateModal from "./components/UpdateModal";
 
+// Hàm định dạng thời gian sang yyyy-MM-dd HH:mm:ss
+const formatDateTime = (date) => {
+  if (isNaN(date.getTime())) return null; // Kiểm tra nếu date không hợp lệ
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const seconds = String(date.getSeconds()).padStart(2, "0");
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+};
+
 export default function Promotion() {
   const [promotions, setPromotions] = useState([]);
   const [currentPage, setCurrentPage] = useState(0);
@@ -24,23 +36,12 @@ export default function Promotion() {
 
   const fetchPromotions = useCallback(async () => {
     try {
-      console.log("Fetching with params:", {
-        search,
-        currentPage,
-        pageSize,
-        sortKey: sortConfig.key,
-        sortDirection: sortConfig.direction,
-        startDate: dateRange.start,
-        endDate: dateRange.end,
-        minPercent: percentRange.min,
-        maxPercent: percentRange.max,
-        status:
-          statusFilter === "active"
-            ? true
-            : statusFilter === "inactive"
-              ? false
-              : null,
-      });
+      const startDateFormatted = dateRange.start
+        ? formatDateTime(new Date(dateRange.start))
+        : null;
+      const endDateFormatted = dateRange.end
+        ? formatDateTime(new Date(dateRange.end))
+        : null;
 
       const { content, totalPages } = await PromotionService.getAllPromotions(
         search || "",
@@ -48,8 +49,8 @@ export default function Promotion() {
         pageSize,
         sortConfig.key,
         sortConfig.direction,
-        dateRange.start ? new Date(dateRange.start).toISOString() : null,
-        dateRange.end ? new Date(dateRange.end).toISOString() : null,
+        startDateFormatted,
+        endDateFormatted,
         percentRange.min ? Number(percentRange.min) : null,
         percentRange.max ? Number(percentRange.max) : null,
         statusFilter === "active"
@@ -59,11 +60,13 @@ export default function Promotion() {
             : null
       );
 
-      setPromotions(content);
+      setPromotions(content || []);
       setTotalPages(totalPages || 1);
     } catch (error) {
-      console.error("Error fetching promotions:", error);
+      console.error("Lỗi khi tải dữ liệu khuyến mãi", error);
       toast.error("Lỗi khi tải dữ liệu khuyến mãi");
+      setPromotions([]);
+      setTotalPages(1);
     }
   }, [
     search,
@@ -86,6 +89,7 @@ export default function Promotion() {
 
   const handleDateFilter = (field) => (event) => {
     const value = event.target.value;
+    console.log(`Input ${field}_date:`, value); // Thêm console log để hiển thị giá trị start_date hoặc end_date
     setDateRange((prev) => ({ ...prev, [field]: value }));
     setCurrentPage(0);
   };
@@ -135,7 +139,7 @@ export default function Promotion() {
               onChange={handleSearch}
             />
           </div>
-          <div>
+          {/* <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Ngày bắt đầu từ
             </label>
@@ -156,7 +160,7 @@ export default function Promotion() {
               value={dateRange.end}
               onChange={handleDateFilter("end")}
             />
-          </div>
+          </div> */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Phần trăm giảm
@@ -230,58 +234,64 @@ export default function Promotion() {
         <tbody>
           {promotions
             .slice(currentPage * pageSize, (currentPage + 1) * pageSize)
-            .map((item, index) => (
-              <tr
-                key={item.id}
-                className="bg-white hover:bg-gray-50 transition-colors duration-200 border-b border-gray-200 last:border-b-0"
-              >
-                <td className="px-4 py-3">
-                  {currentPage * pageSize + index + 1}
-                </td>
-                <td className="px-4 py-3 font-medium text-gray-800">
-                  {item.promotionName}
-                </td>
-                <td className="px-4 py-3 text-gray-600 italic">
-                  {item.description}
-                </td>
-                <td className="px-4 py-3">{item.promotionPercent}%</td>
-                <td className="px-4 py-3 text-gray-600">
-                  {new Date(item.startDate).toLocaleString("vi-VN", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </td>
-                <td className="px-4 py-3 text-gray-600">
-                  {new Date(item.endDate).toLocaleString("vi-VN", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </td>
-                <td
-                  className={`px-4 py-3 font-semibold ${
-                    item.status ? "text-green-600" : "text-red-600"
-                  }`}
+            .map((item, index) => {
+              const startDate = new Date(item.startDate);
+              const endDate = new Date(item.endDate);
+              return (
+                <tr
+                  key={item.id}
+                  className="bg-white hover:bg-gray-50 transition-colors duration-200 border-b border-gray-200 last:border-b-0"
                 >
-                  {item.status ? "Kích hoạt" : "Không kích hoạt"}
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex justify-center gap-4">
-                    <button
-                      className="text-blue-600 hover:text-blue-800 transition-colors duration-150"
-                      onClick={() => handleUpdatePromotion(item)}
-                    >
-                      <AiOutlineEdit size={20} />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+                  <td className="px-4 py-3">
+                    {currentPage * pageSize + index + 1}
+                  </td>
+                  <td className="px-4 py-3 font-medium text-gray-800">
+                    {item.promotionName}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600 italic">
+                    {item.description}
+                  </td>
+                  <td className="px-4 py-3">{item.promotionPercent}%</td>
+                  <td className="px-4 py-3 text-gray-600">
+                    {startDate.toLocaleString("vi-VN", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      timeZone: "Asia/Ho_Chi_Minh",
+                    })}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600">
+                    {endDate.toLocaleString("vi-VN", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      timeZone: "Asia/Ho_Chi_Minh",
+                    })}
+                  </td>
+                  <td
+                    className={`px-4 py-3 font-semibold ${
+                      item.status ? "text-green-600" : "text-red-600"
+                    }`}
+                  >
+                    {item.status ? "Kích hoạt" : "Không kích hoạt"}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex justify-center gap-4">
+                      <button
+                        className="text-blue-600 hover:text-blue-800 transition-colors duration-150"
+                        onClick={() => handleUpdatePromotion(item)}
+                      >
+                        <AiOutlineEdit size={20} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
         </tbody>
       </table>
 
