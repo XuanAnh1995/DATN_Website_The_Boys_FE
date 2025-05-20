@@ -259,7 +259,7 @@ export default function CreateProduct() {
                   name="promotion"
                   options={promotions.map(promotion => ({
                     value: promotion.id,
-                    label: `${promotion.promotionName} - ${promotion.promotionPercent}% (${new Date(promotion.startDate).toLocaleDateString("vi-VN")} -> ${new Date(promotion.endDate).toLocaleDateString("vi-VN")})`
+                    label: `${promotion.promotionName} - ${promotion.promotionPercent}% (${new Date(promotion.startDate).toLocaleDateString("vi-VN")} - ${new Date(promotion.endDate).toLocaleDateString("vi-VN")})`
                   }))}
 
                   value={promotions
