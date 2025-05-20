@@ -47,7 +47,10 @@ export default function OnlineOrder() {
   const [totalPages, setTotalPages] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [search, setSearch] = useState("");
-  const [sortConfig, setSortConfig] = useState({ key: "id", direction: "asc" });
+  const [sortConfig, setSortConfig] = useState({
+    key: "id",
+    direction: "desc",
+  });
   const [selectedStatus, setSelectedStatus] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -55,7 +58,7 @@ export default function OnlineOrder() {
 
   useEffect(() => {
     fetchOrders();
-  }, [currentPage, pageSize]);
+  }, [currentPage, pageSize, sortConfig]);
 
   useEffect(() => {
     filterOrders();
@@ -67,21 +70,13 @@ export default function OnlineOrder() {
       const data = await OrderService.getOnlineOrders(
         "",
         currentPage - 1,
-        pageSize
+        pageSize,
+        sortConfig.key,
+        sortConfig.direction
       );
-      let sortedOrders = data?.content || [];
-      if (sortConfig.key) {
-        sortedOrders.sort((a, b) => {
-          if (a[sortConfig.key] < b[sortConfig.key])
-            return sortConfig.direction === "asc" ? -1 : 1;
-          if (a[sortConfig.key] > b[sortConfig.key])
-            return sortConfig.direction === "asc" ? 1 : -1;
-          return 0;
-        });
-      }
-      setOrders(sortedOrders);
+      setOrders(data?.content || []);
       setTotalPages(data?.totalPages || 1);
-      setFilteredOrders(sortedOrders);
+      setFilteredOrders(data?.content || []);
     } catch (error) {
       toast.error("Lỗi khi tải dữ liệu đơn hàng Online");
       console.error("Error fetching orders:", error);
