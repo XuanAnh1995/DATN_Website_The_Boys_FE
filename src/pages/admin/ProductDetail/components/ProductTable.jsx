@@ -1,8 +1,13 @@
-import React from 'react';
+import React from "react";
 import { AiOutlineEdit, AiOutlineDelete } from "react-icons/ai";
 import Switch from "react-switch";
 
-const ProductTable = ({ products, handleToggleStatus, handleUpdateProduct, openDeleteModal }) => {
+const ProductTable = ({
+  products,
+  handleToggleStatus,
+  handleUpdateProduct,
+  openDeleteModal,
+}) => {
   return (
     <table className="table-auto w-full text-xs px-4 py-2 bg-white rounded-lg shadow overflow-hidden text-center">
       <thead>
@@ -25,7 +30,7 @@ const ProductTable = ({ products, handleToggleStatus, handleUpdateProduct, openD
         {products.map((product, index) => (
           <tr key={product.id} className="hover:bg-blue-50">
             <td className="px-4 py-2">{index + 1}</td>
-            <td className="px-4 py-2">{product.product.productCode}</td>
+            <td className="px-4 py-2">{product.productDetailCode}</td>
             <td className="px-4 py-2 flex items-center space-x-2">
               {product.photo && (
                 <img
@@ -36,15 +41,17 @@ const ProductTable = ({ products, handleToggleStatus, handleUpdateProduct, openD
               )}
               <span>{product.product.productName}</span>
             </td>
-            <td className="px-4 py-2">{product.collar?.name || 'N/A'}</td>
-            <td className="px-4 py-2">{product.color?.name || 'N/A'}</td>
-            <td className="px-4 py-2">{product.size?.name || 'N/A'}</td>
-            <td className="px-4 py-2">{product.sleeve?.sleeveName || 'N/A'}</td>
+            <td className="px-4 py-2">{product.collar?.name || "N/A"}</td>
+            <td className="px-4 py-2">{product.color?.name || "N/A"}</td>
+            <td className="px-4 py-2">{product.size?.name || "N/A"}</td>
+            <td className="px-4 py-2">{product.sleeve?.sleeveName || "N/A"}</td>
             <td className="px-4 py-2">{product.quantity}</td>
             <td className="px-4 py-2">{product.importPrice}</td>
             <td className="px-4 py-2">{product.salePrice}</td>
             <td className="px-4 py-2">
-              <div title={product.status ? "Click để tắt" : "Click để kích hoạt"}>
+              <div
+                title={product.status ? "Click để tắt" : "Click để kích hoạt"}
+              >
                 <Switch
                   onChange={() => handleToggleStatus(product.id)}
                   checked={product.status}

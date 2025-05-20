@@ -2,9 +2,20 @@ import React, { useState, useEffect, useCallback } from "react";
 import PromotionService from "../../../../services/PromotionServices";
 import { toast } from "react-toastify";
 import { AiOutlineEdit } from "react-icons/ai";
-import Switch from "react-switch";
 import CreatePromotionModal from "./components/CreateModal";
 import UpdateModal from "./components/UpdateModal";
+
+// Hàm định dạng thời gian sang yyyy-MM-dd HH:mm:ss
+const formatDateTime = (date) => {
+  if (isNaN(date.getTime())) return null; // Kiểm tra nếu date không hợp lệ
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const seconds = String(date.getSeconds()).padStart(2, "0");
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+};
 
 export default function Promotion() {
   const [promotions, setPromotions] = useState([]);
@@ -18,25 +29,19 @@ export default function Promotion() {
   });
   const [dateRange, setDateRange] = useState({ start: "", end: "" });
   const [percentRange, setPercentRange] = useState({ min: "", max: "" });
-  const [statusFilter, setStatusFilter] = useState(""); // Thêm bộ lọc trạng thái
+  const [statusFilter, setStatusFilter] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [updateModal, setUpdateModal] = useState(false);
   const [selectedPromotion, setSelectedPromotion] = useState(null);
 
   const fetchPromotions = useCallback(async () => {
     try {
-      console.log("Fetching with params:", {
-        search,
-        currentPage,
-        pageSize,
-        sortKey: sortConfig.key,
-        sortDirection: sortConfig.direction,
-        startDate: dateRange.start,
-        endDate: dateRange.end,
-        minPercent: percentRange.min,
-        maxPercent: percentRange.max,
-        status: statusFilter,
-      });
+      const startDateFormatted = dateRange.start
+        ? formatDateTime(new Date(dateRange.start))
+        : null;
+      const endDateFormatted = dateRange.end
+        ? formatDateTime(new Date(dateRange.end))
+        : null;
 
       const { content, totalPages } = await PromotionService.getAllPromotions(
         search || "",
@@ -44,62 +49,24 @@ export default function Promotion() {
         pageSize,
         sortConfig.key,
         sortConfig.direction,
-        dateRange.start || null,
-        dateRange.end || null,
+        startDateFormatted,
+        endDateFormatted,
         percentRange.min ? Number(percentRange.min) : null,
-        percentRange.max ? Number(percentRange.max) : null
+        percentRange.max ? Number(percentRange.max) : null,
+        statusFilter === "active"
+          ? true
+          : statusFilter === "inactive"
+            ? false
+            : null
       );
 
-      let filteredPromotions = content.map((promo) => ({
-        ...promo,
-        status:
-          new Date(promo.startDate) <= new Date() &&
-          new Date(promo.endDate) >= new Date(),
-      }));
-
-      // Lọc theo tên
-      if (search) {
-        filteredPromotions = filteredPromotions.filter((promo) =>
-          promo.promotionName.toLowerCase().includes(search.toLowerCase())
-        );
-      }
-
-      // Lọc theo khoảng ngày
-      if (dateRange.start) {
-        filteredPromotions = filteredPromotions.filter(
-          (promo) => new Date(promo.startDate) >= new Date(dateRange.start)
-        );
-      }
-      if (dateRange.end) {
-        filteredPromotions = filteredPromotions.filter(
-          (promo) => new Date(promo.endDate) <= new Date(dateRange.end)
-        );
-      }
-
-      // Lọc theo phần trăm
-      if (percentRange.min) {
-        filteredPromotions = filteredPromotions.filter(
-          (promo) => promo.promotionPercent >= Number(percentRange.min)
-        );
-      }
-      if (percentRange.max) {
-        filteredPromotions = filteredPromotions.filter(
-          (promo) => promo.promotionPercent <= Number(percentRange.max)
-        );
-      }
-
-      // Lọc theo trạng thái
-      if (statusFilter) {
-        filteredPromotions = filteredPromotions.filter(
-          (promo) => promo.status === (statusFilter === "active")
-        );
-      }
-
-      setPromotions(filteredPromotions);
-      setTotalPages(Math.ceil(filteredPromotions.length / pageSize) || 1);
+      setPromotions(content || []);
+      setTotalPages(totalPages || 1);
     } catch (error) {
-      console.error("Error fetching promotions:", error);
+      console.error("Lỗi khi tải dữ liệu khuyến mãi", error);
       toast.error("Lỗi khi tải dữ liệu khuyến mãi");
+      setPromotions([]);
+      setTotalPages(1);
     }
   }, [
     search,
@@ -122,6 +89,7 @@ export default function Promotion() {
 
   const handleDateFilter = (field) => (event) => {
     const value = event.target.value;
+    console.log(`Input ${field}_date:`, value); // Thêm console log để hiển thị giá trị start_date hoặc end_date
     setDateRange((prev) => ({ ...prev, [field]: value }));
     setCurrentPage(0);
   };
@@ -156,7 +124,6 @@ export default function Promotion() {
         Quản lý Khuyến mãi
       </h1>
 
-      {/* Bộ lọc đẹp hơn */}
       <div className="mb-6 bg-white p-4 rounded-lg shadow-md border border-gray-200">
         <h2 className="text-lg font-semibold text-gray-700 mb-4">Bộ Lọc</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -172,12 +139,12 @@ export default function Promotion() {
               onChange={handleSearch}
             />
           </div>
-          <div>
+          {/* <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Ngày bắt đầu từ
             </label>
             <input
-              type="date"
+              type="datetime-local"
               className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               value={dateRange.start}
               onChange={handleDateFilter("start")}
@@ -188,12 +155,12 @@ export default function Promotion() {
               Ngày kết thúc đến
             </label>
             <input
-              type="date"
+              type="datetime-local"
               className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               value={dateRange.end}
               onChange={handleDateFilter("end")}
             />
-          </div>
+          </div> */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Phần trăm giảm
@@ -251,7 +218,6 @@ export default function Promotion() {
         </div>
       </div>
 
-      {/* Bảng danh sách khuyến mãi */}
       <table className="table-auto w-full bg-white rounded-lg shadow-lg text-center text-sm border-separate border-spacing-0">
         <thead>
           <tr className="bg-blue-100 text-gray-700 text-xs uppercase tracking-wider">
@@ -259,8 +225,8 @@ export default function Promotion() {
             <th className="px-4 py-3">Tên KM</th>
             <th className="px-4 py-3">Mô tả</th>
             <th className="px-4 py-3">Phần trăm giảm</th>
-            <th className="px-4 py-3">Ngày bắt đầu</th>
-            <th className="px-4 py-3">Ngày kết thúc</th>
+            <th className="px-4 py-3">Ngày và giờ bắt đầu</th>
+            <th className="px-4 py-3">Ngày và giờ kết thúc</th>
             <th className="px-4 py-3">Trạng thái</th>
             <th className="px-4 py-3 rounded-tr-lg">Hành động</th>
           </tr>
@@ -268,61 +234,67 @@ export default function Promotion() {
         <tbody>
           {promotions
             .slice(currentPage * pageSize, (currentPage + 1) * pageSize)
-            .map((item, index) => (
-              <tr
-                key={item.id}
-                className="bg-white hover:bg-gray-50 transition-colors duration-200 border-b border-gray-200 last:border-b-0"
-              >
-                <td className="px-4 py-3">
-                  {currentPage * pageSize + index + 1}
-                </td>
-                <td className="px-4 py-3 font-medium text-gray-800">
-                  {item.promotionName}
-                </td>
-                <td className="px-4 py-3 text-gray-600 italic">
-                  {item.description}
-                </td>
-                <td className="px-4 py-3">{item.promotionPercent}%</td>
-                <td className="px-4 py-3 text-gray-600">
-                  {new Date(item.startDate).toLocaleDateString("vi-VN")}
-                </td>
-                <td className="px-4 py-3 text-gray-600">
-                  {new Date(item.endDate).toLocaleDateString("vi-VN")}
-                </td>
-                <td
-                  className={`px-4 py-3 font-semibold ${
-                    item.status ? "text-green-600" : "text-red-600"
-                  }`}
+            .map((item, index) => {
+              const startDate = new Date(item.startDate);
+              const endDate = new Date(item.endDate);
+              return (
+                <tr
+                  key={item.id}
+                  className="bg-white hover:bg-gray-50 transition-colors duration-200 border-b border-gray-200 last:border-b-0"
                 >
-                  {item.status ? "Kích hoạt" : "Không kích hoạt"}
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex justify-center gap-4">
-                    <button
-                      className="text-blue-600 hover:text-blue-800 transition-colors duration-150"
-                      onClick={() => handleUpdatePromotion(item)}
-                    >
-                      <AiOutlineEdit size={20} />
-                    </button>
-                    <Switch
-                      onChange={() =>
-                        console.log("Toggling status for:", item.id)
-                      }
-                      checked={item.status}
-                      height={20}
-                      width={40}
-                      onColor="#10B981"
-                      offColor="#EF4444"
-                      disabled
-                    />
-                  </div>
-                </td>
-              </tr>
-            ))}
+                  <td className="px-4 py-3">
+                    {currentPage * pageSize + index + 1}
+                  </td>
+                  <td className="px-4 py-3 font-medium text-gray-800">
+                    {item.promotionName}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600 italic">
+                    {item.description}
+                  </td>
+                  <td className="px-4 py-3">{item.promotionPercent}%</td>
+                  <td className="px-4 py-3 text-gray-600">
+                    {startDate.toLocaleString("vi-VN", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      timeZone: "Asia/Ho_Chi_Minh",
+                    })}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600">
+                    {endDate.toLocaleString("vi-VN", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      timeZone: "Asia/Ho_Chi_Minh",
+                    })}
+                  </td>
+                  <td
+                    className={`px-4 py-3 font-semibold ${
+                      item.status ? "text-green-600" : "text-red-600"
+                    }`}
+                  >
+                    {item.status ? "Kích hoạt" : "Không kích hoạt"}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex justify-center gap-4">
+                      <button
+                        className="text-blue-600 hover:text-blue-800 transition-colors duration-150"
+                        onClick={() => handleUpdatePromotion(item)}
+                      >
+                        <AiOutlineEdit size={20} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
         </tbody>
       </table>
 
-      {/* Phân trang */}
       <div className="flex items-center justify-between mt-6">
         <div className="flex items-center gap-2">
           <label htmlFor="entries" className="text-sm text-gray-700">

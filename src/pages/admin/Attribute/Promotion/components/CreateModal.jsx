@@ -5,6 +5,16 @@ import PromotionService from "../../../../../services/PromotionServices";
 
 Modal.setAppElement("#root");
 
+const formatDateTime = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const seconds = String(date.getSeconds()).padStart(2, "0");
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+};
+
 export default function CreateModal({ isOpen, onCancel, fetchPromotions }) {
   const [promotion, setPromotion] = useState({
     promotionName: "",
@@ -12,71 +22,63 @@ export default function CreateModal({ isOpen, onCancel, fetchPromotions }) {
     description: "",
     startDate: "",
     endDate: "",
-    status: true,
+    status: true, // Sửa từ 1 thành true
   });
-  const [errors, setErrors] = useState({}); // State để lưu thông báo lỗi
+  const [errors, setErrors] = useState({});
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value } = e.target;
     setPromotion((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: value,
     }));
-    // Xóa lỗi của trường khi người dùng bắt đầu nhập
     setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const validateForm = () => {
     const newErrors = {};
 
-    // Validate tên khuyến mãi
     if (!promotion.promotionName.trim()) {
       newErrors.promotionName = "Tên khuyến mãi không được để trống!";
-    } else if (promotion.promotionName.length > 100) {
-      newErrors.promotionName = "Tên khuyến mãi không được vượt quá 100 ký tự!";
+    } else if (promotion.promotionName.length > 255) {
+      newErrors.promotionName = "Tên khuyến mãi không được vượt quá 255 ký tự!";
     }
 
-    // Validate phần trăm giảm giá
     if (!promotion.promotionPercent) {
       newErrors.promotionPercent = "Phần trăm giảm giá không được để trống!";
     } else {
       const percent = Number(promotion.promotionPercent);
-      if (isNaN(percent) || percent < 1 || percent > 100) {
-        newErrors.promotionPercent = "Phần trăm giảm giá phải từ 1 đến 100!";
+      if (isNaN(percent) || percent < 0 || percent > 100) {
+        newErrors.promotionPercent = "Phần trăm giảm giá phải từ 0 đến 100!";
       }
     }
 
-    // Validate mô tả (không bắt buộc, nhưng nếu có thì kiểm tra độ dài)
-    if (promotion.description && promotion.description.length > 500) {
+    if (!promotion.description.trim()) {
+      newErrors.description = "Mô tả không được để trống!";
+    } else if (promotion.description.length > 500) {
       newErrors.description = "Mô tả không được vượt quá 500 ký tự!";
     }
 
-    // Validate ngày bắt đầu
     if (!promotion.startDate) {
       newErrors.startDate = "Ngày bắt đầu không được để trống!";
+    } else if (isNaN(new Date(promotion.startDate).getTime())) {
+      newErrors.startDate = "Ngày và giờ bắt đầu không hợp lệ!";
     }
 
-    // Validate ngày kết thúc
     if (!promotion.endDate) {
       newErrors.endDate = "Ngày kết thúc không được để trống!";
-    }
-
-    // Validate ngày bắt đầu và ngày kết thúc
-    if (promotion.startDate && promotion.endDate) {
+    } else if (isNaN(new Date(promotion.endDate).getTime())) {
+      newErrors.endDate = "Ngày và giờ kết thúc không hợp lệ!";
+    } else if (promotion.startDate && promotion.endDate) {
       const start = new Date(promotion.startDate);
       const end = new Date(promotion.endDate);
-      const today = new Date().setHours(0, 0, 0, 0);
-      if (start > end) {
-        newErrors.endDate =
-          "Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu!";
-      }
-      if (start < today) {
-        newErrors.startDate = "Ngày bắt đầu không được nhỏ hơn ngày hiện tại!";
+      if (end <= start) {
+        newErrors.endDate = "Ngày và giờ kết thúc phải sau ngày bắt đầu!";
       }
     }
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0; // Trả về true nếu không có lỗi
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleCreatePromotion = async () => {
@@ -87,17 +89,17 @@ export default function CreateModal({ isOpen, onCancel, fetchPromotions }) {
 
     try {
       const formattedPromotion = {
-        ...promotion,
+        promotionName: promotion.promotionName,
         promotionPercent: parseInt(promotion.promotionPercent),
-        startDate: new Date(promotion.startDate).toISOString(),
-        endDate: new Date(promotion.endDate).toISOString(),
+        description: promotion.description,
+        startDate: formatDateTime(new Date(promotion.startDate)),
+        endDate: formatDateTime(new Date(promotion.endDate)),
+        status: promotion.status,
       };
 
-      console.log("Data sent to API:", formattedPromotion);
+      console.log("Dữ liệu gửi API:", formattedPromotion);
       await PromotionService.createPromotion(formattedPromotion);
       toast.success("Thêm khuyến mãi thành công!");
-
-      // Reset form và đóng modal
       setPromotion({
         promotionName: "",
         promotionPercent: "",
@@ -110,8 +112,10 @@ export default function CreateModal({ isOpen, onCancel, fetchPromotions }) {
       fetchPromotions();
       onCancel();
     } catch (error) {
-      console.error(error);
-      toast.error("Lỗi khi tạo khuyến mãi!");
+      console.error("Error creating promotion:", error);
+      const errorMessage =
+        error.response?.data?.message || "Lỗi không xác định từ server!";
+      toast.error(`Lỗi khi tạo khuyến mãi: ${errorMessage}`);
     }
   };
 
@@ -156,7 +160,7 @@ export default function CreateModal({ isOpen, onCancel, fetchPromotions }) {
             }`}
             value={promotion.promotionPercent}
             onChange={handleChange}
-            min="1"
+            min="0"
             max="100"
           />
           {errors.promotionPercent && (
@@ -184,10 +188,10 @@ export default function CreateModal({ isOpen, onCancel, fetchPromotions }) {
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            Ngày bắt đầu
+            Ngày và giờ bắt đầu
           </label>
           <input
-            type="date"
+            type="datetime-local"
             name="startDate"
             className={`border p-2 rounded w-full bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
               errors.startDate ? "border-red-500" : "border-gray-300"
@@ -201,10 +205,10 @@ export default function CreateModal({ isOpen, onCancel, fetchPromotions }) {
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            Ngày kết thúc
+            Ngày và giờ kết thúc
           </label>
           <input
-            type="date"
+            type="datetime-local"
             name="endDate"
             className={`border p-2 rounded w-full bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
               errors.endDate ? "border-red-500" : "border-gray-300"
@@ -216,17 +220,24 @@ export default function CreateModal({ isOpen, onCancel, fetchPromotions }) {
             <p className="text-red-500 text-xs mt-1">{errors.endDate}</p>
           )}
         </div>
-        <div className="flex items-center">
-          <input
-            type="checkbox"
-            name="status"
-            checked={promotion.status}
-            onChange={handleChange}
-            className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-          />
-          <label className="ml-2 text-sm text-gray-700">
-            Kích hoạt khuyến mãi
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Trạng thái
           </label>
+          <select
+            name="status"
+            value={promotion.status}
+            onChange={(e) =>
+              setPromotion((prev) => ({
+                ...prev,
+                status: e.target.value === "true",
+              }))
+            }
+            className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 border-gray-300"
+          >
+            <option value={true}>Kích hoạt</option>
+            <option value={false}>Không kích hoạt</option>
+          </select>
         </div>
       </div>
 

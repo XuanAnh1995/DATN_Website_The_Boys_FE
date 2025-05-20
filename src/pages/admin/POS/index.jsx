@@ -73,8 +73,12 @@ const SalePOSPage = () => {
   const [selectedVoucher, setSelectedVoucher] = useState("");
   const [calculatedDiscount, setCalculatedDiscount] = useState(0);
   const [vouchers, setVouchers] = useState([]);
+
   // Thêm state để lưu voucher tối ưu
   const [optimalVoucher, setOptimalVoucher] = useState(null);
+
+  // Thêm một trạng thái hasSelectedVoucher để kiểm tra xem người dùng đã chọn voucher (kể cả "Không sử dụng voucher") hay chưa.
+  const [hasSelectedVoucher, setHasSelectedVoucher] = useState(false);
 
   const [searchKeyword, setSearchKeyword] = useState("");
   const [filteredCustomers, setFilteredCustomers] = useState([]);
@@ -272,27 +276,19 @@ const SalePOSPage = () => {
 
       setOptimalVoucher(bestVoucher || null);
 
-      // Chỉ tự động áp dụng nếu chưa có voucher được chọn thủ công
-      if (bestVoucher && !selectedVoucher) {
+      // Chỉ áp dụng bestVoucher nếu người dùng chưa chọn thủ công
+      if (bestVoucher && !hasSelectedVoucher) {
         handleVoucherChange(bestVoucher.voucherCode);
       } else if (!bestVoucher) {
-        setSelectedVoucher(""); // Reset nếu không có voucher hợp lệ
+        setSelectedVoucher("");
         setCalculatedDiscount(0);
-      }
-
-      // (Tùy chọn) Hiển thị thông báo nếu có nhiều voucher với cùng mức giảm giá
-      if (bestVouchers.length > 1) {
-        setNotification({
-          type: "info",
-          message: `Có ${bestVouchers.length} voucher với mức giảm giá bằng nhau. Đã chọn ngẫu nhiên voucher "${bestVoucher?.voucherName}".`,
-        });
       }
     } else {
       setOptimalVoucher(null);
       setSelectedVoucher("");
       setCalculatedDiscount(0);
     }
-  }, [currentOrder.totalAmount, vouchers, selectedVoucher]);
+  }, [currentOrder.totalAmount, vouchers]);
 
   useEffect(() => {
     if (activeOrderIndex !== null && selectedVoucher) {
@@ -402,6 +398,7 @@ const SalePOSPage = () => {
     console.log("📌 Voucher được chọn:", voucherCode);
 
     setSelectedVoucher(voucherCode);
+    setHasSelectedVoucher(true); // Đánh dấu rằng người dùng đã chọn
 
     const voucher = vouchers.find((v) => v.voucherCode === voucherCode);
 
@@ -571,6 +568,7 @@ const SalePOSPage = () => {
       ]);
 
       setActiveOrderIndex(orders.length);
+      setHasSelectedVoucher(false); // Reset để áp dụng bestVoucher cho hóa đơn mới
       console.log("✅ Đơn hàng mới đã được tạo:", newOrder);
     } catch (error) {
       console.error("❌ Lỗi khi tạo đơn hàng:", error);
@@ -1058,6 +1056,7 @@ const SalePOSPage = () => {
 
     setPaymentUrl(null); // Reset URL thanh toán
     setShowQRCode(false); // Ẩn mã QR
+    setHasSelectedVoucher(false); // Reset để áp dụng bestVoucher cho lần tiếp theo
   };
 
   return (
@@ -1687,15 +1686,14 @@ const SalePOSPage = () => {
 
           {/* Chọn voucher */}
           <div className="mt-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Chọn voucher
-            </label>
             <select
               value={selectedVoucher}
               onChange={(e) => handleVoucherChange(e.target.value)}
               className="border p-2 w-full mt-1 rounded-md"
             >
-              {/* <option value="">Sử dụng voucher</option> */}
+              <option value="" disabled>
+                Chọn voucher
+              </option>
               {vouchers
                 .filter((v) => {
                   const now = new Date();
@@ -1718,9 +1716,9 @@ const SalePOSPage = () => {
                     currentOrder.totalAmount
                   );
                   if (discountB !== discountA) {
-                    return discountB - discountA; // Ưu tiên giảm giá cao hơn
+                    return discountB - discountA;
                   }
-                  return a.voucherCode.localeCompare(b.voucherCode); // Sắp xếp theo voucherCode nếu giảm giá bằng nhau
+                  return a.voucherCode.localeCompare(b.voucherCode);
                 })
                 .map((v) => (
                   <option key={v.id} value={v.voucherCode}>
@@ -1733,6 +1731,7 @@ const SalePOSPage = () => {
                     VND)
                   </option>
                 ))}
+              <option value="">Không sử dụng voucher</option>
             </select>
           </div>
 

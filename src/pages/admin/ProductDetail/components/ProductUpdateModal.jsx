@@ -1,328 +1,349 @@
 import React, { useState, useEffect } from "react";
+import { FaInfoCircle } from "react-icons/fa";
 import Select from "react-select";
-import { toast } from "react-toastify";
-import ProductDetailService from "../../../../services/ProductDetailService";
-import UploadFileService from "../../../../services/UploadFileService";
-import PromotionService from "../../../../services/PromotionServices";
-import Barcode from "react-barcode";
+import CreatableSelect from "react-select/creatable";
+import ProductVariants from "./components/ProductVariants";
+import ProductService from "../../../services/ProductService";
+import ProductDetailService from "../../../services/ProductDetailService";
+import CollarService from "../../../services/CollarService";
+import SleeveService from "../../../services/SleeveService";
+import ColorService from "../../../services/ColorService";
+import SizeService from "../../../services/SizeService";
+import PromotionService from "../../../services/PromotionServices";
 
-export default function ProductUpdateModal({
-  modalVisible,
-  currentProduct,
-  onClose,
-  onUpdate,
-  collars,
-  sleeves,
-  colors,
-  sizes,
-  promotions
-}) {
-  const [quantity, setQuantity] = useState("");
-  const [importPrice, setImportPrice] = useState("");
-  const [salePrice, setSalePrice] = useState("");
-  const [description, setDescription] = useState("");
-  const [photo, setPhoto] = useState("");
-  const [collar, setCollar] = useState(null);
-  const [sleeve, setSleeve] = useState(null);
-  const [color, setColor] = useState(null);
-  const [size, setSize] = useState(null);
-  const [promotion, setPromotion] = useState(null);
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [previewImage, setPreviewImage] = useState("");
+export default function CreateProduct() {
+  const [products, setProducts] = useState([]);
+  const [collars, setCollars] = useState([]);
+  const [sizes, setSizes] = useState([]);
+  const [colors, setColors] = useState([]);
+  const [sleeves, setSleeves] = useState([]);
+  const [promotions, setPromotions] = useState([]);
+  const [showProductDetails, setShowProductDetails] = useState(false);
+
+  const [generateData, setGenerateData] = useState({
+    productId: null,
+    sizeId: [],
+    colorId: [],
+    collarId: [],
+    sleeveId: [],
+    promotionId: null,
+    importPrice: 0,
+    salePrice: 0,
+    quantity: 0,
+    description: "",
+  });
 
   useEffect(() => {
-    if (currentProduct) {
-      setQuantity(currentProduct.quantity || "");
-      setImportPrice(currentProduct.importPrice || "");
-      setSalePrice(currentProduct.salePrice || "");
-      setDescription(currentProduct.description || "");
-      setPhoto(currentProduct.photo || "");
-      setCollar(currentProduct.collar ? { value: currentProduct.collar.id, label: currentProduct.collar.name } : null);
-      setSleeve(currentProduct.sleeve ? { value: currentProduct.sleeve.id, label: currentProduct.sleeve.sleeveName } : null);
-      setColor(currentProduct.color ? { value: currentProduct.color.id, label: currentProduct.color.name } : null);
-      setSize(currentProduct.size ? { value: currentProduct.size.id, label: currentProduct.size.name } : null);
-      setPromotion(currentProduct.promotion ? { value: currentProduct.promotion.id, label: currentProduct.promotion.promotionName } : null);
+    fetchSelectOptions();
+  }, []);
+
+  useEffect(() => {
+    if (
+      collars.length > 0 ||
+      sleeves.length > 0 ||
+      colors.length > 0 ||
+      sizes.length > 0
+    ) {
+      setGenerateData((prevData) => ({
+        ...prevData,
+        collar: collars.length > 0 ? [collars[0].id] : [],
+        sleeve: sleeves.length > 0 ? [sleeves[0].id] : [],
+        color: colors.length > 0 ? [colors[0].id] : [],
+        size: sizes.length > 0 ? [sizes[0].id] : [],
+      }));
     }
-  }, [currentProduct]);
+  }, [collars, sleeves, colors, sizes]);
 
-  const handleUpdateSubmit = async () => {
-    const productData = {
-      productId: currentProduct.product.id,
-      collarId: collar?.value,
-      sleeveId: sleeve?.value,
-      colorId: color?.value,
-      sizeId: size?.value,
-      promotionId: promotion?.value,
-      quantity: Number(quantity),
-      importPrice: Number(importPrice),
-      salePrice: Number(salePrice),
-      description: description,
-      photo: selectedImage || photo,
-    };
-
+  const fetchSelectOptions = async () => {
     try {
-      const result = await ProductDetailService.updateProductDetail(currentProduct.id, productData);
-      onUpdate(result);
-      toast.success("Cập nhật sản phẩm thành công!");
-      setPreviewImage("");
-      onClose();
+      const productData = await ProductService.getAllProducts(0, 1000);
+      setProducts(productData.content);
+
+      const collarData = await CollarService.getAllCollars();
+      setCollars(collarData.content);
+
+      const sizeData = await SizeService.getAllSizes();
+      setSizes(sizeData.content);
+
+      const colorData = await ColorService.getAllColors();
+      setColors(colorData.content);
+
+      const sleeveData = await SleeveService.getAllSleeves();
+      setSleeves(sleeveData.content);
+
+      const promotionData = await PromotionService.getAllPromotions();
+
+      const today = new Date();
+
+      // Lọc các khuyến mãi còn hiệu lực
+      const validPromotions = promotionData.content.filter((promotion) => {
+        const end = new Date(promotion.endDate);
+        return promotion.status === true && end >= today;
+      });
+
+
+      setPromotions(validPromotions);
+
     } catch (error) {
-      console.error("Update failed", error);
-      toast.error("Cập nhật thất bại. Vui lòng thử lại!");
+      console.error("Error fetching select options:", error);
     }
   };
 
-  if (!modalVisible) return null;
+  const handleSelectChange = (name, selectedOption) => {
+    const newGenerateData = { ...generateData };
 
-  const handleImageUpload = async (file) => {
-    if (!file) return;
-
-    const validImageTypes = ["image/jpeg", "image/png"];
-    if (!validImageTypes.includes(file.type)) {
-      toast.error("Chỉ hỗ trợ định dạng JPEG, PNG!");
-      return;
+    if (selectedOption) {
+      if (name === "product") {
+        newGenerateData.productId = selectedOption.value;
+      } else if (name === "collar") {
+        newGenerateData.collarId = selectedOption.map((opt) => opt.value);
+      } else if (name === "sleeve") {
+        newGenerateData.sleeveId = selectedOption.map((opt) => opt.value);
+      } else if (name === "color") {
+        newGenerateData.colorId = selectedOption.map((opt) => opt.value);
+      } else if (name === "size") {
+        newGenerateData.sizeId = selectedOption.map((opt) => opt.value);
+      } else if (name === "promotion") {
+        newGenerateData.promotionId = selectedOption.value;
+      }
     }
 
-    const fileReader = new FileReader();
-    fileReader.onload = (e) => {
-      setPreviewImage(e.target.result);
-    };
-    fileReader.readAsDataURL(file);
+    setGenerateData(newGenerateData);
+  };
 
+  const handleCreateOption = async (name, newOption) => {
     try {
-      const uploadedImageUrl = await UploadFileService.uploadProductImage(file);
-
-      setPreviewImage(uploadedImageUrl);
-      setSelectedImage(uploadedImageUrl);
+      let createdOption;
+      if (name === "collar") {
+        createdOption = await CollarService.createCollar({ name: newOption });
+        setCollars((prev) => [...prev, createdOption]);
+      } else if (name === "sleeve") {
+        createdOption = await SleeveService.createSleeve({ name: newOption });
+        setSleeves((prev) => [...prev, createdOption]);
+      } else if (name === "color") {
+        createdOption = await ColorService.createColor({ name: newOption });
+        setColors((prev) => [...prev, createdOption]);
+      } else if (name === "size") {
+        createdOption = await SizeService.createSize({ name: newOption });
+        setSizes((prev) => [...prev, createdOption]);
+      }
+      fetchSelectOptions();
+      return createdOption;
     } catch (error) {
-      console.error("Lỗi tải ảnh lên Firebase:", error);
-      toast.error("Tải ảnh thất bại. Vui lòng thử lại!");
+      console.error("Error creating new option:", error);
+      throw error;
     }
   };
 
-  const handleClose = () => {
-    setQuantity("");
-    setImportPrice("");
-    setSalePrice("");
-    setDescription("");
-    setPhoto("");
-    setCollar(null);
-    setSleeve(null);
-    setColor(null);
-    setSize(null);
-    setPromotion(null);
-    setSelectedImage(null);
-    setPreviewImage("");
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setGenerateData((prevData) => ({
+      ...prevData,
+      [name]: value,
+    }));
+  };
 
-    onClose();
+  const handleSubmit = async () => {
+    try {
+      // Ensure lists are not null
+      const productDetailData = {
+        productId: generateData.productId,
+        sizeId: generateData.sizeId || [],
+        colorId: generateData.colorId || [],
+        collarId: generateData.collarId || [],
+        sleeveId: generateData.sleeveId || [],
+        promotionId: generateData.promotionId,
+        importPrice: generateData.importPrice,
+        salePrice: generateData.salePrice,
+        quantity: generateData.quantity,
+        description: generateData.description || "",
+      };
+
+      await ProductDetailService.generateProductDetails(productDetailData);
+      alert("Product detail generated successfully!");
+    } catch (error) {
+      console.error("Error generating product detail:", error);
+      alert("Error generating product detail");
+    }
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-gray-500 bg-opacity-50 z-50">
-      <div className="bg-white p-8 rounded-lg shadow-lg w-11/12 md:w-3/4 lg:w-2/3">
-        <h2 className="text-2xl font-semibold mb-6 text-gray-800 text-center">Cập nhật chi tiết sản phẩm</h2>
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="grid grid-cols-5 gap-6">
+        {/* Thuộc tính sản phẩm */}
+        <div className="col-span-2 p-6 border rounded-lg bg-white shadow-lg">
+          <h2 className="text-2xl font-semibold text-blue-600 mb-6">Thuộc tính sản phẩm</h2>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm">
-          {/* Main grid container with responsive columns */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Product information section - takes 2/3 on large screens */}
-            <div className="lg:col-span-2 space-y-6">
-              <h2 className="text-xl font-bold text-gray-800 mb-4">Thông tin sản phẩm</h2>
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-black">Tên sản phẩm</label>
+              <Select
+                name="product"
+                options={products.map(product => ({ value: product.id, label: product.productName }))}
+                isClearable
+                placeholder="Chọn sản phẩm"
+                onChange={(selectedOption) => {
+                  setGenerateData((prevData) => ({
+                    ...prevData,
+                    productId: selectedOption ? selectedOption.value : null,
+                  }));
+                }}
+                className="rounded-lg text-sm w-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
 
-              {/* Form fields in responsive grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
-                <div className="form-group">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Cổ áo</label>
-                  <Select
-                    value={collar}
-                    onChange={(option) => setCollar(option)}
-                    options={collars.map(item => ({
-                      value: item.id,
-                      label: item.name
-                    }))}
-                    className="w-full"
-                    classNamePrefix="select"
-                  />
-                </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-black mb-1">Cổ áo</label>
+                <CreatableSelect
+                  name="collar"
+                  options={collars.map(collar => ({ value: collar.id, label: collar.name }))}
+                  value={collars
+                    .filter(collar => generateData.collarId.includes(collar.id))
+                    .map(collar => ({ value: collar.id, label: collar.name }))}
+                  isMulti
+                  onChange={(selectedOption) => handleSelectChange("collar", selectedOption)}
+                  onCreateOption={(newOption) => handleCreateOption("collar", newOption)}
+                  className="rounded-lg text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
 
-                <div className="form-group">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tay áo</label>
-                  <Select
-                    value={sleeve}
-                    onChange={(option) => setSleeve(option)}
-                    options={sleeves.map(item => ({
-                      value: item.id,
-                      label: item.sleeveName
-                    }))}
-                    className="w-full"
-                    classNamePrefix="select"
-                  />
-                </div>
+              <div>
+                <label className="block text-xs font-medium text-black mb-1">Tay áo</label>
+                <CreatableSelect
+                  name="sleeve"
+                  options={sleeves.map(sleeve => ({ value: sleeve.id, label: sleeve.sleeveName }))}
+                  value={sleeves
+                    .filter(sleeve => generateData.sleeveId.includes(sleeve.id))
+                    .map(sleeve => ({ value: sleeve.id, label: sleeve.sleeveName }))}
+                  isMulti
+                  onChange={(selectedOption) => handleSelectChange("sleeve", selectedOption)}
+                  onCreateOption={(newOption) => handleCreateOption("sleeve", newOption)}
+                  className="rounded-lg text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
 
-                <div className="form-group">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Màu sắc</label>
-                  <Select
-                    value={color}
-                    onChange={(option) => setColor(option)}
-                    options={colors.map(item => ({
-                      value: item.id,
-                      label: item.name
-                    }))}
-                    className="w-full"
-                    classNamePrefix="select"
-                  />
-                </div>
+              <div>
+                <label className="block text-xs font-medium text-black mb-1">Màu sắc</label>
+                <CreatableSelect
+                  name="color"
+                  options={colors.map(color => ({ value: color.id, label: color.name }))}
+                  value={colors
+                    .filter(color => generateData.colorId.includes(color.id))
+                    .map(color => ({ value: color.id, label: color.name }))}
+                  isMulti
+                  onChange={(selectedOption) => handleSelectChange("color", selectedOption)}
+                  onCreateOption={(newOption) => handleCreateOption("color", newOption)}
+                  className="rounded-lg text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
 
-                <div className="form-group">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Kích thước</label>
-                  <Select
-                    value={size}
-                    onChange={(option) => setSize(option)}
-                    options={sizes.map(item => ({
-                      value: item.id,
-                      label: item.name
-                    }))}
-                    className="w-full"
-                    classNamePrefix="select"
-                  />
-                </div>
+              <div>
+                <label className="block text-xs font-medium text-black mb-1">Kích thước</label>
+                <CreatableSelect
+                  name="size"
+                  options={sizes.map(size => ({ value: size.id, label: size.name }))}
+                  value={sizes
+                    .filter(size => generateData.sizeId.includes(size.id))
+                    .map(size => ({ value: size.id, label: size.name }))}
+                  isMulti
+                  onChange={(selectedOption) => handleSelectChange("size", selectedOption)}
+                  onCreateOption={(newOption) => handleCreateOption("size", newOption)}
+                  className="rounded-lg text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
 
-                <div className="form-group">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Khuyến mãi</label>
-                  <Select
-                    value={promotion}
-                    onChange={(option) => setPromotion(option)}
-                    options={promotions.map(promotion => ({
+              <div>
+                <label className="block text-xs font-medium text-black mb-1">Khuyến mãi</label>
+                <Select
+                  name="promotion"
+                  options={promotions.map(promotion => ({
                     value: promotion.id,
                     label: `${promotion.promotionName} - ${promotion.promotionPercent}% (${new Date(promotion.startDate).toLocaleDateString("vi-VN")} - ${new Date(promotion.endDate).toLocaleDateString("vi-VN")})`
                   }))}
-                    className="w-full"
-                    classNamePrefix="select"
-                  />
-                </div>
 
-                <div className="form-group">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Số lượng</label>
-                  <input
-                    type="number"
-                    value={quantity}
-                    onChange={(e) => setQuantity(e.target.value)}
-                    className="border border-gray-300 rounded-lg px-4 py-2 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                    min="0"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Giá nhập</label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      value={importPrice}
-                      onChange={(e) => setImportPrice(e.target.value)}
-                      className="border border-gray-300 rounded-lg pl-4 pr-10 py-2 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                      min="0"
-                    />
-                    <span className="absolute right-3 top-2 text-gray-500">VND</span>
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Đơn giá</label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      value={salePrice}
-                      onChange={(e) => setSalePrice(e.target.value)}
-                      className="border border-gray-300 rounded-lg pl-4 pr-10 py-2 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                      min="0"
-                    />
-                    <span className="absolute right-3 top-2 text-gray-500">VND</span>
-                  </div>
-                </div>
+                  value={promotions
+                    .filter(promotion => generateData.promotionId === promotion.id)
+                    .map(promotion => ({ value: promotion.id, label: promotion.promotionName }))}
+                  onChange={(selectedOption) => setGenerateData((prevData) => ({
+                    ...prevData,
+                    promotionId: selectedOption ? selectedOption.value : null,
+                  }))}
+                  className="rounded-lg text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
               </div>
 
-              {/* Description field - spans full width */}
-              <div className="form-group mt-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
+              <div>
+                <label className="block text-xs font-medium text-black mb-1">Số lượng</label>
+                <input
+                  type="number"
+                  name="quantity"
+                  value={generateData.quantity}
+                  onChange={handleInputChange}
+                  className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Nhập số lượng"
+                  min={0}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-black mb-1">Giá nhập</label>
+                <input
+                  type="number"
+                  name="importPrice"
+                  value={generateData.importPrice}
+                  onChange={handleInputChange}
+                  className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Nhập giá nhập"
+                  min={0}
+                  step={10000}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-black mb-1">Giá bán</label>
+                <input
+                  type="number"
+                  name="salePrice"
+                  value={generateData.salePrice}
+                  onChange={handleInputChange}
+                  className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Nhập giá bán"
+                  min={0}
+                  step={10000}
+                />
+              </div>
+
+              <div className="col-span-2">
+                <label className="block text-xs font-medium text-black mb-1">Mô tả</label>
                 <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="border border-gray-300 rounded-lg px-4 py-2 w-full h-32 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none"
+                  name="description"
+                  value={generateData.description}
+                  onChange={handleInputChange}
+                  className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Nhập mô tả"
+                  maxLength={500}
                 />
               </div>
             </div>
-
-            {/* Image and barcode section - takes 1/3 on large screens */}
-            <div className="lg:col-span-1 space-y-6">
-              {/* Image upload section */}
-              <div className="bg-white rounded-lg">
-                <h3 className="text-lg font-semibold text-gray-800 mb-3">Hình ảnh</h3>
-                <div className="bg-blue-50 p-4 rounded-lg border-2 border-dashed border-blue-300 hover:bg-blue-100 transition-colors duration-200 relative">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleImageUpload(e.target.files[0])}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                  />
-                  {previewImage || photo ? (
-                    <div className="relative">
-                      <img
-                        src={previewImage || photo}
-                        className="h-48 w-full object-contain rounded-lg"
-                        onError={() => previewImage ? setPreviewImage(null) : setPhoto(null)}
-                        alt="Product Image"
-                      />
-                      <button
-                        onClick={() => { setPreviewImage(null); setPhoto(null); }}
-                        className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 shadow-md"
-                        type="button"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                        </svg>
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center py-6">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-blue-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      <p className="text-gray-600 text-center">Thả hình ảnh vào đây hoặc <span className="text-blue-500 font-medium">chọn ảnh</span></p>
-                      <p className="text-gray-400 text-sm mt-1">Hỗ trợ: jpeg, png</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Barcode section */}
-              <div className="bg-white rounded-lg pt-2">
-                <h3 className="text-lg font-semibold text-gray-800 mb-3">Mã vạch sản phẩm</h3>
-                <div className="flex flex-col items-center justify-center bg-gray-50 p-4 rounded-lg border border-gray-200">
-                  {currentProduct?.productDetailCode ? (
-                    <div className="w-full flex justify-center">
-                      <Barcode value={currentProduct.productDetailCode} />
-                    </div>
-                  ) : (
-                    <div className="text-gray-500 text-center py-6">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                      </svg>
-                      <p>Mã sản phẩm sẽ hiển thị ở đây</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
           </div>
-
         </div>
 
-
-        {/* Nút hành động */}
-        <div className="flex justify-end space-x-4 mt-6">
-          <button onClick={handleClose} className="px-6 py-3 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 transition duration-200">Hủy</button>
-          <button onClick={handleUpdateSubmit} className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-200">Cập nhật</button>
-        </div>
+        {/* Biến thể sản phẩm */}
+        {Object.values(generateData).every(
+          (value) => (typeof value === "number" && value >= 0) || value && (!Array.isArray(value) || value.length > 0)
+        ) ? (
+          <div className="col-span-3 mt-6 bg-white p-6 border rounded-lg shadow-lg">
+            <ProductVariants generateData={generateData} />
+          </div>
+        ) : (
+          <div className="col-span-3 mt-6 p-6 border rounded-lg bg-white shadow-lg flex flex-col items-center justify-center text-center">
+            <div className="w-24 h-24 flex items-center justify-center">
+              <FaInfoCircle className="text-5xl text-blue-500" />
+            </div>
+            <p className="text-gray-600 mt-4">Chọn các thuộc tính để hiển thị sản phẩm chi tiết.</p>
+          </div>
+        )}
       </div>
     </div>
   );

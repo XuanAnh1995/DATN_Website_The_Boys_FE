@@ -65,6 +65,52 @@ const OrderPOSDetail = () => {
     });
   };
 
+  // Tính tổng giá trị ban đầu (Đơn giá × Số lượng) trước khi giảm giá
+  const calculateOriginalTotal = () => {
+    if (!orderDetails?.orderDetails?.length) return 0;
+    return orderDetails.orderDetails.reduce(
+      (sum, detail) =>
+        sum + (detail.quantity ?? 0) * (detail.productDetail?.salePrice ?? 0),
+      0
+    );
+  };
+
+  // Tính tổng giảm giá sản phẩm
+  const calculateTotalDiscount = () => {
+    if (!orderDetails?.orderDetails?.length) return 0;
+    return orderDetails.orderDetails.reduce((sum, detail) => {
+      const salePrice = detail.productDetail?.salePrice ?? 0;
+      const importPrice = detail.productDetail?.importPrice ?? salePrice;
+      const promotionPercent =
+        detail.productDetail?.promotion?.promotionPercent ?? 0;
+      const discountPrice = promotionPercent
+        ? salePrice * (1 - promotionPercent / 100)
+        : salePrice;
+      const discountAmount =
+        importPrice > salePrice
+          ? importPrice - salePrice
+          : promotionPercent
+            ? salePrice - discountPrice
+            : 0;
+      return sum + discountAmount * (detail.quantity ?? 0);
+    }, 0);
+  };
+
+  // Tính tổng tiền trước khi áp voucher
+  const calculateTotalBeforeVoucher = () => {
+    const originalTotal = calculateOriginalTotal();
+    const totalDiscount = calculateTotalDiscount();
+    return originalTotal; // Vì tổng thành tiền đã trừ giảm giá sản phẩm, nên tổng trước khi áp voucher là giá trị ban đầu
+  };
+
+  // Tính số tiền giảm giá từ voucher (nếu có)
+  const calculateVoucherDiscount = () => {
+    if (!orderDetails.voucher) return 0;
+    const totalBeforeVoucher = calculateTotalBeforeVoucher();
+    const totalBill = orderDetails.totalBill ?? 0;
+    return totalBeforeVoucher > totalBill ? totalBeforeVoucher - totalBill : 0;
+  };
+
   // Fix style cho in ấn
   useEffect(() => {
     const style = document.createElement("style");
@@ -306,6 +352,7 @@ const OrderPOSDetail = () => {
                     <th className="py-3 px-4 text-center">Màu sắc</th>
                     <th className="py-3 px-4 text-center">Size</th>
                     <th className="py-3 px-4 text-right">Đơn giá</th>
+                    <th className="py-3 px-4 text-right">Giảm giá sản phẩm</th>
                     <th className="py-3 px-4 text-right">Thành tiền</th>
                   </tr>
                 </thead>
@@ -320,11 +367,26 @@ const OrderPOSDetail = () => {
                       const sizeName =
                         detail.productDetail?.size?.name ??
                         "Không có kích thước";
-                      const price =
+                      const salePrice =
                         detail.productDetail?.salePrice ??
                         product?.salePrice ??
                         0;
-                      const totalPrice = price * quantity;
+                      const importPrice =
+                        detail.productDetail?.importPrice ??
+                        product?.importPrice ??
+                        salePrice;
+                      const promotionPercent =
+                        detail.productDetail?.promotion?.promotionPercent ?? 0;
+                      const discountPrice = promotionPercent
+                        ? salePrice * (1 - promotionPercent / 100)
+                        : salePrice;
+                      const discountAmount =
+                        importPrice > salePrice
+                          ? importPrice - salePrice
+                          : promotionPercent
+                            ? salePrice - discountPrice
+                            : 0;
+                      const totalPrice = discountPrice * quantity;
 
                       return (
                         <tr
@@ -357,7 +419,12 @@ const OrderPOSDetail = () => {
                             {sizeName}
                           </td>
                           <td className="py-3 px-4 text-right font-medium text-green-600">
-                            {formatCurrency(price)}
+                            {formatCurrency(salePrice)}
+                          </td>
+                          <td className="py-3 px-4 text-right font-medium text-red-600">
+                            {discountAmount > 0
+                              ? formatCurrency(discountAmount)
+                              : "-"}
                           </td>
                           <td className="py-3 px-4 text-right font-semibold text-gray-900">
                             {formatCurrency(totalPrice)}
@@ -382,24 +449,32 @@ const OrderPOSDetail = () => {
                       Tổng tiền trước khi áp voucher:
                     </td>
                     <td
-                      colSpan="1"
+                      colSpan="2"
                       className="py-4 px-4 text-right text-xl text-gray-700"
                     >
-                      {formatCurrency(orderDetails.originalTotal ?? 0)}
+                      {formatCurrency(
+                        calculateOriginalTotal() - calculateTotalDiscount()
+                      )}
                     </td>
                   </tr>
                   <tr>
                     <td colSpan="5" className="py-4 px-4 text-right">
-                      Số tiền giảm (Khuyến mãi):
+                      Số tiền giảm giá (voucher):
                     </td>
                     <td
-                      colSpan="1"
+                      colSpan="2"
                       className="py-4 px-4 text-right text-xl text-green-600"
                     >
+                      -
                       {formatCurrency(
-                        orderDetails.discount ??
-                          orderDetails.originalTotal - orderDetails.totalBill ??
-                          0
+                        orderDetails.voucher
+                          ? Math.max(
+                              0,
+                              calculateOriginalTotal() -
+                                calculateTotalDiscount() -
+                                (orderDetails.totalBill ?? 0)
+                            )
+                          : 0
                       )}
                     </td>
                   </tr>
@@ -408,10 +483,15 @@ const OrderPOSDetail = () => {
                       Tổng tiền sau khi áp voucher:
                     </td>
                     <td
-                      colSpan="1"
+                      colSpan="2"
                       className="py-4 px-4 text-right text-xl text-red-600"
                     >
-                      {formatCurrency(orderDetails.totalBill ?? 0)}
+                      {formatCurrency(
+                        orderDetails.totalBill ??
+                          calculateOriginalTotal() -
+                            calculateTotalDiscount() -
+                            calculateVoucherDiscount()
+                      )}
                     </td>
                   </tr>
                 </tfoot>
