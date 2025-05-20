@@ -619,7 +619,7 @@ const Header = () => {
       {/* Menu nhỏ dưới */}
       <div className="flex justify-center max-w-7xl mx-auto mt-4 gap-8 text-sm">
         <Link
-          to="/products"
+          to="/productsBanrd"
           className="relative flex flex-col items-center cursor-pointer hover:text-red-600"
         >
           <FaHeart size={20} />
