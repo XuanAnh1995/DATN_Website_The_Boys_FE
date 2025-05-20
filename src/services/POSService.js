@@ -136,6 +136,21 @@ const SalePOS = {
     }
   },
 
+  async createVietQRPaymentUrl(orderId) {
+        console.log(`📌 Tạo URL VietQR cho đơn hàng #${orderId}`);
+        try {
+            const response = await api.post(`/api/sale-pos/payment/create-vietqr-url/${orderId}`);
+            console.log("✅ URL VietQR:", response.data);
+            return response.data; // Trả về URL VietQR
+        } catch (error) {
+            console.error(
+                "❌ Lỗi khi tạo URL VietQR:",
+                error.response?.data || error.message
+            );
+            throw error;
+        }
+    },
+
   /** 🎟️ Lấy danh sách voucher */
   getVouchers: async () => {
     console.log("📌 Lấy danh sách voucher hợp lệ");
@@ -173,12 +188,11 @@ const SalePOS = {
   },
 
   /** ✅ **Checkout - Luồng chuẩn** */
-  checkout: async (orderData) => {
+async checkout(orderData) {
     console.log("📌 Bắt đầu luồng thanh toán với đơn hàng:", orderData);
     try {
       let orderId = orderData.orderId ?? null;
 
-      // Nếu không có orderId, tạo đơn hàng mới
       if (!orderId) {
         console.log("📌 Không có orderId, tiến hành tạo đơn hàng mới.");
         const orderResponse = await SalePOS.createOrder(orderData);
@@ -187,10 +201,8 @@ const SalePOS = {
         console.log("✅ Sử dụng orderId đã có:", orderId);
       }
 
-      // Lấy chi tiết đơn hàng hiện tại từ backend
       const existingOrder = await SalePOS.getOrderDetails(orderId);
       const existingProducts = existingOrder.orderDetails || [];
-      // So sánh orderDetails từ frontend với dữ liệu từ backend
       const productsToAdd = [];
       if (orderData.orderDetails && orderData.orderDetails.length > 0) {
         for (let item of orderData.orderDetails) {
@@ -198,33 +210,18 @@ const SalePOS = {
             (existing) => existing.productDetail.id === item.productDetailId
           );
           if (!existingItem) {
-            // Nếu sản phẩm chưa có trong đơn hàng, thêm vào danh sách cần thêm
             productsToAdd.push(item);
-          } else {
-            // Nếu sản phẩm đã có, kiểm tra xem số lượng có thay đổi không
-            if (existingItem.quantity !== item.quantity) {
-              // Cập nhật số lượng nếu cần (hoặc xử lý theo yêu cầu)
-              console.log(
-                `🔄 Sản phẩm ${item.productDetailId} đã có, nhưng số lượng thay đổi. Cũ: ${existingItem.quantity}, Mới: ${item.quantity}`
-              );
-              // Gọi API để cập nhật số lượng (nếu backend hỗ trợ)
-              // await SalePOS.updateProductQuantity(orderId, item);
-            }
           }
         }
       }
 
-      // Thêm các sản phẩm mới vào đơn hàng (nếu có)
       if (productsToAdd.length > 0) {
         for (let item of productsToAdd) {
           await SalePOS.addProductToCart(orderId, item);
         }
         console.log("✅ Đã thêm các sản phẩm mới vào đơn hàng:", productsToAdd);
-      } else {
-        console.log("✅ Không có sản phẩm mới để thêm vào đơn hàng.");
       }
 
-      // Cập nhật customerId và voucherId
       const paymentData = {
         customerId: orderData.customerId,
         voucherId: orderData.voucherId,
@@ -232,19 +229,14 @@ const SalePOS = {
       await SalePOS.updateOrderInfo(orderId, paymentData);
       console.log("✅ Đã cập nhật customerId và voucherId");
 
-      // Nếu không phải VNPay, hoàn tất thanh toán ngay
       if (orderData.paymentMethod !== "vnpay") {
         console.log("🔍 Xử lý thanh toán tiền mặt cho đơn hàng:", orderId);
-        const paymentResponse = await SalePOS.completePayment(
-          orderId,
-          paymentData
-        );
+        const paymentResponse = await SalePOS.completePayment(orderId, paymentData);
         console.log("✅ Thanh toán thành công:", paymentResponse);
         return { orderId, paymentResponse };
       }
 
-      // Nếu là VNPay, chỉ trả về orderId để frontend xử lý tiếp
-      console.log("✅ Đơn hàng sẵn sàng cho VNPay:", orderId);
+      console.log("✅ Đơn hàng sẵn sàng cho VietQR:", orderId);
       return { orderId };
     } catch (error) {
       console.error(
@@ -254,6 +246,7 @@ const SalePOS = {
       throw error;
     }
   },
+  
 
   /** 🖨️ Lấy sản phẩm theo mã vạch */
   getProductByBarcode: async (barcode) => {

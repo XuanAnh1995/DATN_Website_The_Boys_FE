@@ -1783,16 +1783,60 @@ const SalePOSPage = () => {
 
           {/* Hiển thị mã QR nếu có paymentUrl và showQRCode là true */}
           {paymentMethod === "vnpay" && showQRCode && paymentUrl && (
-            <div style={{ textAlign: "center", marginTop: "20px" }}>
-              <p>Quét mã QR để thanh toán qua VNPay:</p>
-              <QRCode
-                value={paymentUrl}
-                size={300}
-                level="H"
-                includeMargin={true}
-              />
+    <div style={{ textAlign: "center", marginTop: "20px" }}>
+        <p className="text-lg font-semibold mb-2">Thanh toán chuyển khoản</p>
+        <p className="text-sm mb-4">Vui lòng quét mã QR để thanh toán.</p>
+        <div style={{ backgroundColor: "#f5f5f5", padding: "20px", borderRadius: "8px", display: "inline-block" }}>
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", marginBottom: "10px" }}>
+                <img src="/path/to/vietqr-logo.png" alt="VietQR" style={{ height: "30px", marginRight: "10px" }} />
+                <img src="/path/to/vietcombank-logo.png" alt="Vietcombank" style={{ height: "30px" }} />
             </div>
-          )}
+            <QRCode
+                value={paymentUrl}
+                size={200}
+                level="H"
+            />
+            <p className="mt-2 text-sm font-medium">
+                THE BOY
+            </p>
+            <p className="text-sm">
+                Số tài khoản: 1017095584
+            </p>
+            <p className="text-sm">
+                Số tiền: {(currentOrder.totalAmount - calculatedDiscount).toLocaleString()} VND
+            </p>
+            <p className="text-sm">
+                Mã giao dịch: HD1-{currentOrder.id}
+            </p>
+        </div>
+        <div className="mt-4 flex justify-center space-x-2">
+            <button
+                onClick={() => {
+                    setShowQRCode(false);
+                    setPaymentUrl(null);
+                }}
+                className="bg-gray-300 text-black px-4 py-2 rounded"
+            >
+                Hủy
+            </button>
+            <button
+                onClick={async () => {
+                    const paymentData = {
+                        customerId: selectedCustomer === "walk-in" ? -1 : selectedCustomer,
+                        voucherId: selectedVoucher ? vouchers.find((v) => v.voucherCode === selectedVoucher)?.id : null,
+                    };
+                    await SalePOS.completePayment(currentOrder.id, paymentData);
+                    handleRemoveOrder(activeOrderIndex);
+                    resetAfterPayment();
+                    await fetchProductDetails();
+                }}
+                className="bg-blue-600 text-white px-4 py-2 rounded"
+            >
+                Đã thanh toán
+            </button>
+        </div>
+    </div>
+)}
         </div>
       </div>
     </div>
