@@ -25,59 +25,111 @@ function Payment() {
   const [selectedWard, setSelectedWard] = useState(null);
   const [isOrdering, setIsOrdering] = useState(false);
 
-  const { items, totalAmount, totalItems } = location.state || {
-    items: [],
-    totalAmount: 0,
-    totalItems: 0,
-  };
+  // Thêm state finalTotal để quản lý tổng thanh toán
+  const [finalTotal, setFinalTotal] = useState(0);
 
+  // Thêm trạng thái loading để kiểm soát tải dữ liệu
+  const [loading, setLoading] = useState(true);
+
+  const { items, totalAmount, totalItems } = location.state || {};
+  if (!items || !totalAmount || !totalItems) {
+    useEffect(() => {
+      toast.error("Không có thông tin đơn hàng. Vui lòng quay lại giỏ hàng.");
+      navigate("/cart");
+    }, [navigate]);
+    return null;
+  }
   const voucherOptions = [];
   const [formData, setFormData] = useState({
+    fullName: "",
     phone: "",
     email: "",
   });
 
-  const [selectedVoucher, setSelectedVoucher] = useState(voucherOptions[0]);
+  const [selectedVoucher, setSelectedVoucher] = useState(null);
   const [customAddress, setCustomAddress] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cod");
 
+  // Đồng bộ finalTotal khi totalAmount, shippingFee, hoặc selectedVoucher thay đổi
   useEffect(() => {
-    const fetchUserData = async () => {
+    const voucherDiscount = calculateVoucherDiscount();
+    const newFinalTotal = totalAmount + shippingFee - voucherDiscount;
+    setFinalTotal(newFinalTotal > 0 ? newFinalTotal : 0); // Đảm bảo không âm
+    console.log("Updated finalTotal:", newFinalTotal); // Debug log
+  }, [totalAmount, shippingFee, selectedVoucher]);
+
+  // Lấy tất cả dữ liệu cần thiết khi component mount
+  useEffect(() => {
+    const fetchAllData = async () => {
+      setLoading(true); // Bắt đầu quá trình tải dữ liệu
       try {
-        const user = await LoginInfoService.getCurrentUser();
-        setCurrentUser(user);
-
-        const addresses = await LoginInfoService.getCurrentUserAddresses();
-        const formattedAddresses = addresses.map((address) => ({
-          value: address.id,
-          label: `${address.addressDetail}, ${address.wardName}, ${address.districtName}, ${address.provinceName}`,
-          fullAddress: address,
-        }));
-
-        setUserAddresses(formattedAddresses);
-
-        // Mặc định chọn địa chỉ đầu tiên nếu có
-        if (formattedAddresses.length > 0) {
-          setSelectedAddress(formattedAddresses[0]);
+        // Lấy thông tin người dùng
+        let user;
+        try {
+          user = await LoginInfoService.getCurrentUser();
+          setCurrentUser(user);
+        } catch (error) {
+          console.error("Error fetching user:", error);
+          toast.error("Không thể tải thông tin người dùng.");
+          return;
         }
 
-        setFormData({
-          fullName: user.fullname,
-          phone: user.phone,
-          email: user.email,
-        });
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-        toast.error("Không thể tải thông tin người dùng.");
-      }
-    };
+        // Lấy danh sách địa chỉ người dùng
+        let formattedAddresses = [];
+        try {
+          const addresses = await LoginInfoService.getCurrentUserAddresses();
+          formattedAddresses = addresses.map((address) => ({
+            value: address.id,
+            label: `${address.addressDetail}, ${address.wardName}, ${address.districtName}, ${address.provinceName}`,
+            fullAddress: address,
+          }));
+          setUserAddresses(formattedAddresses);
 
-    const fetchVouchers = async () => {
-      try {
+          // In thông tin địa chỉ ban đầu ngay khi lấy được địa chỉ
+          if (formattedAddresses.length > 0) {
+            console.log("Thông tin địa chỉ ban đầu của khách hàng:", {
+              province: formattedAddresses[0].fullAddress.provinceName,
+              district: formattedAddresses[0].fullAddress.districtName,
+              ward: formattedAddresses[0].fullAddress.wardName,
+            });
+          } else {
+            console.log("Không có địa chỉ nào được lưu trữ cho khách hàng.");
+          }
+        } catch (error) {
+          console.error("Error fetching addresses:", error);
+          toast.error("Không thể tải danh sách địa chỉ.");
+        }
+
+        // Cập nhật dữ liệu biểu mẫu
+        setFormData({
+          fullName: user.fullname ?? "",
+          phone: user.phone ?? "",
+          email: user.email ?? "",
+        });
+
+        // Lấy danh sách tỉnh/thành phố trước
+        let provincesData = [];
+        try {
+          const response = await GHNService.getProvinces();
+          provincesData = response.data.map((province) => ({
+            value: province.ProvinceID,
+            label: province.ProvinceName,
+          }));
+          console.log("Danh sách tỉnh/thành từ API:", provincesData); // Kiểm tra dữ liệu tỉnh
+          setProvinces(provincesData);
+        } catch (error) {
+          console.error("Error fetching provinces:", error);
+          toast.error("Không thể tải danh sách tỉnh/thành phố.");
+          return;
+        }
+
+        // Chỉ gọi handleSelectAddress sau khi đã có provinces
+        if (formattedAddresses.length > 0) {
+          await handleSelectAddress(formattedAddresses[0]);
+        }
+
         const allVouchers = await VoucherService.getAllVouchers();
         const now = new Date();
-
-        // Lọc các voucher đủ điều kiện
         const validVouchers = allVouchers.content.filter((voucher) => {
           const startDate = new Date(voucher.startDate);
           const endDate = new Date(voucher.endDate);
@@ -97,39 +149,25 @@ function Payment() {
 
         setVouchers(formattedVouchers);
 
-        // Mặc định chọn voucher đầu tiên nếu có
         if (formattedVouchers.length > 0) {
           setSelectedVoucher(formattedVouchers[0]);
         }
       } catch (error) {
-        console.error("Error fetching vouchers:", error);
-        toast.error("Không thể tải danh sách voucher.");
+        console.error("Unexpected error in fetchAllData:", error);
+        toast.error("Đã xảy ra lỗi không mong muốn.");
+      } finally {
+        setLoading(false);
       }
     };
-
-    const fetchProvinces = async () => {
-      try {
-        const response = await GHNService.getProvinces();
-        setProvinces(
-          response.data.map((province) => ({
-            value: province.ProvinceID,
-            label: province.ProvinceName,
-          }))
-        );
-      } catch (error) {
-        console.error("Error fetching provinces:", error);
-      }
-    };
-
-    fetchProvinces();
-    fetchUserData();
-    fetchVouchers();
+    fetchAllData();
   }, [totalAmount]);
 
+  // Xử lý thay đổi voucher
   const handleVoucherChange = (selectedOption) => {
     setSelectedVoucher(selectedOption);
   };
 
+  // Tính toán giảm giá từ voucher
   const calculateVoucherDiscount = () => {
     if (!selectedVoucher || totalAmount < selectedVoucher.minCondition) {
       return 0;
@@ -139,10 +177,16 @@ function Payment() {
     return Math.min(discountAmount, selectedVoucher.maxDiscount);
   };
 
+  // Xử lý thay đổi tỉnh/thành phố
   const handleProvinceChange = async (selectedOption) => {
     setSelectedProvince(selectedOption);
     setSelectedDistrict(null);
     setSelectedWard(null);
+    setDistricts([]); // Reset districts khi thay đổi province
+    console.log(
+      "Thay đổi tỉnh/thành phố:",
+      selectedOption ? selectedOption.label : "Không có dữ liệu"
+    ); // In thông tin tỉnh/thành phố
     try {
       const response = await GHNService.getDistrictsByProvince(
         selectedOption.value
@@ -158,10 +202,16 @@ function Payment() {
     }
   };
 
+  // Xử lý thay đổi quận/huyện
   const handleDistrictChange = async (selectedOption) => {
     if (selectedDistrict?.value !== selectedOption.value) {
       setSelectedDistrict(selectedOption);
       setSelectedWard(null);
+      setWards([]); // Reset wards khi thay đổi district
+      console.log(
+        "Thay đổi quận/huyện:",
+        selectedOption ? selectedOption.label : "Không có dữ liệu"
+      ); // In thông tin quận/huyện
       try {
         const response = await GHNService.getWardsByDistrict(
           selectedOption.value
@@ -178,23 +228,128 @@ function Payment() {
     }
   };
 
-  const handleSelectAddress = (selectedOption) => {
+  // Xử lý chọn địa chỉ
+  const handleSelectAddress = async (selectedOption) => {
+    if (!selectedOption || !selectedOption.fullAddress) {
+      toast.error("Địa chỉ không hợp lệ.");
+      return;
+    }
     setSelectedAddress(selectedOption);
-    setSelectedProvince(
-      provinces.find((p) => p.label === selectedOption.fullAddress.provinceName)
+
+    // Chuẩn hóa tên tỉnh để so sánh
+    const provinceName = selectedOption.fullAddress.provinceName.replace(
+      "Tỉnh ",
+      ""
     );
-    setSelectedDistrict(
-      districts.find((d) => d.label === selectedOption.fullAddress.districtName)
-    );
-    setSelectedWard(
-      wards.find((w) => w.label === selectedOption.fullAddress.wardName)
-    );
+    const province = provinces.find((p) => {
+      const provinceLabel = p.label.replace("Tỉnh ", "");
+      return provinceLabel === provinceName;
+    });
+
+    if (!province) {
+      console.log("Danh sách tỉnh/thành hiện tại:", provinces);
+      return;
+    }
+
+    setSelectedProvince(province);
+
+    console.log("Địa chỉ được chọn để tính phí vận chuyển:", {
+      province: selectedOption.fullAddress.provinceName,
+      district: selectedOption.fullAddress.districtName,
+      ward: selectedOption.fullAddress.wardName,
+    });
+
+    try {
+      // Lấy danh sách quận/huyện nếu chưa có hoặc không khớp
+      let district = districts.find(
+        (d) => d.label === selectedOption.fullAddress.districtName
+      );
+      if (!district) {
+        console.log("Fetching districts for province:", province.label);
+        const districtResponse = await GHNService.getDistrictsByProvince(
+          province.value
+        );
+        if (!districtResponse.data || !districtResponse.data.length) {
+          throw new Error("Không tìm thấy quận/huyện cho tỉnh này.");
+        }
+        const newDistricts = districtResponse.data.map((district) => ({
+          value: district.DistrictID,
+          label: district.DistrictName,
+        }));
+        setDistricts(newDistricts);
+        district = newDistricts.find(
+          (d) => d.label === selectedOption.fullAddress.districtName
+        );
+      }
+
+      if (!district) {
+        throw new Error("Không tìm thấy quận/huyện phù hợp.");
+      }
+      setSelectedDistrict(district);
+      console.log("Selected district:", district.label);
+
+      // Lấy danh sách phường/xã nếu chưa có hoặc không khớp
+      let ward = wards.find(
+        (w) => w.label === selectedOption.fullAddress.wardName
+      );
+      if (!ward) {
+        console.log("Fetching wards for district:", district.label);
+        const wardResponse = await GHNService.getWardsByDistrict(
+          district.value
+        );
+        if (!wardResponse.data || !wardResponse.data.length) {
+          throw new Error("Không tìm thấy phường/xã cho quận/huyện này.");
+        }
+        const newWards = wardResponse.data.map((ward) => ({
+          value: ward.WardCode,
+          label: ward.WardName,
+        }));
+        setWards(newWards);
+        ward = newWards.find(
+          (w) => w.label === selectedOption.fullAddress.wardName
+        );
+      }
+
+      if (!ward) {
+        throw new Error("Không tìm thấy phường/xã phù hợp.");
+      }
+      setSelectedWard(ward);
+      console.log("Selected ward:", ward.label);
+
+      // Tính phí vận chuyển
+      console.log("Calculating shipping fee for:", {
+        districtId: district.value,
+        wardCode: ward.value,
+      });
+      const response = await GHNService.calculateShippingFee({
+        toDistrictId: district.value,
+        toWardCode: ward.value,
+        weight: 1000,
+        items: items.map((item) => ({
+          name: item.productName,
+          quantity: item.quantity,
+        })),
+      });
+
+      setShippingFee(response.data.total);
+      console.log("New shipping fee:", response.data.total);
+    } catch (error) {
+      console.error("Error calculating shipping fee:", error);
+      setShippingFee(0);
+      toast.error("Không thể tính phí vận chuyển: " + error.message);
+    }
   };
 
+  // Xử lý thay đổi phường/xã
   const handleWardChange = (selectedOption) => {
     setSelectedWard(selectedOption);
+    console.log(
+      "Thay đổi phường/xã:",
+      selectedOption ? selectedOption.label : "Không có dữ liệu"
+    ); // In thông tin phường/xã
   };
 
+  // Tính phí vận chuyển cho địa chỉ mới
   const handleCalculateShippingFee = async () => {
     if (!selectedProvince || !selectedDistrict || !selectedWard) {
       toast.error("Vui lòng chọn đầy đủ tỉnh, quận, phường.");
@@ -215,6 +370,10 @@ function Payment() {
     };
 
     try {
+      console.log("Calculating shipping fee for new address:", {
+        districtId: selectedDistrict.value,
+        wardCode: selectedWard.value,
+      });
       const response = await GHNService.calculateShippingFee({
         toDistrictId: selectedDistrict.value,
         toWardCode: selectedWard.value,
@@ -226,6 +385,7 @@ function Payment() {
       });
 
       setShippingFee(response.data.total);
+      console.log("New shipping fee (new address):", response.data.total); // Debug log
 
       // Cập nhật danh sách địa chỉ
       const formattedAddress = `${newAddress.addressDetail}, ${newAddress.wardName}, ${newAddress.districtName}, ${newAddress.provinceName}`;
@@ -252,6 +412,7 @@ function Payment() {
     }
   };
 
+  // Xử lý thay đổi dữ liệu biểu mẫu
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({
@@ -260,6 +421,7 @@ function Payment() {
     });
   };
 
+  // Xử lý gửi đơn hàng
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -311,8 +473,9 @@ function Payment() {
     }
   };
 
-  const voucherDiscount = calculateVoucherDiscount();
-  const finalTotal = totalAmount + shippingFee - voucherDiscount;
+  if (loading) {
+    return <div>Đang tải dữ liệu...</div>;
+  }
 
   return (
     <div className="bg-gray-50 min-h-screen py-12">
@@ -320,7 +483,7 @@ function Payment() {
         <ToastContainer />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left column */}
+          {/* Cột trái */}
           <div className="lg:col-span-2 space-y-6">
             {/* Thông tin khách hàng */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
@@ -377,7 +540,7 @@ function Payment() {
                         type="radio"
                         name="addressSelection"
                         checked={selectedAddress?.value === address.value}
-                        onChange={() => setSelectedAddress(address)}
+                        onChange={() => handleSelectAddress(address)}
                         className="h-4 w-4 mt-1 text-orange-600 focus:ring-orange-500"
                       />
                       <div className="ml-3">
@@ -396,7 +559,7 @@ function Payment() {
               <Select
                 options={userAddresses}
                 value={selectedAddress}
-                onChange={setSelectedAddress}
+                onChange={handleSelectAddress}
                 placeholder="Chọn địa chỉ khác"
                 className="mb-4"
               />
@@ -423,7 +586,7 @@ function Payment() {
               </button>
             </div>
 
-            {/* Shopping Cart Items */}
+            {/* Sản phẩm trong giỏ hàng */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold text-gray-900">
@@ -451,7 +614,9 @@ function Payment() {
                         <h3 className="text-sm font-medium text-gray-900">
                           {item.productName}
                         </h3>
-                        <p className="text-xs text-gray-500 mt-1">{item.productDetailName}</p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {item.productDetailName}
+                        </p>
                         <p className="text-xs text-gray-500">
                           Thương hiệu: {item.brandName}
                         </p>
@@ -488,10 +653,9 @@ function Payment() {
                   );
                 })}
               </div>
-
             </div>
 
-            {/* Payment Methods */}
+            {/* Phương thức thanh toán */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 mb-6">
               <h2 className="text-xl font-bold text-gray-900 mb-4">
                 Phương thức thanh toán
@@ -538,9 +702,9 @@ function Payment() {
             </div>
           </div>
 
-          {/* Right column */}
+          {/* Cột phải */}
           <div className="lg:col-span-1">
-            {/* Order Summary */}
+            {/* Tóm tắt đơn hàng */}
             <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-6 sticky top-6">
               <h2 className="text-2xl font-semibold text-gray-900 mb-5">
                 Tóm tắt đơn hàng
@@ -562,11 +726,11 @@ function Payment() {
                     {shippingFee.toLocaleString()}₫
                   </span>
                 </div>
-                {selectedVoucher && voucherDiscount > 0 && (
+                {selectedVoucher && calculateVoucherDiscount() > 0 && (
                   <div className="flex justify-between text-green-600 mt-2">
                     <span className="text-sm">Giảm giá:</span>
                     <span className="text-sm font-medium">
-                      -{voucherDiscount.toLocaleString()}₫
+                      -{calculateVoucherDiscount().toLocaleString()}₫
                     </span>
                   </div>
                 )}
@@ -640,10 +804,11 @@ function Payment() {
               <div className="space-y-3">
                 <button
                   onClick={handleSubmit}
-                  className={`w-full py-3 text-lg font-medium rounded-md transition-colors flex items-center justify-center ${isOrdering
+                  className={`w-full py-3 text-lg font-medium rounded-md transition-colors flex items-center justify-center ${
+                    isOrdering
                       ? "bg-gray-400 cursor-not-allowed"
                       : "bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white"
-                    }`}
+                  }`}
                   disabled={isOrdering}
                 >
                   {isOrdering ? (
@@ -724,7 +889,7 @@ function Payment() {
           </div>
         </div>
 
-        {/* Address Modal */}
+        {/* Modal địa chỉ */}
         {isModalOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
