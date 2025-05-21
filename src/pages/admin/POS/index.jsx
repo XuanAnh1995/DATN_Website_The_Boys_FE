@@ -1,13 +1,13 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import SalePOS from "../../../services/POSService";
 import ColorService from "../../../services/ColorService";
 import SizeService from "../../../services/SizeService";
 import CustomerService from "../../../services/CustomerService";
 import { FaShoppingCart, FaTrash, FaPlus, FaTimes } from "react-icons/fa";
-import QRCode from "react-qr-code";
+import QRCode from "react-qr-code"; // Import thư viện qrcode.react
 import Toast from "../../../components/ui/ToastModal";
 import { debounce } from "lodash";
+import { data } from "autoprefixer";
 import ConfirmModal from "../../../components/ui/ConfirmModal";
 import AlertModal from "../../../components/ui/AlertModal";
 
@@ -32,13 +32,16 @@ const SalePOSPage = () => {
     size: "",
   });
 
+  // State cho ConfirmModal
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
   const [confirmMessage, setConfirmMessage] = useState("");
 
+  // State cho AlertModal
   const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
 
+  // thêm state để quản lý lỗi validation và trạng thái loading:
   const [formErrors, setFormErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [notification, setNotification] = useState(null);
@@ -63,19 +66,25 @@ const SalePOSPage = () => {
     return errors;
   };
 
+  // State mới cho danh sách màu sắc và kích thước
   const [colors, setColors] = useState([]);
   const [sizes, setSizes] = useState([]);
 
   const [selectedVoucher, setSelectedVoucher] = useState("");
   const [calculatedDiscount, setCalculatedDiscount] = useState(0);
   const [vouchers, setVouchers] = useState([]);
+
+  // Thêm state để lưu voucher tối ưu
   const [optimalVoucher, setOptimalVoucher] = useState(null);
+
+  // Thêm một trạng thái hasSelectedVoucher để kiểm tra xem người dùng đã chọn voucher (kể cả "Không sử dụng voucher") hay chưa.
+  const [hasSelectedVoucher, setHasSelectedVoucher] = useState(false);
 
   const [searchKeyword, setSearchKeyword] = useState("");
   const [filteredCustomers, setFilteredCustomers] = useState([]);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const productsPerPage = 8;
+  const productsPerPage = 8; // Số sản phẩm trên mỗi trang
 
   const indexOfLastProduct = currentPage * productsPerPage;
   const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
@@ -86,15 +95,18 @@ const SalePOSPage = () => {
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
+  // Mảng các hóa đơn đang tạo
   const [orders, setOrders] = useState([]);
   const [activeOrderIndex, setActiveOrderIndex] = useState(null);
 
+  // Định nghĩa currentOrder bằng useMemo
   const currentOrder = useMemo(() => {
     return activeOrderIndex !== null && activeOrderIndex < orders.length
       ? orders[activeOrderIndex]
       : { items: [], totalAmount: 0, discount: 0 };
   }, [activeOrderIndex, orders]);
 
+  // State cho form thêm khách hàng mới
   const [showAddCustomerForm, setShowAddCustomerForm] = useState(false);
   const [newCustomer, setNewCustomer] = useState({
     fullname: "",
@@ -102,111 +114,29 @@ const SalePOSPage = () => {
     email: "",
   });
 
+  // Nhân viên hiện tại (giả định)
   const [currentEmployee] = useState({ id: 1, name: "Nhân viên mặc định" });
 
+  // State mới để lưu URL thanh toán VNPay và kiểm soát hiển thị mã QR
   const [paymentUrl, setPaymentUrl] = useState(null);
   const [showQRCode, setShowQRCode] = useState(false);
-
-  // State cho đồng hồ đếm ngược
-  const [timeRemaining, setTimeRemaining] = useState({});
-
-  // Hàm định dạng thời gian còn lại
-  const formatTimeRemaining = (expiresAt) => {
-    const now = new Date().getTime();
-    const timeLeft = Math.max(0, expiresAt - now);
-    if (timeLeft === 0) return 'Hết hạn';
-    const minutes = Math.floor(timeLeft / 1000 / 60);
-    const seconds = Math.floor((timeLeft / 1000) % 60);
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  };
 
   useEffect(() => {
     fetchProductDetails();
     fetchCustomers();
     fetchVouchers();
-    fetchColors();
-    fetchSizes();
+    fetchColors(); // Lấy danh sách màu sắc
+    fetchSizes(); // Lấy danh sách kích thước
   }, []);
-
-  // Tải hóa đơn từ localStorage khi mount
-  useEffect(() => {
-    const loadOrdersFromStorage = () => {
-      const savedOrders = localStorage.getItem('pendingOrders');
-      if (savedOrders) {
-        const parsedOrders = JSON.parse(savedOrders);
-        const now = new Date().getTime();
-        const validOrders = parsedOrders.filter(order => order.expiresAt > now);
-        if (validOrders.length > 0) {
-          setOrders(validOrders);
-          setActiveOrderIndex(validOrders.length - 1);
-        }
-        localStorage.setItem('pendingOrders', JSON.stringify(validOrders));
-      }
-    };
-
-    loadOrdersFromStorage();
-  }, []);
-
-  // Lưu hóa đơn và xóa hóa đơn hết hạn
-  useEffect(() => {
-    const saveOrdersToStorage = () => {
-      const ordersWithTimestamps = orders.map(order => ({
-        ...order,
-        createdAt: order.createdAt || new Date().getTime(),
-        expiresAt: order.expiresAt || new Date().getTime() + 15 * 60 * 1000,
-      }));
-      localStorage.setItem('pendingOrders', JSON.stringify(ordersWithTimestamps));
-    };
-
-    saveOrdersToStorage();
-
-    const interval = setInterval(() => {
-      const now = new Date().getTime();
-      const expiredOrders = orders.filter(order => order.expiresAt <= now);
-      const validOrders = orders.filter(order => order.expiresAt > now);
-
-      if (expiredOrders.length > 0) {
-        setOrders(validOrders);
-        localStorage.setItem('pendingOrders', JSON.stringify(validOrders));
-
-        if (activeOrderIndex !== null && activeOrderIndex >= validOrders.length) {
-          setActiveOrderIndex(validOrders.length - 1 >= 0 ? validOrders.length - 1 : null);
-        }
-
-        const expiredOrderNumbers = expiredOrders.map((_, index) => index + 1).join(', #');
-        setNotification({
-          type: 'info',
-          message: `Hóa đơn #${expiredOrderNumbers} đã hết hạn và bị xóa.`,
-        });
-      }
-    }, 60 * 1000);
-
-    return () => clearInterval(interval);
-  }, [orders, activeOrderIndex]);
-
-  // Cập nhật đồng hồ đếm ngược
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTimeRemaining((prev) => {
-        const updated = {};
-        orders.forEach((order) => {
-          updated[order.id] = formatTimeRemaining(order.expiresAt);
-        });
-        return updated;
-      });
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [orders]);
 
   const handleSelectCustomer = (customer) => {
     setSelectedCustomer(customer.id);
     setCustomerName(customer.fullname);
     setPhone(customer.phone);
     setEmail(customer.email);
-    setSearchKeyword(customer.fullname);
-    setFilteredCustomers([]);
-    setIsSearching(false);
+    setSearchKeyword(customer.fullname); // Hiển thị tên khách hàng trong input
+    setFilteredCustomers([]); // Ẩn danh sách gợi ý
+    setIsSearching(false); // Tắt loading sau khi chọn khách hàng
     if (activeOrderIndex !== null) {
       setOrders((prevOrders) => {
         const updatedOrders = [...prevOrders];
@@ -222,6 +152,7 @@ const SalePOSPage = () => {
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
       filtered = filtered.filter((product) => {
+        // Tính giá bán thực tế (có khuyến mãi)
         const now = new Date();
         const startDate = product.promotion?.startDate
           ? new Date(product.promotion.startDate)
@@ -239,40 +170,45 @@ const SalePOSPage = () => {
             ? product.salePrice * (1 - discountPercent / 100)
             : product.salePrice;
 
+        // Các trường từ ProductDetail để tìm kiếm
         const fields = [
-          product.id?.toString() || "",
-          product.product?.productName?.toLowerCase() || "",
-          product.size?.name?.toLowerCase() || "",
-          product.color?.name?.toLowerCase() || "",
-          product.promotion?.promotionPercent?.toString() || "",
-          product.collar?.name?.toLowerCase() || "",
-          product.sleeve?.name?.toLowerCase() || "",
-          product.photo?.toLowerCase() || "",
-          product.productDetailCode?.toLowerCase() || "",
-          product.importPrice?.toString() || "",
-          product.salePrice?.toString() || "",
-          effectivePrice?.toString() || "",
-          product.quantity?.toString() || "",
-          product.description?.toLowerCase() || "",
-          product.status?.toString() || "",
+          product.id?.toString() || "", // ID
+          product.product?.productName?.toLowerCase() || "", // Tên sản phẩm
+          product.size?.name?.toLowerCase() || "", // Kích thước
+          product.color?.name?.toLowerCase() || "", // Màu sắc
+          product.promotion?.promotionPercent?.toString() || "", // Phần trăm giảm giá
+          product.collar?.name?.toLowerCase() || "", // Cổ áo (nếu có)
+          product.sleeve?.name?.toLowerCase() || "", // Tay áo (nếu có)
+          product.photo?.toLowerCase() || "", // Ảnh (chuỗi đường dẫn)
+          product.productDetailCode?.toLowerCase() || "", // Mã chi tiết sản phẩm
+          product.importPrice?.toString() || "", // Giá nhập
+          product.salePrice?.toString() || "", // Giá bán gốc
+          effectivePrice?.toString() || "", // Giá bán thực tế
+          product.quantity?.toString() || "", // Số lượng
+          product.description?.toLowerCase() || "", // Mô tả
+          product.status?.toString() || "", // Trạng thái (true/false)
         ];
 
+        // Kiểm tra xem bất kỳ trường nào chứa searchTerm không
         return fields.some((field) => field.includes(searchLower));
       });
     }
 
+    // Lọc theo màu sắc (nếu có filter.color)
     if (filter.color) {
       filtered = filtered.filter((product) =>
         product.color?.name?.toLowerCase().includes(filter.color.toLowerCase())
       );
     }
 
+    // Lọc theo kích thước (nếu có filter.size)
     if (filter.size) {
       filtered = filtered.filter((product) =>
         product.size?.name?.toLowerCase().includes(filter.size.toLowerCase())
       );
     }
 
+    // Lọc theo khoảng giá (nếu có filter.minPrice/maxPrice)
     const minPrice = Number(filter.minPrice) || 0;
     const maxPrice = Number(filter.maxPrice) || Infinity;
     filtered = filtered.filter((product) => {
@@ -297,9 +233,10 @@ const SalePOSPage = () => {
     });
 
     setFilteredProducts(filtered);
-    setCurrentPage(1);
+    setCurrentPage(1); // Reset về trang đầu tiên khi áp dụng bộ lọc
   }, [searchTerm, allProducts, filter]);
 
+  // Tìm voucher tối ưu mỗi khi totalAmount thay đổi
   useEffect(() => {
     if (currentOrder?.totalAmount > 0) {
       const validVouchers = vouchers.filter((v) => {
@@ -314,20 +251,24 @@ const SalePOSPage = () => {
         );
       });
 
+      // Tính giá trị giảm giá cho từng voucher và tìm voucher tối ưu
       const vouchersWithDiscount = validVouchers.map((voucher) => ({
         ...voucher,
         discountValue: calculateDiscount(voucher, currentOrder.totalAmount),
       }));
 
+      // Tìm giá trị giảm giá lớn nhất
       const maxDiscountValue = Math.max(
         ...vouchersWithDiscount.map((v) => v.discountValue),
         0
       );
 
+      // Lọc các voucher có giá trị giảm giá lớn nhất
       const bestVouchers = vouchersWithDiscount.filter(
         (v) => v.discountValue === maxDiscountValue
       );
 
+      // Chọn ngẫu nhiên một voucher từ danh sách bestVouchers
       const bestVoucher =
         bestVouchers.length > 0
           ? bestVouchers[Math.floor(Math.random() * bestVouchers.length)]
@@ -335,25 +276,19 @@ const SalePOSPage = () => {
 
       setOptimalVoucher(bestVoucher || null);
 
-      if (bestVoucher && !selectedVoucher) {
+      // Chỉ áp dụng bestVoucher nếu người dùng chưa chọn thủ công
+      if (bestVoucher && !hasSelectedVoucher) {
         handleVoucherChange(bestVoucher.voucherCode);
       } else if (!bestVoucher) {
         setSelectedVoucher("");
         setCalculatedDiscount(0);
-      }
-
-      if (bestVouchers.length > 1) {
-        setNotification({
-          type: "info",
-          message: `Có ${bestVouchers.length} voucher với mức giảm giá bằng nhau. Đã chọn ngẫu nhiên voucher "${bestVoucher?.voucherName}".`,
-        });
       }
     } else {
       setOptimalVoucher(null);
       setSelectedVoucher("");
       setCalculatedDiscount(0);
     }
-  }, [currentOrder.totalAmount, vouchers, selectedVoucher]);
+  }, [currentOrder.totalAmount, vouchers]);
 
   useEffect(() => {
     if (activeOrderIndex !== null && selectedVoucher) {
@@ -372,6 +307,7 @@ const SalePOSPage = () => {
     }
   }, [currentOrder.totalAmount, selectedVoucher, vouchers, activeOrderIndex]);
 
+  // Hàm lấy danh sách sản phẩm chi tiết
   const fetchProductDetails = async () => {
     try {
       const response = await SalePOS.getProductDetails({});
@@ -382,6 +318,7 @@ const SalePOSPage = () => {
     }
   };
 
+  // Hàm lấy danh sách khách hàng
   const fetchCustomers = async () => {
     try {
       const response = await SalePOS.getCustomers();
@@ -391,6 +328,7 @@ const SalePOSPage = () => {
     }
   };
 
+  // Hàm lấy danh sách voucher
   const fetchVouchers = async () => {
     try {
       const response = await SalePOS.getVouchers();
@@ -400,19 +338,21 @@ const SalePOSPage = () => {
     }
   };
 
+  // Hàm lấy danh sách màu sắc
   const fetchColors = async () => {
     try {
       const response = await ColorService.getAllColors();
-      setColors(response.content || []);
+      setColors(response.content || []); // Giả sử API trả về { content: [...] }
     } catch (error) {
       console.error("Lỗi khi lấy danh sách màu sắc:", error);
     }
   };
 
+  // Hàm lấy danh sách kích thước
   const fetchSizes = async () => {
     try {
       const response = await SizeService.getAllSizes();
-      setSizes(response.content || []);
+      setSizes(response.content || []); // Giả sử API trả về { content: [...] }
     } catch (error) {
       console.error("Lỗi khi lấy danh sách kích thước:", error);
     }
@@ -424,17 +364,20 @@ const SalePOSPage = () => {
 
     if (!keyword) {
       setFilteredCustomers([]);
-      setIsSearching(false);
+      setIsSearching(false); // Tắt loading khi không có từ khóa
       return;
     }
 
-    setIsSearching(true);
+    setIsSearching(true); // Bật loading khi bắt đầu tìm kiếm
 
+    // Chuẩn hóa và tìm kiếm trong danh sách khách hàng
     const results = customers.filter((customer) => {
+      // Chuẩn hóa các trường của khách hàng
       const fullname = (customer.fullname || "").trim().toLowerCase();
       const phone = (customer.phone || "").trim().toLowerCase();
       const email = (customer.email || "").trim().toLowerCase();
 
+      // Kiểm tra từ khóa có trong các trường không
       return (
         fullname.includes(keyword) ||
         phone.includes(keyword) ||
@@ -442,15 +385,33 @@ const SalePOSPage = () => {
       );
     });
 
+    // Ghi log để debug
+    console.log("Từ khóa tìm kiếm:", keyword);
+    console.log("Danh sách khách hàng:", customers);
+    console.log("Kết quả tìm kiếm:", results);
+
     setFilteredCustomers(results);
-    setIsSearching(false);
+    setIsSearching(false); // Tắt loading khi tìm kiếm hoàn tất
   };
 
   const handleVoucherChange = (voucherCode) => {
+    console.log("📌 Voucher được chọn:", voucherCode);
+
     setSelectedVoucher(voucherCode);
+    setHasSelectedVoucher(true); // Đánh dấu rằng người dùng đã chọn
+
     const voucher = vouchers.find((v) => v.voucherCode === voucherCode);
+
+    console.log("📌 Voucher tìm thấy:", voucher);
+
     if (voucher && currentOrder.totalAmount >= voucher.minCondition) {
-      const discountAmount = calculateDiscount(voucher, currentOrder.totalAmount);
+      const discountAmount = calculateDiscount(
+        voucher,
+        currentOrder.totalAmount
+      );
+
+      console.log("✅ Giảm giá áp dụng:", discountAmount);
+
       setCalculatedDiscount(discountAmount);
       if (activeOrderIndex !== null) {
         setOrders((prevOrders) => {
@@ -460,7 +421,10 @@ const SalePOSPage = () => {
         });
       }
     } else {
+      console.log("❌ Không đủ điều kiện để áp dụng voucher.");
+
       setCalculatedDiscount(0);
+
       if (activeOrderIndex != null) {
         setOrders((prevOrders) => {
           const updatedOrders = [...prevOrders];
@@ -471,6 +435,7 @@ const SalePOSPage = () => {
     }
   };
 
+  // Hàm tính giá trị giảm giá thực tế cho một voucher
   const calculateDiscount = (voucher, totalAmount) => {
     if (!voucher || totalAmount < voucher.minCondition) return 0;
     const discount = (totalAmount * voucher.reducedPercent) / 100;
@@ -498,8 +463,10 @@ const SalePOSPage = () => {
     }));
   };
 
+  // Hiển thị thông báo
   const handleUseWalkInCustomer = () => {
-    setSelectedCustomer("walk-in");
+    // Sử dụng khách vãng lai (không có thông tin cụ thể)
+    setSelectedCustomer("walk-in"); // Giá trị đặc biệt cho khách vãng lai
     setCustomerName("Khách vãng lai");
     setPhone("");
     setEmail("");
@@ -510,7 +477,9 @@ const SalePOSPage = () => {
     });
   };
 
+  // Hàm reset thông tin khách hàng
   const resetNewCustomer = () => {
+    console.log("🔄 Resetting newCustomer...");
     setNewCustomer({
       fullname: "",
       phone: "",
@@ -531,22 +500,28 @@ const SalePOSPage = () => {
     setFormErrors({});
 
     try {
+      // Loại bỏ khoảng trắng đầu/cuối khi nhập thông tin
       const trimmedCustomer = {
         fullname: newCustomer.fullname.trim(),
         phone: newCustomer.phone.trim(),
         email: newCustomer.email.trim(),
       };
 
+      // Gọi API để lưu khách hàng mới
       const response = await CustomerService.add(trimmedCustomer);
 
+      // 🟢 Kiểm tra response và cập nhật UI
       if (response?.data?.id) {
         setCustomers((prev) => [...prev, response.data]);
+
         handleSelectCustomer(response.data);
+
         setNotification({
           type: "success",
           message: "Thêm mới khách hàng thành công !",
         });
-        resetNewCustomer();
+
+        resetNewCustomer(); // Reset form
       } else {
         setNotification({
           type: "error",
@@ -570,7 +545,7 @@ const SalePOSPage = () => {
           selectedCustomer && selectedCustomer !== "walk-in"
             ? selectedCustomer
             : -1,
-        employeeId: 1,
+        employeeId: 1, // ID nhân viên
         voucherId: selectedVoucher
           ? vouchers.find((v) => v.voucherCode === selectedVoucher)?.id
           : null,
@@ -589,37 +564,34 @@ const SalePOSPage = () => {
           customerId: orderData.customerId,
           voucherId: orderData.voucherId,
           paymentMethod: orderData.paymentMethod,
-          createdAt: new Date().getTime(),
-          expiresAt: new Date().getTime() + 30 * 60 * 1000,
         },
       ]);
 
       setActiveOrderIndex(orders.length);
-      setNotification({
-        type: "success",
-        message: `Hóa đơn #${orders.length + 1} đã được tạo.`,
-      });
+      setHasSelectedVoucher(false); // Reset để áp dụng bestVoucher cho hóa đơn mới
+      console.log("✅ Đơn hàng mới đã được tạo:", newOrder);
     } catch (error) {
-      setAlertMessage("Lỗi khi tạo hóa đơn: " + error.message);
-      setIsAlertModalOpen(true);
+      console.error("❌ Lỗi khi tạo đơn hàng:", error);
     }
   };
 
+  // Trong phần useEffect xử lý barcode
   useEffect(() => {
     let barcode = "";
     let timer = null;
 
     const handleKeyDown = (event) => {
+      // Không chặn sự kiện mặc định để ô tìm kiếm vẫn hoạt động khi cần
       const currentTime = Date.now();
 
       if (event.key === "Enter" && barcode.trim() !== "") {
         handleBarcodeScan(barcode);
-        barcode = "";
+        barcode = ""; // Xóa sau khi xử lý
       } else if (event.key.length === 1) {
         barcode += event.key;
         clearTimeout(timer);
         timer = setTimeout(() => {
-          barcode = "";
+          barcode = ""; // Reset nếu không nhận thêm ký tự trong 500ms
         }, 500);
       }
     };
@@ -629,11 +601,20 @@ const SalePOSPage = () => {
       document.removeEventListener("keydown", handleKeyDown);
       clearTimeout(timer);
     };
-  }, [activeOrderIndex, allProducts]);
+  }, [activeOrderIndex, allProducts]); // Thêm dependencies để cập nhật khi danh sách sản phẩm hoặc hóa đơn thay đổi
 
   const handleBarcodeScan = (scannedBarcode) => {
     if (!scannedBarcode) return;
 
+    console.log("📌 Nhận mã vạch:", scannedBarcode);
+    console.log(
+      "📌 [CHECK] activeOrderIndex:",
+      activeOrderIndex,
+      "orders.length:",
+      orders.length
+    );
+
+    // Kiểm tra xem có hóa đơn nào được chọn không
     if (activeOrderIndex === null || activeOrderIndex >= orders.length) {
       setAlertMessage("Bạn cần chọn hóa đơn trước khi quét mã vạch!");
       setIsAlertModalOpen(true);
@@ -650,8 +631,12 @@ const SalePOSPage = () => {
           `Sản phẩm "${product.product?.productName}" đã hết hàng!`
         );
         setIsAlertModalOpen(true);
+        console.warn(
+          `⚠ Sản phẩm ${product.id} đã hết hàng (số lượng: ${product.quantity}).`
+        );
         return;
       }
+      console.log("✅ Tìm thấy sản phẩm:", product);
       handleAddToCart(product);
     } else {
       setAlertMessage("Không tìm thấy sản phẩm với mã vạch này!");
@@ -659,13 +644,19 @@ const SalePOSPage = () => {
     }
   };
 
+  // thêm sản phẩm vào giỏ hàng
   const handleAddToCart = async (product) => {
+    console.log("🛒 [ADD TO CART] Bắt đầu thêm sản phẩm vào giỏ hàng...");
     if (activeOrderIndex === null || activeOrderIndex >= orders.length) {
       setAlertMessage("Vui lòng tạo hóa đơn trước!");
       setIsAlertModalOpen(true);
+      console.warn(
+        "⚠ Không có đơn hàng nào được chọn. Hãy tạo đơn hàng trước!"
+      );
       return;
     }
 
+    // Kiểm tra số lượng tồn kho trước khi thêm sản phẩm
     if (product.quantity <= 0) {
       setAlertMessage(`Sản phẩm ${product.product?.productName} đã hết hàng!`);
       setIsAlertModalOpen(true);
@@ -676,11 +667,18 @@ const SalePOSPage = () => {
     const productData = { productDetailId: product.id, quantity: 1 };
 
     try {
+      // Gọi API để thêm sản phẩm vào backend
       await SalePOS.addProductToCart(orderId, productData);
+      console.log(
+        `✅ [ADD TO CART] Đã thêm sản phẩm ${product.id} vào đơn hàng #${orderId} trên backend.`
+      );
 
+      // Cập nhật trạng thái frontend
       setOrders((prevOrders) => {
         const updatedOrders = [...prevOrders];
         const currentOrder = updatedOrders[activeOrderIndex];
+
+        console.log("📌 [ORDER] Đơn hàng hiện tại:", currentOrder);
 
         const existingItemIndex = currentOrder.items.findIndex(
           (item) => item.id === product.id
@@ -694,8 +692,12 @@ const SalePOSPage = () => {
             setIsAlertModalOpen(true);
             return updatedOrders;
           }
+          console.log(
+            `🔄 [UPDATE] Sản phẩm ${product.id} đã có trong giỏ hàng, tăng số lượng lên.`
+          );
           currentOrder.items[existingItemIndex].quantity += 1;
         } else {
+          console.log(`➕ [NEW] Thêm sản phẩm mới:`, product);
           currentOrder.items.push({
             ...product,
             quantity: 1,
@@ -703,6 +705,7 @@ const SalePOSPage = () => {
           });
         }
 
+        // Cập nhật totalAmount của đơn hàng trên frontend
         currentOrder.totalAmount = currentOrder.items.reduce((sum, item) => {
           const salePrice = Number(item.salePrice) || 0;
           const discountPercent = Number(item.promotion?.promotionPercent) || 0;
@@ -710,16 +713,24 @@ const SalePOSPage = () => {
           return sum + discountedPrice * item.quantity;
         }, 0);
 
+        console.log(
+          "💰 [TOTAL] Tổng tiền đơn hàng sau khi thêm sản phẩm:",
+          currentOrder.totalAmount
+        );
         return updatedOrders;
       });
     } catch (error) {
+      console.error("❌ Lỗi khi thêm sản phẩm vào giỏ hàng:", error);
       setAlertMessage("Có lỗi xảy ra khi thêm sản phẩm: " + error.message);
       setIsAlertModalOpen(true);
     }
   };
 
+  // quá trình xóa sản phẩm khỏi giỏ hàng.
   const handleRemoveFromCart = (productId) => {
+    console.log("🗑 [REMOVE FROM CART] Bắt đầu xóa sản phẩm khỏi giỏ hàng...");
     if (activeOrderIndex === null) {
+      console.warn("⚠ Không có đơn hàng nào được chọn.");
       return;
     }
 
@@ -727,6 +738,12 @@ const SalePOSPage = () => {
       const updatedOrders = [...prevOrders];
       const currentOrder = updatedOrders[activeOrderIndex];
 
+      console.log(
+        "📌 [ORDER] Trước khi xóa, danh sách sản phẩm:",
+        currentOrder.items
+      );
+
+      // Lọc ra danh sách sản phẩm mới (loại bỏ sản phẩm đã xóa)
       currentOrder.items = currentOrder.items.filter(
         (item) => item.id !== productId
       );
@@ -738,16 +755,26 @@ const SalePOSPage = () => {
         return sum + discountedPrice * item.quantity;
       }, 0);
 
+      console.log(
+        "💰 [TOTAL] Tổng tiền sau khi xóa sản phẩm:",
+        currentOrder.totalAmount
+      );
+      console.log("✅ [SUCCESS] Sản phẩm đã được xóa thành công!");
       return updatedOrders;
     });
   };
 
+  // quá trình thay đổi số lượng sản phẩm trong giỏ hàng.
   const handleQuantityChange = (productId, newQuantity) => {
     if (activeOrderIndex === null) {
+      console.warn("⚠ Không có đơn hàng nào được chọn.");
       return;
     }
 
     if (newQuantity <= 0) {
+      console.warn(
+        `⚠ Số lượng sản phẩm ID ${productId} không hợp lệ (${newQuantity}).`
+      );
       return;
     }
 
@@ -760,11 +787,18 @@ const SalePOSPage = () => {
       );
 
       if (itemIndex !== -1) {
+        console.log(
+          `🔄 [UPDATE] Cập nhật số lượng sản phẩm ID ${productId} từ ${currentOrder.items[itemIndex].quantity} → ${newQuantity}`
+        );
         currentOrder.items[itemIndex].quantity = newQuantity;
       } else {
+        console.warn(
+          `⚠ Không tìm thấy sản phẩm ID ${productId} trong giỏ hàng!`
+        );
         return updatedOrders;
       }
 
+      // Cập nhật tổng tiền
       currentOrder.totalAmount = currentOrder.items.reduce((sum, item) => {
         const salePrice = Number(item.salePrice) || 0;
         const discountPercent = Number(item.promotion?.promotionPercent) || 0;
@@ -772,6 +806,11 @@ const SalePOSPage = () => {
         return sum + discountedPrice * item.quantity;
       }, 0);
 
+      console.log(
+        "💰 [TOTAL] Tổng tiền đơn hàng sau khi cập nhật số lượng:",
+        currentOrder.totalAmount
+      );
+      console.log("✅ [SUCCESS] Cập nhật số lượng thành công!");
       return updatedOrders;
     });
   };
@@ -785,6 +824,7 @@ const SalePOSPage = () => {
       setDiscount(order.discount);
       setPaymentMethod(order.paymentMethod);
 
+      // Cập nhật thông tin khách hàng
       if (order.customerId === "walk-in") {
         setCustomerName("Khách vãng lai");
         setPhone("");
@@ -804,7 +844,6 @@ const SalePOSPage = () => {
     setOrders((prevOrders) => {
       const updatedOrders = [...prevOrders];
       updatedOrders.splice(index, 1);
-      localStorage.setItem('pendingOrders', JSON.stringify(updatedOrders));
       return updatedOrders;
     });
 
@@ -831,15 +870,16 @@ const SalePOSPage = () => {
     if (activeOrderIndex !== null && orders[activeOrderIndex]) {
       const totalAmount = orders[activeOrderIndex].totalAmount;
       const finalAmount = totalAmount - calculatedDiscount;
-      setChangeAmount(Math.max(customerPaid - finalAmount, 0));
+      setChangeAmount(Math.max(customerPaid - finalAmount, 0)); // Đảm bảo không âm
     }
   }, [customerPaid, activeOrderIndex, orders, calculatedDiscount]);
 
+  // Hàm xử lý thanh toán VNPay
   const handleVNPayPayment = async (orderId) => {
     try {
       const paymentUrl = await SalePOS.createVNPayPaymentUrl(orderId);
 
-      localStorage.setItem("pendingOrderId", orderId);
+      localStorage.setItem("pendingOrderId", orderId); // Lưu orderId để xử lý callback
       localStorage.setItem("pendingCustomerId", selectedCustomer || -1);
       localStorage.setItem(
         "pendingVoucherId",
@@ -848,15 +888,19 @@ const SalePOSPage = () => {
           : null
       );
 
-      window.location.href = paymentUrl;
+      window.location.href = paymentUrl; // Chuyển hướng đến VNPay
     } catch (error) {
+      console.error("❌ Lỗi khi tạo URL thanh toán VNPay:", error);
       setAlertMessage("Lỗi khi tạo URL thanh toán: " + error.message);
       setIsAlertModalOpen(true);
     }
   };
 
+  // Hàm xử lý thanh toán chính
+  // Hàm xử lý thanh toán chính
   const handlePayment = async () => {
     if (activeOrderIndex === null) {
+      console.log("⚠ Không có hóa đơn nào được chọn.");
       setAlertMessage("Vui lòng chọn hoặc tạo hóa đơn!");
       setIsAlertModalOpen(true);
       return;
@@ -864,27 +908,35 @@ const SalePOSPage = () => {
 
     const currentOrder = orders[activeOrderIndex];
     if (currentOrder.items.length === 0) {
+      console.log("⚠ Giỏ hàng trống!");
       setAlertMessage("Giỏ hàng trống, vui lòng thêm sản phẩm!");
       setIsAlertModalOpen(true);
       return;
     }
 
     if (!selectedCustomer) {
+      console.log("⚠ Không có khách hàng nào được chọn.");
       setAlertMessage("Vui lòng chọn khách hàng!");
       setIsAlertModalOpen(true);
       return;
     }
 
+    // Tính số tiền khách phải trả
     const amountToPay = currentOrder.totalAmount - calculatedDiscount;
 
-    if (paymentMethod === "cash" && customerPaid < amountToPay) {
-      setAlertMessage(
-        `Số tiền khách thanh toán (${customerPaid.toLocaleString()} VND) không đủ. Khách cần trả ít nhất ${amountToPay.toLocaleString()} VND.`
-      );
-      setIsAlertModalOpen(true);
-      return;
+    // Kiểm tra số tiền khách thanh toán nếu là tiền mặt
+    if (paymentMethod === "cash") {
+      if (customerPaid < amountToPay) {
+        console.log("⚠ Số tiền khách thanh toán không đủ.");
+        setAlertMessage(
+          `Số tiền khách thanh toán (${customerPaid.toLocaleString()} VND) không đủ. Khách cần trả ít nhất ${amountToPay.toLocaleString()} VND.`
+        );
+        setIsAlertModalOpen(true);
+        return;
+      }
     }
 
+    // Chuẩn bị nội dung thông báo cho modal
     const messageContent = (
       <div>
         <p>
@@ -916,6 +968,7 @@ const SalePOSPage = () => {
       </div>
     );
 
+    // Mở modal xác nhận
     setConfirmMessage(messageContent);
     setConfirmAction(() => async () => {
       const customerId = selectedCustomer === "walk-in" ? -1 : selectedCustomer;
@@ -939,10 +992,13 @@ const SalePOSPage = () => {
 
         if (paymentMethod === "vnpay") {
           if (orderId) {
+            // Gọi API để lấy URL thanh toán VNPay
             const qrData = await SalePOS.createVNPayPaymentUrl(orderId);
+            console.log("QR Data:", qrData);
             setPaymentUrl(qrData);
             setShowQRCode(true);
 
+            // Lưu thông tin vào localStorage để xử lý callback
             localStorage.setItem("pendingOrderId", orderId);
             localStorage.setItem("pendingCustomerId", selectedCustomer || -1);
             localStorage.setItem(
@@ -956,24 +1012,16 @@ const SalePOSPage = () => {
           }
         } else {
           if (paymentResponse && paymentResponse.status === "success") {
-            setOrders((prevOrders) => {
-              const updatedOrders = [...prevOrders];
-              updatedOrders.splice(activeOrderIndex, 1);
-              localStorage.setItem('pendingOrders', JSON.stringify(updatedOrders));
-              return updatedOrders;
-            });
-            setActiveOrderIndex(null);
+            console.log("✅ Thanh toán thành công!");
+            handleRemoveOrder(activeOrderIndex);
             resetAfterPayment();
             await fetchProductDetails();
-            setNotification({
-              type: "success",
-              message: "Thanh toán thành công!",
-            });
           } else {
             throw new Error("Thanh toán thất bại!");
           }
         }
       } catch (error) {
+        console.error("❌ Lỗi khi thanh toán:", error);
         setAlertMessage("Có lỗi xảy ra khi thanh toán: " + error.message);
         setIsAlertModalOpen(true);
       }
@@ -981,30 +1029,39 @@ const SalePOSPage = () => {
     setIsConfirmModalOpen(true);
   };
 
+  // Hàm reset sau khi thanh toán thành công
   const resetAfterPayment = () => {
+    // Reset các state liên quan đến khách hàng
     setSelectedCustomer("");
     setCustomerName("");
     setPhone("");
     setEmail("");
-    setSearchKeyword("");
-    setFilteredCustomers([]);
+    setSearchKeyword(""); // Reset ô tìm kiếm khách hàng
+    setFilteredCustomers([]); // Ẩn danh sách gợi ý khách hàng
+
+    // Reset các state liên quan đến thanh toán
     setTotalAmount(0);
     setCustomerPaid(0);
     setChangeAmount(0);
     setSelectedVoucher("");
     setCalculatedDiscount(0);
+
+    // Reset các state liên quan đến form thêm khách hàng (nếu cần)
     setShowAddCustomerForm(false);
     setNewCustomer({
       fullname: "",
       phone: "",
       email: "",
     });
-    setPaymentUrl(null);
-    setShowQRCode(false);
+
+    setPaymentUrl(null); // Reset URL thanh toán
+    setShowQRCode(false); // Ẩn mã QR
+    setHasSelectedVoucher(false); // Reset để áp dụng bestVoucher cho lần tiếp theo
   };
 
   return (
     <div className="p-4 bg-gray-100 min-h-screen relative">
+      {/* Hiển thị Toast */}
       {notification && (
         <Toast
           type={notification.type}
@@ -1012,6 +1069,7 @@ const SalePOSPage = () => {
           onClose={() => setNotification(null)}
         />
       )}
+      {/* Modal xác nhận thanh toán */}
       <ConfirmModal
         isOpen={isConfirmModalOpen}
         onClose={() => setIsConfirmModalOpen(false)}
@@ -1024,12 +1082,14 @@ const SalePOSPage = () => {
         title="Xác nhận thanh toán"
         message={confirmMessage}
       />
+      {/* Modal thông báo lỗi/cảnh báo */}
       <AlertModal
         isOpen={isAlertModalOpen}
         onClose={() => setIsAlertModalOpen(false)}
         message={alertMessage}
       />
 
+      {/* Form thêm khách hàng mới */}
       {showAddCustomerForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
           <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
@@ -1126,7 +1186,9 @@ const SalePOSPage = () => {
                 <button
                   onClick={handleSaveNewCustomer}
                   disabled={isLoading}
-                  className={`inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white ${isLoading ? "bg-blue-400" : "bg-blue-600 hover:bg-blue-700"}`}
+                  className={`inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white ${
+                    isLoading ? "bg-blue-400" : "bg-blue-600 hover:bg-blue-700"
+                  }`}
                 >
                   {isLoading ? (
                     <svg
@@ -1174,6 +1236,7 @@ const SalePOSPage = () => {
         </button>
       </div>
 
+      {/* Danh sách các hóa đơn đang tạo */}
       {orders.length > 0 && (
         <div className="flex overflow-x-auto my-2 bg-white p-2 rounded shadow">
           {orders.map((order, index) => (
@@ -1198,15 +1261,13 @@ const SalePOSPage = () => {
               <div className="font-bold">
                 {order.totalAmount.toLocaleString()} VND
               </div>
-              <div className="text-sm text-red-600 font-semibold">
-                {timeRemaining[order.id] || formatTimeRemaining(order.expiresAt)}
-              </div>
             </div>
           ))}
         </div>
       )}
 
       <div className="grid grid-cols-3 gap-4 mt-4">
+        {/* Giỏ hàng hiện tại */}
         <div className="col-span-2 bg-white p-4 rounded shadow">
           <h3 className="text-lg font-semibold mb-2">
             Giỏ hàng{" "}
@@ -1282,7 +1343,7 @@ const SalePOSPage = () => {
                         <input
                           type="number"
                           min="1"
-                          max={item.quantityAvailable || 1}
+                          max={item.quantityAvailable || 1} // giới hạn số lượng tối đa theo tồn kho
                           value={
                             isNaN(item.quantity) || item.quantity < 1
                               ? 1
@@ -1320,9 +1381,11 @@ const SalePOSPage = () => {
             </table>
           )}
 
+          {/*Danh sách chi tiết sản phẩm*/}
           <div className="mt-6">
             <h3 className="text-lg font-semibold mb-2">Danh sách sản phẩm</h3>
 
+            {/* Form Bộ Lọc */}
             <div className="mb-4 flex gap-4">
               <div className="flex-1">
                 <label className="block text-sm font-medium text-gray-700">
@@ -1394,6 +1457,7 @@ const SalePOSPage = () => {
               </div>
             </div>
 
+            {/* Bảng Danh Sách Sản Phẩm */}
             <table className="min-w-full bg-white border border-gray-200 rounded-lg shadow-sm">
               <thead>
                 <tr className="bg-gray-100">
@@ -1499,7 +1563,9 @@ const SalePOSPage = () => {
           </div>
         </div>
 
+        {/* Thông tin thanh toán */}
         <div className="bg-white p-4 rounded shadow">
+          {/* Ô tìm kiếm khách hàng */}
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Tìm kiếm khách hàng
           </label>
@@ -1512,6 +1578,7 @@ const SalePOSPage = () => {
                 placeholder="Nhập tên, số điện thoại hoặc email..."
                 className="border p-2 w-full rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
+              {/* Trạng thái loading khi tìm kiếm */}
               {isSearching && (
                 <div className="absolute right-2 top-2">
                   <svg
@@ -1537,6 +1604,7 @@ const SalePOSPage = () => {
                 </div>
               )}
 
+              {/* Danh sách gợi ý khách hàng */}
               {filteredCustomers.length > 0 && (
                 <ul className="absolute z-10 bg-white border rounded-md w-full mt-1 shadow-lg max-h-60 overflow-y-auto">
                   {filteredCustomers.map((customer) => (
@@ -1571,6 +1639,7 @@ const SalePOSPage = () => {
                   ))}
                 </ul>
               )}
+              {/* Thông báo khi không tìm thấy khách hàng */}
               {!isSearching &&
                 searchKeyword &&
                 filteredCustomers.length === 0 && (
@@ -1615,15 +1684,16 @@ const SalePOSPage = () => {
           <h3 className="text-lg font-semibold mt-4">Thanh toán</h3>
           <p>Tổng tiền: {currentOrder.totalAmount.toLocaleString()} VND</p>
 
+          {/* Chọn voucher */}
           <div className="mt-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Chọn voucher
-            </label>
             <select
               value={selectedVoucher}
               onChange={(e) => handleVoucherChange(e.target.value)}
               className="border p-2 w-full mt-1 rounded-md"
             >
+              <option value="" disabled>
+                Chọn voucher
+              </option>
               {vouchers
                 .filter((v) => {
                   const now = new Date();
@@ -1661,6 +1731,7 @@ const SalePOSPage = () => {
                     VND)
                   </option>
                 ))}
+              <option value="">Không sử dụng voucher</option>
             </select>
           </div>
 
@@ -1676,13 +1747,13 @@ const SalePOSPage = () => {
               value={paymentMethod}
               onChange={(e) => {
                 setPaymentMethod(e.target.value);
-                setShowQRCode(false);
-                setPaymentUrl(null);
+                setShowQRCode(false); // Ẩn mã QR khi thay đổi phương thức thanh toán
+                setPaymentUrl(null); // Reset URL thanh toán
               }}
               className="border p-2 w-full mt-1"
             >
               <option value="cash">Tiền mặt</option>
-              <option value="vnpay">VNPay</option>
+              <option value="vnpay">VNPay</option> {/* Thêm tùy chọn VNPay */}
             </select>
           </div>
 
@@ -1710,6 +1781,7 @@ const SalePOSPage = () => {
             {paymentMethod === "vnpay" ? "Chuyển đến VNPay" : "Thanh toán"}
           </button>
 
+          {/* Hiển thị mã QR nếu có paymentUrl và showQRCode là true */}
           {paymentMethod === "vnpay" && showQRCode && paymentUrl && (
             <div style={{ textAlign: "center", marginTop: "20px" }}>
               <p>Quét mã QR để thanh toán qua VNPay:</p>
