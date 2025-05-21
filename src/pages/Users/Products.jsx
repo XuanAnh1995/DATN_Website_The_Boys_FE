@@ -516,8 +516,8 @@ const ProductList = () => {
                         }`}
                       >
                         {selectedProducts.some((p) => p.id === product.id)
-                          ? "✔ Đã chọn"
-                          : "🔍 Chọn so sánh"}
+                          ? ""
+                          : ""}
                       </button>
                     </div>
                   </div>
