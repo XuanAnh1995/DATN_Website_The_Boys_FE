@@ -10,6 +10,17 @@ import Modal from "react-modal";
 
 Modal.setAppElement("#root");
 
+const formatDateTime = (date) => {
+  if (isNaN(date.getTime())) return null;
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const seconds = String(date.getSeconds()).padStart(2, "0");
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+};
+
 export default function Voucher() {
   const [vouchers, setVouchers] = useState([]);
   const [currentPage, setCurrentPage] = useState(0);
@@ -56,54 +67,34 @@ export default function Voucher() {
 
   const fetchVouchers = useCallback(async () => {
     try {
+      const startDateFormatted = dateFilter.startDate
+        ? formatDateTime(new Date(dateFilter.startDate))
+        : null;
+      const endDateFormatted = dateFilter.endDate
+        ? formatDateTime(new Date(dateFilter.endDate))
+        : null;
+
       const response = await VoucherService.getAllVouchers(
         search,
         currentPage,
         pageSize,
         sortConfig.key,
-        sortConfig.direction
+        sortConfig.direction,
+        startDateFormatted,
+        endDateFormatted,
+        percentFilter ? Number(percentFilter) : null,
+        minConditionFilter ? Number(minConditionFilter) : null,
+        statusFilter === "active"
+          ? true
+          : statusFilter === "inactive"
+            ? false
+            : null
       );
 
-      // Normalize voucherName to prevent null/undefined
       let filteredVouchers = response.content.map((voucher) => ({
         ...voucher,
         voucherName: voucher.voucherName || "",
       }));
-
-      if (dateFilter.startDate || dateFilter.endDate) {
-        filteredVouchers = filteredVouchers.filter((voucher) => {
-          const startDate = new Date(voucher.startDate);
-          const endDate = new Date(voucher.endDate);
-          const filterStart = dateFilter.startDate
-            ? new Date(dateFilter.startDate)
-            : null;
-          const filterEnd = dateFilter.endDate
-            ? new Date(dateFilter.endDate)
-            : null;
-          return (
-            (!filterStart || startDate >= filterStart) &&
-            (!filterEnd || endDate <= filterEnd)
-          );
-        });
-      }
-
-      if (percentFilter) {
-        filteredVouchers = filteredVouchers.filter(
-          (voucher) => voucher.reducedPercent >= Number(percentFilter)
-        );
-      }
-
-      if (minConditionFilter) {
-        filteredVouchers = filteredVouchers.filter(
-          (voucher) => voucher.minCondition >= Number(minConditionFilter)
-        );
-      }
-
-      if (statusFilter) {
-        filteredVouchers = filteredVouchers.filter(
-          (voucher) => voucher.status === (statusFilter === "active")
-        );
-      }
 
       const updatedVouchers = await Promise.all(
         filteredVouchers.map(async (voucher) => {
@@ -116,10 +107,12 @@ export default function Voucher() {
       );
 
       setVouchers(updatedVouchers);
-      setTotalPages(response.totalPages);
+      setTotalPages(response.totalPages || 1);
     } catch (error) {
       console.error(error);
       toast.error("Failed to fetch vouchers");
+      setVouchers([]);
+      setTotalPages(1);
     }
   }, [
     search,
@@ -319,7 +312,6 @@ export default function Voucher() {
         Quản lý Voucher
       </h1>
 
-      {/* Bộ lọc đồng bộ theme với Promotion */}
       <div className="mb-6 bg-white p-4 rounded-lg shadow-md border border-gray-200">
         <h2 className="text-lg font-semibold text-gray-700 mb-4">Bộ Lọc</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -340,7 +332,7 @@ export default function Voucher() {
               Ngày bắt đầu từ
             </label>
             <input
-              type="date"
+              type="datetime-local"
               name="startDate"
               value={dateFilter.startDate}
               onChange={handleDateFilter}
@@ -352,7 +344,7 @@ export default function Voucher() {
               Ngày kết thúc đến
             </label>
             <input
-              type="date"
+              type="datetime-local"
               name="endDate"
               value={dateFilter.endDate}
               onChange={handleDateFilter}
@@ -433,74 +425,92 @@ export default function Voucher() {
           </tr>
         </thead>
         <tbody>
-          {vouchers.map((item, index) => (
-            <tr
-              key={item.id}
-              className="bg-white hover:bg-gray-50 transition-colors duration-200 border-b border-gray-200 last:border-b-0"
-            >
-              <td className="px-4 py-3">{index + 1}</td>
-              <td className="px-4 py-3 font-medium text-gray-800">
-                {item.voucherCode}
-              </td>
-              <td className="px-4 py-3 text-gray-700">{item.voucherName}</td>
-              <td className="px-4 py-3 text-gray-600 italic">
-                {item.description}
-              </td>
-              <td className="px-4 py-3">
-                {item.minCondition.toLocaleString()}đ
-              </td>
-              <td className="px-4 py-3">
-                {item.maxDiscount.toLocaleString()}đ
-              </td>
-              <td className="px-4 py-3">{item.reducedPercent}%</td>
-              <td className="px-4 py-3 text-gray-600">
-                {new Date(item.startDate).toLocaleDateString("vi-VN")}
-              </td>
-              <td className="px-4 py-3 text-gray-600">
-                {new Date(item.endDate).toLocaleDateString("vi-VN")}
-              </td>
-              <td
-                className={`px-4 py-3 font-semibold ${
-                  item.status ? "text-green-600" : "text-red-600"
-                }`}
+          {vouchers.map((item, index) => {
+            const startDate = new Date(item.startDate);
+            const endDate = new Date(item.endDate);
+            return (
+              <tr
+                key={item.id}
+                className="bg-white hover:bg-gray-50 transition-colors duration-200 border-b border-gray-200 last:border-b-0"
               >
-                {item.status ? "Kích hoạt" : "Không kích hoạt"}
-              </td>
-              <td className="px-4 py-3">
-                <div className="flex justify-center items-center gap-3 min-w-[120px]">
-                  <button
-                    className="text-blue-600 hover:text-blue-800 transition-colors duration-150"
-                    onClick={() => handleUpdateVoucher(item)}
-                    title="Chỉnh sửa"
-                  >
-                    <AiOutlineEdit size={20} />
-                  </button>
-                  <Switch
-                    onChange={() => handleToggleStatus(item.id, item.status)}
-                    checked={item.status}
-                    height={20}
-                    width={40}
-                    onColor="#10B981"
-                    offColor="#EF4444"
-                    uncheckedIcon={false}
-                    checkedIcon={false}
-                    className="react-switch"
-                  />
-                  <div className="w-5">
-                    {item.status && (
-                      <button
-                        className="text-green-600 hover:text-green-800 transition-colors duration-150"
-                        onClick={() => handleOpenEmailModal(item)}
-                        title="Gửi email"
-                      >
-                        <AiOutlineMail size={20} />
-                      </button>
-                    )}
+                <td className="px-4 py-3">{index + 1}</td>
+                <td className="px-4 py-3 font-medium text-gray-800">
+                  {item.voucherCode}
+                </td>
+                <td className="px-4 py-3 text-gray-700">{item.voucherName}</td>
+                <td className="px-4 py-3 text-gray-600 italic">
+                  {item.description}
+                </td>
+                <td className="px-4 py-3">
+                  {item.minCondition.toLocaleString()}đ
+                </td>
+                <td className="px-4 py-3">
+                  {item.maxDiscount.toLocaleString()}đ
+                </td>
+                <td className="px-4 py-3">{item.reducedPercent}%</td>
+                <td className="px-4 py-3 text-gray-600">
+                  {startDate.toLocaleString("vi-VN", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    timeZone: "Asia/Ho_Chi_Minh",
+                  })}
+                </td>
+                <td className="px-4 py-3 text-gray-600">
+                  {endDate.toLocaleString("vi-VN", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    timeZone: "Asia/Ho_Chi_Minh",
+                  })}
+                </td>
+                <td
+                  className={`px-4 py-3 font-semibold ${
+                    item.status ? "text-green-600" : "text-red-600"
+                  }`}
+                >
+                  {item.status ? "Kích hoạt" : "Không kích hoạt"}
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex justify-center items-center gap-3 min-w-[120px]">
+                    <button
+                      className="text-blue-600 hover:text-blue-800 transition-colors duration-150"
+                      onClick={() => handleUpdateVoucher(item)}
+                      title="Chỉnh sửa"
+                    >
+                      <AiOutlineEdit size={20} />
+                    </button>
+                    <Switch
+                      onChange={() => handleToggleStatus(item.id, item.status)}
+                      checked={item.status}
+                      height={20}
+                      width={40}
+                      onColor="#10B981"
+                      offColor="#EF4444"
+                      uncheckedIcon={false}
+                      checkedIcon={false}
+                      className="react-switch"
+                    />
+                    <div className="w-5">
+                      {item.status && (
+                        <button
+                          className="text-green-600 hover:text-green-800 transition-colors duration-150"
+                          onClick={() => handleOpenEmailModal(item)}
+                          title="Gửi email"
+                        >
+                          <AiOutlineMail size={20} />
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </td>
-            </tr>
-          ))}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
 
@@ -544,7 +554,6 @@ export default function Voucher() {
         </div>
       </div>
 
-      {/* Modal gửi email */}
       <Modal
         isOpen={emailModalOpen}
         onRequestClose={() => setEmailModalOpen(false)}
