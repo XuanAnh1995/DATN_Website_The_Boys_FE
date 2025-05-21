@@ -285,12 +285,7 @@ export default function OnlineOrder() {
                     >
                       Khách hàng
                     </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Nhân viên
-                    </th>
+                  
                     <th
                       scope="col"
                       className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
@@ -345,11 +340,7 @@ export default function OnlineOrder() {
                             {item.customer?.fullname || "N/A"}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            {item.employee?.fullname || "N/A"}
-                          </div>
-                        </td>
+                      
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-700 font-medium">
                           {formatCurrency(item.totalAmount)}
                         </td>
