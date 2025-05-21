@@ -39,7 +39,7 @@ function Payment() {
 
   const [selectedVoucher, setSelectedVoucher] = useState(voucherOptions[0]);
   const [customAddress, setCustomAddress] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("COD");
+  const [paymentMethod, setPaymentMethod] = useState("cod");
 
   useEffect(() => {
     const fetchUserData = async () => {
