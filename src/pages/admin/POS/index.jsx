@@ -1695,35 +1695,36 @@ const SalePOSPage = () => {
           </button>
 
           {paymentMethod === "vnpay" && showQRCode && paymentUrl && (
-    <div style={{ textAlign: "center", marginTop: "20px" }}>
-        <p className="text-lg font-semibold mb-2">Thanh toán chuyển khoản</p>
-        <p className="text-sm mb-4">Vui lòng quét mã QR để thanh toán.</p>
-        <div style={{ backgroundColor: "#f5f5f5", padding: "20px", borderRadius: "8px", display: "inline-block" }}>
-            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", marginBottom: "10px" }}>
-                <img src="/path/to/vietqr-logo.png" alt="VietQR" style={{ height: "30px", marginRight: "10px" }} />
-                <img src="/path/to/vietcombank-logo.png" alt="Vietcombank" style={{ height: "30px" }} />
-            </div>
-            <QRCode
-                value={paymentUrl}
-                size={200}
-                level="H"
-                includeMargin={true}
-              />
-              <div style={{ marginTop: "10px" }}>
-                <a href={paymentUrl} target="_blank" rel="noopener noreferrer">
-                  <button
-                    style={{
-                      padding: "10px 20px",
-                      backgroundColor: "#007bff",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "5px",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Mở URL thanh toán trực tiếp
-                  </button>
-                </a>
+            <div style={{ textAlign: "center", marginTop: "20px" }}>
+              <p className="text-lg font-semibold mb-2">Thanh toán chuyển khoản</p>
+              <p className="text-sm mb-4">Vui lòng quét mã QR để thanh toán.</p>
+              <div style={{ backgroundColor: "#f5f5f5", padding: "20px", borderRadius: "8px", display: "inline-block" }}>
+                <div style={{ display: "flex", justifyContent: "center", alignItems: "center", marginBottom: "10px" }}>
+                  <img src="/path/to/vietqr-logo.png" alt="VietQR" style={{ height: "30px", marginRight: "10px" }} />
+                  <img src="/path/to/vietcombank-logo.png" alt="Vietcombank" style={{ height: "30px" }} />
+                </div>
+                <QRCode
+                  value={paymentUrl}
+                  size={200}
+                  level="H"
+                  includeMargin={true}
+                />
+                <div style={{ marginTop: "10px" }}>
+                  <a href={paymentUrl} target="_blank" rel="noopener noreferrer">
+                    <button
+                      style={{
+                        padding: "10px 20px",
+                        backgroundColor: "#007bff",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "5px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      Mở URL thanh toán trực tiếp
+                    </button>
+                  </a>
+                </div>
               </div>
             </div>
           )}
