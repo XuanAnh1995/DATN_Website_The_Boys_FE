@@ -1071,10 +1071,10 @@ const SalePOSPage = () => {
       {notification && (
         <div
           className={`fixed top-4 right-4 p-4 rounded shadow-lg text-white ${notification.type === "success"
-              ? "bg-green-500"
-              : notification.type === "error"
-                ? "bg-red-500"
-                : "bg-yellow-500"
+            ? "bg-green-500"
+            : notification.type === "error"
+              ? "bg-red-500"
+              : "bg-yellow-500"
             }`}
         >
           {notification.message}
@@ -1563,6 +1563,10 @@ const SalePOSPage = () => {
           </div>
         </div>
 
+
+
+
+
         <div className="bg-white p-4 rounded shadow">
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Tìm kiếm khách hàng
@@ -1636,17 +1640,20 @@ const SalePOSPage = () => {
                 </ul>
               )}
 
-              {!isSearching && searchKeyword && filteredCustomers.length === 0 && (
-                <div className="absolute z-10 bg-white border rounded-md w-full mt-1 shadow-lg p-3 text-gray-500">
-                  Không tìm thấy khách hàng.{" "}
-                  <button
-                    onClick={handleAddNewCustomerClick}
-                    className="text-blue-600 hover:underline"
-                  >
-                    Thêm khách hàng mới
-                  </button>
-                </div>
-              )}
+              {!isSearching &&
+                searchKeyword &&
+                filteredCustomers.length === 0 &&
+                !selectedCustomer && (
+                  <div className="absolute z-10 bg-white border rounded-md w-full mt-1 shadow-lg p-3 text-gray-500">
+                    Không tìm thấy khách hàng.{" "}
+                    <button
+                      onClick={handleAddNewCustomerClick}
+                      className="text-blue-600 hover:underline"
+                    >
+                      Thêm khách hàng mới
+                    </button>
+                  </div>
+                )}
             </div>
             <button
               onClick={handleAddNewCustomerClick}
