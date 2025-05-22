@@ -48,6 +48,11 @@ export default function Voucher() {
   const [customerSearch, setCustomerSearch] = useState("");
 
   const updateVoucherStatus = useCallback(async (voucher) => {
+    // Skip automatic updates if the voucher is manually deactivated
+    if (!voucher.status) {
+      return false;
+    }
+
     const currentDate = new Date();
     const startDate = new Date(voucher.startDate);
     const endDate = new Date(voucher.endDate);
@@ -198,6 +203,19 @@ export default function Voucher() {
   };
 
   const handleToggleStatus = async (id, currentStatus) => {
+    // If trying to activate an expired voucher
+    if (!currentStatus) {
+      const voucher = vouchers.find((v) => v.id === id);
+      const endDate = new Date(voucher.endDate);
+      const currentDate = new Date();
+      if (currentDate > endDate) {
+        toast.error(
+          "Kích hoạt thất bại. Vui lòng sửa lại ngày bắt đầu hoặc kết thúc để kích hoạt."
+        );
+        return;
+      }
+    }
+
     try {
       setVouchers((prevVouchers) =>
         prevVouchers.map((voucher) =>
@@ -205,7 +223,11 @@ export default function Voucher() {
         )
       );
       await VoucherService.toggleStatusVoucher(id);
-      toast.success("Cập nhật trạng thái thành công");
+      toast.success(
+        currentStatus
+          ? "Voucher đã được tắt và sẽ không tự động kích hoạt lại cho đến khi bạn bật lại."
+          : "Cập nhật trạng thái thành công"
+      );
       await fetchVouchers();
     } catch (error) {
       console.error("Toggle error:", error);
