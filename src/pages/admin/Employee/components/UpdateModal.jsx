@@ -23,10 +23,10 @@ const UpdateModal = ({ isOpen, setUpdateModal, employee, fetchEmployees }) => {
 
     const handleAvatarUpload = async (file) => {
         if (!file) return;
-    
+
         const localImageUrl = URL.createObjectURL(file);
         setAvatar(localImageUrl);
-    
+
         try {
             const uploadedImageUrl = await UploadFileService.uploadProductImage(file);
             setUpdatedEmployee(prev => ({ ...prev, photo: uploadedImageUrl }));
@@ -35,7 +35,7 @@ const UpdateModal = ({ isOpen, setUpdateModal, employee, fetchEmployees }) => {
             toast.error("Không thể tải ảnh lên!");
         }
     };
-    
+
 
     const handleDoubleClick = () => fileInputRef.current.click();
 
@@ -46,14 +46,20 @@ const UpdateModal = ({ isOpen, setUpdateModal, employee, fetchEmployees }) => {
 
     const handleUpdate = async () => {
         try {
-            await EmployeeService.update(employee.id, updatedEmployee);
+            console.log("Dữ liệu gửi đi:", updatedEmployee);
+
+            const response = await EmployeeService.update(employee.id, updatedEmployee); // 👈 Gán vào biến
+            console.log("Phản hồi từ server:", response); // 👈 In ra response
+
             toast.success("Cập nhật nhân viên thành công!");
             fetchEmployees();
             setUpdateModal(false);
         } catch (error) {
-            toast.error("Cập nhật thất bại!");
+            console.error("Lỗi khi cập nhật:", error);
+            toast.error(error?.response?.data?.message);
         }
     };
+
 
     const handleResetPassword = async () => {
         try {
@@ -122,10 +128,16 @@ const UpdateModal = ({ isOpen, setUpdateModal, employee, fetchEmployees }) => {
                         </div>
                         <div className="flex flex-col">
                             <label className="text-sm font-medium text-gray-600">Giới tính</label>
-                            <select name="gender" value={updatedEmployee.gender || true} onChange={handleChange} className="select select-bordered w-full">
+                            <select
+                                name="gender"
+                                value={updatedEmployee.gender !== undefined ? updatedEmployee.gender : true}
+                                onChange={handleChange}
+                                className="select select-bordered w-full"
+                            >
                                 <option value={true}>Nam</option>
                                 <option value={false}>Nữ</option>
                             </select>
+
                         </div>
                     </div>
 

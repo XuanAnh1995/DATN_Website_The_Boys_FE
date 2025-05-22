@@ -58,6 +58,17 @@ const EmployeeService = {
     }
   },
 
+  async updatePassword(id, passwordUpdateRequest) {
+    try {
+      const response = await api.put(`/api/employees/${id}/change-password`, passwordUpdateRequest);
+      return response.data;
+    } catch (error) {
+      console.error("Error updating password:", error);
+      throw error;
+    }
+  },
+
+
   async toggleStatus(id) {
     try {
       const response = await api.patch(`/api/employees/${id}/toggle-status`);

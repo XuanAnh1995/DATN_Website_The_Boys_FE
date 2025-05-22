@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { AiFillCaretUp, AiFillCaretDown, AiOutlineEdit } from "react-icons/ai";
+import { TiLockOpen } from "react-icons/ti";
 import Switch from "react-switch";
 import EmployeeService from "../../../services/EmployeeService";
 import { toast } from "react-toastify";
 import UpdateModal from './components/UpdateModal';
 import CreateModal from './components/CreateModal';
+import UpdatePasswordModal from './components/UpdatePasswordModal';
 
 export default function Employee() {
     const [employees, setEmployees] = useState([]);
@@ -16,6 +18,8 @@ export default function Employee() {
     const [updateModal, setUpdateModal] = useState(false);
     const [createModal, setCreateModal] = useState(false);
     const [currentEmployee, setCurrentEmployee] = useState(null);
+    const [passwordModal, setPasswordModal] = useState(false);
+
 
     const fetchEmployees = async () => {
         try {
@@ -120,9 +124,18 @@ export default function Employee() {
                         onColor="#0000ff"
                         uncheckedIcon={false}
                         checkedIcon={false}
-                        height={20}
+                        height={20} 
                         width={40}
                     />
+                    <button
+                        title="Đổi mật khẩu"
+                        onClick={() => {
+                            setCurrentEmployee(item);
+                            setPasswordModal(true);
+                        }}
+                    >
+                        <TiLockOpen className="text-red-600 hover:text-red-800" size={20} />
+                    </button>
                 </td>
             </tr>
         ));
@@ -240,6 +253,13 @@ export default function Employee() {
                 onConfirm={() => setCreateModal(false)}
                 onCancel={() => setCreateModal(false)}
                 fetchEmployees={fetchEmployees} />
+
+            <UpdatePasswordModal
+                isOpen={passwordModal}
+                setIsOpen={setPasswordModal}
+                employee={currentEmployee}
+            />
+
         </div>
     );
 }

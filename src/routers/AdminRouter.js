@@ -36,27 +36,27 @@ const Category = lazy(() => import("../pages/admin/Category"));
 const Statistic = lazy(() => import("../pages/admin/Statistics"));
 
 const adminRoutes = [
-  { path: "dashboard", component: Dashboard, role: "ADMIN" },
-  { path: "salePOS", component: POS, role: "ADMIN" },
-  { path: "customer", component: Customer, role: "ADMIN" },
-  { path: "employee", component: Employee, role: "ADMIN" },
-  { path: "product", component: Product, role: "ADMIN" },
-  { path: "product/:productCode", component: ProductDetail, role: "ADMIN" },
-  { path: "product/create", component: CreateProduct, role: "ADMIN" },
-  { path: "brand", component: Brand, role: "ADMIN" },
-  { path: "material", component: Material, role: "ADMIN" },
-  { path: "category", component: Category, role: "ADMIN" },
-  { path: "attribute/collar", component: Collar, role: "ADMIN" },
-  { path: "attribute/color", component: Color, role: "ADMIN" },
-  { path: "attribute/size", component: Size, role: "ADMIN" },
-  { path: "attribute/sleeve", component: Sleeve, role: "ADMIN" },
-  { path: "attribute/promotion", component: Promotion, role: "ADMIN" },
-  { path: "order/pos", component: OrderPOS, role: "ADMIN" }, // Route cho Hóa đơn POS
-  { path: "order/online", component: OrderOnline, role: "ADMIN" }, // Route cho Đơn hàng Online
-  { path: "order/pos/:id/details", component: OrderPOSDetail, role: "ADMIN" }, // Chi tiết hóa đơn POS
-  { path: "order/online/:id/details", component: OrderOnlineDetail, role: "ADMIN" }, // Chi tiết đơn hàng Online
-  { path: "voucher", component: Voucher, role: "ADMIN" },
-  { path: "statistics", component: Statistic, role: "ADMIN" },
+  { path: "dashboard", component: Dashboard, role: ["ADMIN", "STAFF"] },
+  { path: "salePOS", component: POS, role: ["ADMIN", "STAFF"] },
+  { path: "customer", component: Customer, role: ["ADMIN", "STAFF"] },
+  { path: "employee", component: Employee, role: ["ADMIN", "STAFF"] },
+  { path: "product", component: Product, role: ["ADMIN", "STAFF"] },
+  { path: "product/:productCode", component: ProductDetail, role: ["ADMIN", "STAFF"] },
+  { path: "product/create", component: CreateProduct, role: ["ADMIN", "STAFF"] },
+  { path: "brand", component: Brand, role: ["ADMIN", "STAFF"] },
+  { path: "material", component: Material, role: ["ADMIN", "STAFF"] },
+  { path: "category", component: Category, role: ["ADMIN", "STAFF"] },
+  { path: "attribute/collar", component: Collar, role: ["ADMIN", "STAFF"] },
+  { path: "attribute/color", component: Color, role: ["ADMIN", "STAFF"] },
+  { path: "attribute/size", component: Size, role: ["ADMIN", "STAFF"] },
+  { path: "attribute/sleeve", component: Sleeve, role: ["ADMIN", "STAFF"] },
+  { path: "attribute/promotion", component: Promotion, role: ["ADMIN", "STAFF"] },
+  { path: "order/pos", component: OrderPOS, role: ["ADMIN", "STAFF"] }, // Route cho Hóa đơn POS
+  { path: "order/online", component: OrderOnline, role: ["ADMIN", "STAFF"] }, // Route cho Đơn hàng Online
+  { path: "order/pos/:id/details", component: OrderPOSDetail, role: ["ADMIN", "STAFF"] }, // Chi tiết hóa đơn POS
+  { path: "order/online/:id/details", component: OrderOnlineDetail, role: ["ADMIN", "STAFF"] }, // Chi tiết đơn hàng Online
+  { path: "voucher", component: Voucher, role: ["ADMIN", "STAFF"] },
+  { path: "statistics", component: Statistic, role: ["ADMIN", "STAFF"] },
 ];
 
 export default adminRoutes;

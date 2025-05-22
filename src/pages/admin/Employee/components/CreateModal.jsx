@@ -51,23 +51,32 @@ const CreateModal = ({ isOpen, onConfirm, onCancel, fetchEmployees }) => {
         setNewEmployee(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleCreate = async () => {
-        try {
-            const payload = {
-                ...newEmployee,
-                roleId: parseInt(newEmployee.roleId, 10),
-                gender: newEmployee.gender === "true" || newEmployee.gender === true
-              };
-              
-            await EmployeeService.add(payload);
-            toast.success("Thêm mới nhân viên thành công!");
-            fetchEmployees();
-            onConfirm();
-        } catch (error) {
-            console.error("Error creating employee:", error);
-            toast.error("Thêm mới nhân viên thất bại. Vui lòng thử lại!");
-        }
-    };
+const handleCreate = async () => {
+    try {
+        const payload = {
+            ...newEmployee,
+            roleId: parseInt(newEmployee.roleId, 10),
+            gender: newEmployee.gender === "true" || newEmployee.gender === true
+        };
+
+        // 🔍 Log dữ liệu gửi đi
+        console.log("📤 Request payload:", payload);
+
+        const response = await EmployeeService.add(payload);
+
+        // ✅ Log phản hồi từ server
+        console.log("📥 Response:", response);
+
+        toast.success("Thêm mới nhân viên thành công!");
+        fetchEmployees();
+        onConfirm();
+    } catch (error) {
+        console.error("❌ Error creating employee:", error);
+
+        toast.error("Thêm mới nhân viên thất bại. Vui lòng thử lại!");
+    }
+};
+
 
     if (!isOpen) return null;
 

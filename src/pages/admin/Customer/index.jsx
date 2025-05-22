@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { AiOutlineEye, AiFillCaretUp, AiFillCaretDown, AiOutlineEdit } from "react-icons/ai";
+import { TiLockOpen } from "react-icons/ti";
 import Switch from "react-switch";
 import CustomerService from "../../../services/CustomerService";
 import { toast } from "react-toastify";
 import UpdateModal from './components/UpdateModal';
 import CreateModal from './components/CreateModal';
+import UpdatePasswordModal from './components/UpdatePasswordModal';
 
 export default function Customer() {
   const [customers, setCustomers] = useState([]);
@@ -17,6 +19,7 @@ export default function Customer() {
   const [updateModal, setUpdateModal] = useState(false);
   const [createModal, setCreateModal] = useState(false);
   const [currentCustomer, setCurrentCustomer] = useState(null);
+  const [passwordModal, setPasswordModal] = useState(false);
 
   const fetchCustomers = async () => {
     try {
@@ -119,6 +122,15 @@ export default function Customer() {
             height={20}
             width={40}
           />
+          <button
+            title="Đổi mật khẩu"
+            onClick={() => {
+              setCurrentCustomer(item);
+              setPasswordModal(true);
+            }}
+          >
+            <TiLockOpen className="text-red-600 hover:text-red-800" size={20} />
+          </button>
         </td>
       </tr>
     ));
@@ -233,8 +245,14 @@ export default function Customer() {
         isOpen={createModal}
         onConfirm={() => setCreateModal(false)}
         onCancel={() => setCreateModal(false)}
-        setCreateModal = {setCreateModal}
+        setCreateModal={setCreateModal}
         fetchCustomers={fetchCustomers} />
+
+      <UpdatePasswordModal
+        isOpen={passwordModal}
+        setIsOpen={setPasswordModal}
+        customer={currentCustomer}
+      />
     </div>
   );
 }
