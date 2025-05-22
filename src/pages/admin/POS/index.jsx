@@ -1049,14 +1049,7 @@ useEffect(() => {
 
   return (
     <div className="p-4 bg-gray-100 min-h-screen relative">
-      {/* Hiển thị Toast */}
-      {notification && (
-        <Toast
-          type={notification.type}
-          message={notification.message}
-          onClose={() => setNotification(null)}
-        />
-      )}
+      
       {/* Form thêm khách hàng mới */}
       {showAddCustomerForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
