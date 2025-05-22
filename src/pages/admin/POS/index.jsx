@@ -489,6 +489,7 @@ const SalePOSPage = () => {
   };
 
   const handleCreateOrder = async () => {
+    console.log("📝 [TẠO HÓA ĐƠN] Bắt đầu tạo hóa đơn mới...");
     try {
       const orderData = {
         customerId:
@@ -504,25 +505,47 @@ const SalePOSPage = () => {
 
       const newOrder = await SalePOS.createOrder(orderData);
 
-      setOrders((prevOrders) => [
-        ...prevOrders,
-        {
-          id: newOrder.id,
-          items: [],
-          totalAmount: 0,
-          discount: 0,
-          customerId: orderData.customerId,
-          voucherId: orderData.voucherId,
-          paymentMethod: orderData.paymentMethod,
-          createdAt: new Date(),
-        },
-      ]);
+      setOrders((prevOrders) => {
+        const updatedOrders = [
+          ...prevOrders,
+          {
+            id: newOrder.id,
+            items: [],
+            totalAmount: 0,
+            discount: 0,
+            customerId: orderData.customerId,
+            voucherId: orderData.voucherId,
+            paymentMethod: orderData.paymentMethod,
+            createdAt: new Date(),
+          },
+        ];
+
+        // Thêm thông báo khi tạo hóa đơn thành công
+        setNotification({
+          type: "success",
+          message: `Đã tạo hóa đơn #${updatedOrders.length} thành công!`,
+        });
+
+        // Tự động xóa thông báo sau 3 giây
+        setTimeout(() => {
+          setNotification(null);
+        }, 3000);
+
+        console.log("✅ [SUCCESS] Đơn hàng mới đã được tạo:", newOrder);
+        return updatedOrders;
+      });
 
       setActiveOrderIndex(orders.length);
       setHasSelectedVoucher(false); // Reset để áp dụng bestVoucher cho hóa đơn mới
-      console.log("✅ Đơn hàng mới đã được tạo:", newOrder);
     } catch (error) {
       console.error("❌ Lỗi khi tạo đơn hàng:", error);
+      setNotification({
+        type: "error",
+        message: "Lỗi khi tạo hóa đơn mới. Vui lòng thử lại!",
+      });
+      setTimeout(() => {
+        setNotification(null);
+      }, 3000);
     }
   };
 
@@ -655,12 +678,10 @@ const SalePOSPage = () => {
   };
 
   const handleAddToCart = (product) => {
-    console.log("🛒 [ADD TO CART] Bắt đầu thêm sản phẩm vào giỏ hàng...");
+    console.log("🛒 [THÊM VÀO GIỎ HÀNG] Bắt đầu thêm sản phẩm vào giỏ hàng...");
     if (activeOrderIndex === null || activeOrderIndex >= orders.length) {
       alert("Vui lòng tạo hóa đơn trước!");
-      console.warn(
-        "⚠ Không có đơn hàng nào được chọn. Hãy tạo đơn hàng trước!"
-      );
+      console.warn("⚠ Không có đơn hàng nào được chọn. Hãy tạo đơn hàng trước!");
       return;
     }
 
@@ -673,7 +694,7 @@ const SalePOSPage = () => {
       const updatedOrders = [...prevOrders];
       const currentOrder = updatedOrders[activeOrderIndex];
 
-      console.log("📌 [ORDER] Đơn hàng hiện tại:", currentOrder);
+      console.log("📌 [ĐƠN HÀNG] Đơn hàng hiện tại:", currentOrder);
 
       const existingItemIndex = currentOrder.items.findIndex(
         (item) => item.id === product.id
@@ -689,11 +710,11 @@ const SalePOSPage = () => {
         }
 
         console.log(
-          `🔄 [UPDATE] Sản phẩm ${product.id} đã có trong giỏ hàng, tăng số lượng lên.`
+          `🔄 [CẬP NHẬT] Sản phẩm ${product.id} đã có trong giỏ hàng, tăng số lượng lên.`
         );
         currentOrder.items[existingItemIndex].quantity += 1;
       } else {
-        console.log(`➕ [NEW] Thêm sản phẩm mới:`, product);
+        console.log(`➕ [MỚI] Thêm sản phẩm mới:`, product);
         currentOrder.items.push({
           ...product,
           quantity: 1,
@@ -709,17 +730,29 @@ const SalePOSPage = () => {
       }, 0);
 
       console.log(
-        "💰 [TOTAL] Tổng tiền đơn hàng sau khi thêm sản phẩm:",
+        "💰 [TỔNG] Tổng tiền đơn hàng sau khi thêm sản phẩm:",
         currentOrder.totalAmount
       );
+
+      // Thêm thông báo khi thêm sản phẩm thành công
+      setNotification({
+        type: "success",
+        message: `Đã thêm sản phẩm "${product.product?.productName}" vào giỏ hàng!`,
+      });
+
+      // Tùy chọn: Xóa thông báo sau vài giây
+      setTimeout(() => {
+        setNotification(null);
+      }, 3000);
+
       return updatedOrders;
     });
   };
-
   const handleRemoveFromCart = (productId) => {
-    console.log("🗑 [REMOVE FROM CART] Bắt đầu xóa sản phẩm khỏi giỏ hàng...");
+    console.log("🗑 [XÓA KHỎI GIỎ HÀNG] Bắt đầu xóa sản phẩm khỏi giỏ hàng...");
     if (activeOrderIndex === null) {
       console.warn("⚠ Không có đơn hàng nào được chọn.");
+      alert("Vui lòng chọn hoặc tạo hóa đơn!");
       return;
     }
 
@@ -732,6 +765,12 @@ const SalePOSPage = () => {
         currentOrder.items
       );
 
+      // Lấy thông tin sản phẩm trước khi xóa để hiển thị trong thông báo
+      const productToRemove = currentOrder.items.find(
+        (item) => item.id === productId
+      );
+
+      // Xóa sản phẩm
       currentOrder.items = currentOrder.items.filter(
         (item) => item.id !== productId
       );
@@ -744,10 +783,24 @@ const SalePOSPage = () => {
       }, 0);
 
       console.log(
-        "💰 [TOTAL] Tổng tiền sau khi xóa sản phẩm:",
+        "💰 [TỔNG] Tổng tiền sau khi xóa sản phẩm:",
         currentOrder.totalAmount
       );
       console.log("✅ [SUCCESS] Sản phẩm đã được xóa thành công!");
+
+      // Thêm thông báo khi xóa sản phẩm thành công
+      if (productToRemove) {
+        setNotification({
+          type: "success",
+          message: `Đã xóa sản phẩm "${productToRemove.product?.productName}" khỏi giỏ hàng!`,
+        });
+
+        // Tự động xóa thông báo sau 3 giây
+        setTimeout(() => {
+          setNotification(null);
+        }, 3000);
+      }
+
       return updatedOrders;
     });
   };
@@ -826,9 +879,23 @@ const SalePOSPage = () => {
   };
 
   const handleRemoveOrder = (index) => {
+    console.log(`🗑 [XÓA HÓA ĐƠN] Bắt đầu xóa hóa đơn #${index + 1}...`);
     setOrders((prevOrders) => {
       const updatedOrders = [...prevOrders];
       updatedOrders.splice(index, 1);
+
+      // Thêm thông báo khi xóa hóa đơn thành công
+      setNotification({
+        type: "success",
+        message: `Đã xóa hóa đơn #${index + 1} thành công!`,
+      });
+
+      // Tự động xóa thông báo sau 3 giây
+      setTimeout(() => {
+        setNotification(null);
+      }, 3000);
+
+      console.log("✅ [SUCCESS] Hóa đơn đã được xóa thành công!");
       return updatedOrders;
     });
 
@@ -999,7 +1066,24 @@ const SalePOSPage = () => {
 
   return (
     <div className="p-4 bg-gray-100 min-h-screen relative">
-     
+
+      {/* Hiển thị thông báo */}
+      {notification && (
+        <div
+          className={`fixed top-4 right-4 p-4 rounded shadow-lg text-white ${notification.type === "success"
+              ? "bg-green-500"
+              : notification.type === "error"
+                ? "bg-red-500"
+                : "bg-yellow-500"
+            }`}
+        >
+          {notification.message}
+        </div>
+      )}
+
+
+
+
       {showAddCustomerForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
           <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
@@ -1023,9 +1107,8 @@ const SalePOSPage = () => {
                   name="fullname"
                   value={newCustomer.fullname}
                   onChange={handleNewCustomerInputChange}
-                  className={`mt-1 block w-full border rounded-md shadow-sm p-2 ${
-                    formErrors.fullname ? "border-red-500" : "border-gray-300"
-                  }`}
+                  className={`mt-1 block w-full border rounded-md shadow-sm p-2 ${formErrors.fullname ? "border-red-500" : "border-gray-300"
+                    }`}
                   placeholder="Nhập họ tên khách hàng"
                 />
                 {formErrors.fullname && (
@@ -1044,9 +1127,8 @@ const SalePOSPage = () => {
                   name="phone"
                   value={newCustomer.phone}
                   onChange={handleNewCustomerInputChange}
-                  className={`mt-1 block w-full border rounded-md shadow-sm p-2 ${
-                    formErrors.phone ? "border-red-500" : "border-gray-300"
-                  }`}
+                  className={`mt-1 block w-full border rounded-md shadow-sm p-2 ${formErrors.phone ? "border-red-500" : "border-gray-300"
+                    }`}
                   placeholder="Nhập số điện thoại"
                 />
                 {formErrors.phone && (
@@ -1065,9 +1147,8 @@ const SalePOSPage = () => {
                   name="email"
                   value={newCustomer.email}
                   onChange={handleNewCustomerInputChange}
-                  className={`mt-1 block w-full border rounded-md shadow-sm p-2 ${
-                    formErrors.email ? "border-red-500" : "border-gray-300"
-                  }`}
+                  className={`mt-1 block w-full border rounded-md shadow-sm p-2 ${formErrors.email ? "border-red-500" : "border-gray-300"
+                    }`}
                   placeholder="Nhập email (không bắt buộc)"
                 />
                 {formErrors.email && (
@@ -1096,9 +1177,8 @@ const SalePOSPage = () => {
                 <button
                   onClick={handleSaveNewCustomer}
                   disabled={isLoading}
-                  className={`inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white ${
-                    isLoading ? "bg-blue-400" : "bg-blue-600 hover:bg-blue-700"
-                  }`}
+                  className={`inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white ${isLoading ? "bg-blue-400" : "bg-blue-600 hover:bg-blue-700"
+                    }`}
                 >
                   {isLoading ? (
                     <svg
@@ -1152,18 +1232,17 @@ const SalePOSPage = () => {
             const remainingTime = orderTimers[index] !== undefined
               ? orderTimers[index]
               : order.createdAt
-              ? Math.max(
+                ? Math.max(
                   30 * 60 - Math.floor((new Date() - new Date(order.createdAt)) / 1000),
                   0
                 )
-              : 30 * 60;
+                : 30 * 60;
 
             return (
               <div
                 key={order.id}
-                className={`min-w-[150px] cursor-pointer p-2 mr-2 rounded ${
-                  index === activeOrderIndex ? "bg-blue-100 border border-blue-500" : "bg-gray-100"
-                }`}
+                className={`min-w-[150px] cursor-pointer p-2 mr-2 rounded ${index === activeOrderIndex ? "bg-blue-100 border border-blue-500" : "bg-gray-100"
+                  }`}
                 onClick={() => handleSwitchOrder(index)}
               >
                 <div className="flex justify-between items-center">
@@ -1473,9 +1552,8 @@ const SalePOSPage = () => {
                   <button
                     key={index + 1}
                     onClick={() => paginate(index + 1)}
-                    className={`mx-1 px-3 py-1 rounded ${
-                      currentPage === index + 1 ? "bg-blue-500 text-white" : "bg-gray-200"
-                    }`}
+                    className={`mx-1 px-3 py-1 rounded ${currentPage === index + 1 ? "bg-blue-500 text-white" : "bg-gray-200"
+                      }`}
                   >
                     {index + 1}
                   </button>
@@ -1557,19 +1635,18 @@ const SalePOSPage = () => {
                   ))}
                 </ul>
               )}
-              {!isSearching &&
-                searchKeyword &&
-                filteredCustomers.length === 0 && (
-                  <div className="absolute z-10 bg-white border rounded-md w-full mt-1 shadow-lg p-3 text-gray-500">
-                    Không tìm thấy khách hàng.{" "}
-                    <button
-                      onClick={handleAddNewCustomerClick}
-                      className="text-blue-600 hover:underline"
-                    >
-                      Thêm khách hàng mới
-                    </button>
-                  </div>
-                )}
+
+              {!isSearching && searchKeyword && filteredCustomers.length === 0 && (
+                <div className="absolute z-10 bg-white border rounded-md w-full mt-1 shadow-lg p-3 text-gray-500">
+                  Không tìm thấy khách hàng.{" "}
+                  <button
+                    onClick={handleAddNewCustomerClick}
+                    className="text-blue-600 hover:underline"
+                  >
+                    Thêm khách hàng mới
+                  </button>
+                </div>
+              )}
             </div>
             <button
               onClick={handleAddNewCustomerClick}
