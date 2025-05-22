@@ -36,14 +36,26 @@ function Sidebar() {
 
   const productItems = [
     { label: "Sản phẩm", icon: <FaTshirt />, path: "/admin/product" },
-    { label: "Thêm sản phẩm", icon: <FaRegPlusSquare />, path: "/admin/product/create" },
+    {
+      label: "Thêm sản phẩm",
+      icon: <FaRegPlusSquare />,
+      path: "/admin/product/create",
+    },
     { label: "Thương hiệu", icon: <FaTrademark />, path: "/admin/brand" },
     { label: "Chất liệu", icon: <FaCubes />, path: "/admin/material" },
     { label: "Cổ áo", icon: <FaThLarge />, path: "/admin/attribute/collar" },
     { label: "Màu sắc", icon: <FaPalette />, path: "/admin/attribute/color" },
-    { label: "Kích thước", icon: <FaRulerCombined />, path: "/admin/attribute/size" },
+    {
+      label: "Kích thước",
+      icon: <FaRulerCombined />,
+      path: "/admin/attribute/size",
+    },
     { label: "Tay áo", icon: <FaCloudSun />, path: "/admin/attribute/sleeve" },
-    { label: "Khuyến mãi", icon: <FaTags />, path: "/admin/attribute/promotion" },
+    {
+      label: "Khuyến mãi",
+      icon: <FaTags />,
+      path: "/admin/attribute/promotion",
+    },
   ];
 
   const accountItems = [
@@ -52,28 +64,35 @@ function Sidebar() {
   ];
 
   const orderItems = [
-    { label: "Hóa đơn POS", icon: <FaCashRegister />, path: "/admin/order/pos" },
-    { label: "Đơn hàng Online", icon: <FaClipboardList />, path: "/admin/order/online" },
+    {
+      label: "Hóa đơn POS",
+      icon: <FaCashRegister />,
+      path: "/admin/order/pos",
+    },
+    {
+      label: "Đơn hàng Online",
+      icon: <FaClipboardList />,
+      path: "/admin/order/online",
+    },
   ];
 
   return (
-    <div className={`bg-white text-dark min-h-screen transition-all ${collapsed ? "w-16" : "w-60"} flex flex-col shadow-lg px-3 py-2 overflow-y-auto`}>
+    <div
+      className={`bg-white text-dark min-h-screen transition-all ${collapsed ? "w-16" : "w-60"} flex flex-col shadow-lg px-3 py-2 overflow-y-auto`}
+    >
       {/* Logo */}
-      <div className="flex items-center justify-center py-4 cursor-pointer border-b border-gray-700" onClick={() => setCollapsed(!collapsed)}>
-        <img src="/src/assets/logo.jpg" className={`transition-all ${collapsed ? "w-8" : "w-24"}`} />
+      <div
+        className="flex items-center justify-center py-4 cursor-pointer border-b border-gray-700"
+        onClick={() => setCollapsed(!collapsed)}
+      >
+        <img
+          src="/src/assets/logo.jpg"
+          className={`transition-all ${collapsed ? "w-8" : "w-24"}`}
+        />
       </div>
 
       {/* Menu */}
       <ul className="flex-1 space-y-2 mt-4">
-        <li>
-          <Link
-            to="/admin/dashboard"
-            className={`flex items-center gap-3 p-3 rounded-lg transition ${location.pathname === "/admin/dashboard" ? "bg-blue-500 text-white" : "hover:bg-gray-200"}`}
-          >
-            <FaChartPie /> {!collapsed && <span>Tổng quan</span>}
-          </Link>
-        </li>
-
         <li>
           <Link
             to="/admin/salePOS"
@@ -92,7 +111,11 @@ function Sidebar() {
             <span className="flex items-center gap-3">
               <FaClipboardList /> {!collapsed && <span>Quản lý hóa đơn</span>}
             </span>
-            {!collapsed && <FaChevronDown className={`transition-transform ${showOrderMenu ? "rotate-180" : ""}`} />}
+            {!collapsed && (
+              <FaChevronDown
+                className={`transition-transform ${showOrderMenu ? "rotate-180" : ""}`}
+              />
+            )}
           </div>
           {!collapsed && showOrderMenu && (
             <ul className="pl-6 space-y-2">
@@ -119,7 +142,11 @@ function Sidebar() {
             <span className="flex items-center gap-3">
               <FaBoxOpen /> {!collapsed && <span>Quản lý sản phẩm</span>}
             </span>
-            {!collapsed && <FaChevronDown className={`transition-transform ${showProductMenu ? "rotate-180" : ""}`} />}
+            {!collapsed && (
+              <FaChevronDown
+                className={`transition-transform ${showProductMenu ? "rotate-180" : ""}`}
+              />
+            )}
           </div>
           {!collapsed && showProductMenu && (
             <ul className="pl-6 space-y-2">
@@ -146,7 +173,11 @@ function Sidebar() {
             <span className="flex items-center gap-3">
               <FaUsers /> {!collapsed && <span>Quản lý tài khoản</span>}
             </span>
-            {!collapsed && <FaChevronDown className={`transition-transform ${showAccountMenu ? "rotate-180" : ""}`} />}
+            {!collapsed && (
+              <FaChevronDown
+                className={`transition-transform ${showAccountMenu ? "rotate-180" : ""}`}
+              />
+            )}
           </div>
           {!collapsed && showAccountMenu && (
             <ul className="pl-6 space-y-2">
