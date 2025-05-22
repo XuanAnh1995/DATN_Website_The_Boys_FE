@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo } from "react";
 import SalePOS from "../../../services/POSService";
 import ColorService from "../../../services/ColorService";
 import SizeService from "../../../services/SizeService";
+import CollarService from "../../../services/CollarService";
+import SleeveService from "../../../services/SleeveService";
 import CustomerService from "../../../services/CustomerService";
 import { FaShoppingCart, FaTrash, FaPlus, FaTimes } from "react-icons/fa";
 import QRCode from "react-qr-code";
@@ -56,6 +58,8 @@ const SalePOSPage = () => {
 
   const [colors, setColors] = useState([]);
   const [sizes, setSizes] = useState([]);
+  const [collar, setCollars] = useState([]);
+  const [sleeve, setSleeves] = useState([]);
 
   const [selectedVoucher, setSelectedVoucher] = useState("");
   const [calculatedDiscount, setCalculatedDiscount] = useState(0);
@@ -103,12 +107,21 @@ const SalePOSPage = () => {
   const [paymentUrl, setPaymentUrl] = useState(null);
   const [showQRCode, setShowQRCode] = useState(false);
 
+  // Utility function to format currency
+  const formatCurrency = (value) => {
+    return value
+      ? value.toLocaleString("vi-VN", { style: "currency", currency: "VND" })
+      : "0 VND";
+  };
+
   useEffect(() => {
     fetchProductDetails();
     fetchCustomers();
     fetchVouchers();
     fetchColors();
     fetchSizes();
+    fetchCollars();
+    fetchSleeves();
   }, []);
 
   const handleSelectCustomer = (customer) => {
@@ -313,6 +326,24 @@ const SalePOSPage = () => {
       setSizes(response.content || []);
     } catch (error) {
       console.error("Lỗi khi lấy danh sách kích thước:", error);
+    }
+  };
+
+  const fetchCollars = async () => {
+    try {
+      const response = await CollarService.getAllCollars();
+      setCollars(response.content || []);
+    } catch (error) {
+      console.error("Lỗi khi lấy danh sách cổ áo:", error);
+    }
+  };
+
+  const fetchSleeves = async () => {
+    try {
+      const response = await SleeveService.getAllSleeves();
+      setSleeves(response.content || []);
+    } catch (error) {
+      console.error("Lỗi khi lấy danh sách tay áo:", error);
     }
   };
 
@@ -527,7 +558,7 @@ const SalePOSPage = () => {
   };
 
   useEffect(() => {
-    const savedOrders = localStorage.getItem('orders');
+    const savedOrders = localStorage.getItem("orders");
     if (savedOrders) {
       const parsedOrders = JSON.parse(savedOrders).map((order) => ({
         ...order,
@@ -550,7 +581,7 @@ const SalePOSPage = () => {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('orders', JSON.stringify(orders));
+    localStorage.setItem("orders", JSON.stringify(orders));
   }, [orders]);
 
   useEffect(() => {
@@ -999,7 +1030,6 @@ const SalePOSPage = () => {
 
   return (
     <div className="p-4 bg-gray-100 min-h-screen relative">
-     
       {showAddCustomerForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
           <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
@@ -1149,20 +1179,26 @@ const SalePOSPage = () => {
       {orders.length > 0 && (
         <div className="flex overflow-x-auto my-2 bg-white p-2 rounded shadow">
           {orders.map((order, index) => {
-            const remainingTime = orderTimers[index] !== undefined
-              ? orderTimers[index]
-              : order.createdAt
-              ? Math.max(
-                  30 * 60 - Math.floor((new Date() - new Date(order.createdAt)) / 1000),
-                  0
-                )
-              : 30 * 60;
+            const remainingTime =
+              orderTimers[index] !== undefined
+                ? orderTimers[index]
+                : order.createdAt
+                  ? Math.max(
+                      30 * 60 -
+                        Math.floor(
+                          (new Date() - new Date(order.createdAt)) / 1000
+                        ),
+                      0
+                    )
+                  : 30 * 60;
 
             return (
               <div
                 key={order.id}
                 className={`min-w-[150px] cursor-pointer p-2 mr-2 rounded ${
-                  index === activeOrderIndex ? "bg-blue-100 border border-blue-500" : "bg-gray-100"
+                  index === activeOrderIndex
+                    ? "bg-blue-100 border border-blue-500"
+                    : "bg-gray-100"
                 }`}
                 onClick={() => handleSwitchOrder(index)}
               >
@@ -1183,7 +1219,8 @@ const SalePOSPage = () => {
                   {order.totalAmount.toLocaleString()} VND
                 </div>
                 <div className="text-sm text-gray-500">
-                  Thời gian còn lại: {`${Math.floor(remainingTime / 60)}:${(remainingTime % 60).toString().padStart(2, '0')} phút`}
+                  Thời gian còn lại:{" "}
+                  {`${Math.floor(remainingTime / 60)}:${(remainingTime % 60).toString().padStart(2, "0")} phút`}
                 </div>
               </div>
             );
@@ -1226,7 +1263,9 @@ const SalePOSPage = () => {
                   <th className="p-2">Tên Sản Phẩm</th>
                   <th className="p-2">Màu Sắc</th>
                   <th className="p-2">Kích Thước</th>
-                  <th className="p-2">Giá Bán</th>
+                  <th className="p-2">Cố Áo</th>
+                  <th className="p-2">Tay Áo</th>
+                  <th className="p-2">Giá Gốc</th>
                   <th className="p-2">Giảm Giá</th>
                   <th className="p-2">Số Lượng</th>
                   <th className="p-2">Thành Tiền</th>
@@ -1254,6 +1293,12 @@ const SalePOSPage = () => {
                       </td>
                       <td className="p-2">
                         {item.size?.name || "Không có mã"}
+                      </td>
+                      <td className="p-2">
+                        {item.collar?.name || "Không có mã"}
+                      </td>
+                      <td className="p-2">
+                        {item.sleeve?.sleeveName || "Không có mã"}
                       </td>
                       <td className="p-2 text-blue-600 font-bold">
                         {item.salePrice?.toLocaleString()} VND
@@ -1385,9 +1430,12 @@ const SalePOSPage = () => {
                   <th className="py-2 px-4 border-b text-left">Tên sản phẩm</th>
                   <th className="py-2 px-4 border-b text-left">Màu sắc</th>
                   <th className="py-2 px-4 border-b text-left">Kích thước</th>
+                  <th className="py-2 px-4 border-b text-left">Cổ áo</th>
+                  <th className="py-2 px-4 border-b text-left">Tay áo</th>
                   <th className="py-2 px-4 border-b text-left">Số lượng</th>
-                  <th className="py-2 px-4 border-b text-left">Giá bán</th>
+                  <th className="py-2 px-4 border-b text-left">Giá gốc</th>
                   <th className="py-2 px-4 border-b text-left">Giảm giá</th>
+                  <th className="py-2 px-4 border-b text-left">Giá bán</th>
                   <th className="py-2 px-4 border-b text-center">Hành động</th>
                 </tr>
               </thead>
@@ -1432,14 +1480,23 @@ const SalePOSPage = () => {
                         <td className="py-2 px-4 border-b">
                           {product.size?.name || "Không xác định"}
                         </td>
+                        <td className="py-2 px-4 border-b">
+                          {product.collar?.name || "Không xác định"}
+                        </td>
+                        <td className="py-2 px-4 border-b">
+                          {product.sleeve?.sleeveName || "Không xác định"}
+                        </td>
                         <td className="py-2 px-4 border-b text-center">
                           {product.quantity || 0}
                         </td>
-                        <td className="py-2 px-4 border-b text-blue-600 font-bold">
-                          {product.salePrice?.toLocaleString()} VND
+                        <td className="py-2 px-4 border-b text-blue-600 font-semibold">
+                          {formatCurrency(product.salePrice)}
                         </td>
-                        <td className="py-2 px-4 border-b text-blue-600 font-bold">
+                        <td className="py-2 px-4 border-b text-blue-600 font-semibold">
                           {discount}
+                        </td>
+                        <td className="py-2 px-4 border-b text-blue-600 font-semibold">
+                          {formatCurrency(discountedPrice)}
                         </td>
                         <td className="py-2 px-4 border-b text-center">
                           <button
@@ -1474,7 +1531,9 @@ const SalePOSPage = () => {
                     key={index + 1}
                     onClick={() => paginate(index + 1)}
                     className={`mx-1 px-3 py-1 rounded ${
-                      currentPage === index + 1 ? "bg-blue-500 text-white" : "bg-gray-200"
+                      currentPage === index + 1
+                        ? "bg-blue-500 text-white"
+                        : "bg-gray-200"
                     }`}
                   >
                     {index + 1}
@@ -1644,7 +1703,8 @@ const SalePOSPage = () => {
                     VND)
                   </option>
                 ))}
-              <option value="">Không sử dụng voucher</option> {/* Thêm tùy chọn không sử dụng voucher */}
+              <option value="">Không sử dụng voucher</option>{" "}
+              {/* Thêm tùy chọn không sử dụng voucher */}
             </select>
           </div>
 
@@ -1696,12 +1756,36 @@ const SalePOSPage = () => {
 
           {paymentMethod === "vnpay" && showQRCode && paymentUrl && (
             <div style={{ textAlign: "center", marginTop: "20px" }}>
-              <p className="text-lg font-semibold mb-2">Thanh toán chuyển khoản</p>
+              <p className="text-lg font-semibold mb-2">
+                Thanh toán chuyển khoản
+              </p>
               <p className="text-sm mb-4">Vui lòng quét mã QR để thanh toán.</p>
-              <div style={{ backgroundColor: "#f5f5f5", padding: "20px", borderRadius: "8px", display: "inline-block" }}>
-                <div style={{ display: "flex", justifyContent: "center", alignItems: "center", marginBottom: "10px" }}>
-                  <img src="/path/to/vietqr-logo.png" alt="VietQR" style={{ height: "30px", marginRight: "10px" }} />
-                  <img src="/path/to/vietcombank-logo.png" alt="Vietcombank" style={{ height: "30px" }} />
+              <div
+                style={{
+                  backgroundColor: "#f5f5f5",
+                  padding: "20px",
+                  borderRadius: "8px",
+                  display: "inline-block",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    marginBottom: "10px",
+                  }}
+                >
+                  <img
+                    src="/path/to/vietqr-logo.png"
+                    alt="VietQR"
+                    style={{ height: "30px", marginRight: "10px" }}
+                  />
+                  <img
+                    src="/path/to/vietcombank-logo.png"
+                    alt="Vietcombank"
+                    style={{ height: "30px" }}
+                  />
                 </div>
                 <QRCode
                   value={paymentUrl}
@@ -1710,7 +1794,11 @@ const SalePOSPage = () => {
                   includeMargin={true}
                 />
                 <div style={{ marginTop: "10px" }}>
-                  <a href={paymentUrl} target="_blank" rel="noopener noreferrer">
+                  <a
+                    href={paymentUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     <button
                       style={{
                         padding: "10px 20px",
