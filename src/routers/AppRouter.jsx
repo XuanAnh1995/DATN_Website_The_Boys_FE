@@ -38,7 +38,7 @@ function AppRouter() {
           <Route
             path="/admin/*"
             element={
-              isLoggedIn && role === "ADMIN" ? (
+              isLoggedIn && (role === "ADMIN" || role === "STAFF") ? (
                 <LayoutAdmin />
               ) : (
                 <Navigate
