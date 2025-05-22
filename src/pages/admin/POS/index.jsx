@@ -4,8 +4,7 @@ import ColorService from "../../../services/ColorService";
 import SizeService from "../../../services/SizeService";
 import CustomerService from "../../../services/CustomerService";
 import { FaShoppingCart, FaTrash, FaPlus, FaTimes } from "react-icons/fa";
-import QRCode from "react-qr-code"; // Import thư viện qrcode.react
-
+import QRCode from "react-qr-code";
 import { debounce } from "lodash";
 import { data } from "autoprefixer";
 
@@ -30,12 +29,12 @@ const SalePOSPage = () => {
     size: "",
   });
 
-  // thêm state để quản lý lỗi validation và trạng thái loading:
   const [formErrors, setFormErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [notification, setNotification] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
-const [orderTimers, setOrderTimers] = useState({});
+  const [orderTimers, setOrderTimers] = useState({});
+
   const validateForm = () => {
     const errors = {};
     if (!newCustomer.fullname.trim()) {
@@ -55,21 +54,22 @@ const [orderTimers, setOrderTimers] = useState({});
     return errors;
   };
 
-  // State mới cho danh sách màu sắc và kích thước
   const [colors, setColors] = useState([]);
   const [sizes, setSizes] = useState([]);
 
   const [selectedVoucher, setSelectedVoucher] = useState("");
   const [calculatedDiscount, setCalculatedDiscount] = useState(0);
   const [vouchers, setVouchers] = useState([]);
-  // Thêm state để lưu voucher tối ưu
   const [optimalVoucher, setOptimalVoucher] = useState(null);
+
+  // Thêm state hasSelectedVoucher
+  const [hasSelectedVoucher, setHasSelectedVoucher] = useState(false);
 
   const [searchKeyword, setSearchKeyword] = useState("");
   const [filteredCustomers, setFilteredCustomers] = useState([]);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const productsPerPage = 8; // Số sản phẩm trên mỗi trang
+  const productsPerPage = 8;
 
   const indexOfLastProduct = currentPage * productsPerPage;
   const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
@@ -80,18 +80,15 @@ const [orderTimers, setOrderTimers] = useState({});
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
-  // Mảng các hóa đơn đang tạo
   const [orders, setOrders] = useState([]);
   const [activeOrderIndex, setActiveOrderIndex] = useState(null);
 
-  // Định nghĩa currentOrder bằng useMemo
   const currentOrder = useMemo(() => {
     return activeOrderIndex !== null && activeOrderIndex < orders.length
       ? orders[activeOrderIndex]
       : { items: [], totalAmount: 0, discount: 0 };
   }, [activeOrderIndex, orders]);
 
-  // State cho form thêm khách hàng mới
   const [showAddCustomerForm, setShowAddCustomerForm] = useState(false);
   const [newCustomer, setNewCustomer] = useState({
     fullname: "",
@@ -99,10 +96,8 @@ const [orderTimers, setOrderTimers] = useState({});
     email: "",
   });
 
-  // Nhân viên hiện tại (giả định)
   const [currentEmployee] = useState({ id: 1, name: "Nhân viên mặc định" });
 
-  // State mới để lưu URL thanh toán VNPay và kiểm soát hiển thị mã QR
   const [paymentUrl, setPaymentUrl] = useState(null);
   const [showQRCode, setShowQRCode] = useState(false);
 
@@ -110,8 +105,8 @@ const [orderTimers, setOrderTimers] = useState({});
     fetchProductDetails();
     fetchCustomers();
     fetchVouchers();
-    fetchColors(); // Lấy danh sách màu sắc
-    fetchSizes(); // Lấy danh sách kích thước
+    fetchColors();
+    fetchSizes();
   }, []);
 
   const handleSelectCustomer = (customer) => {
@@ -119,9 +114,9 @@ const [orderTimers, setOrderTimers] = useState({});
     setCustomerName(customer.fullname);
     setPhone(customer.phone);
     setEmail(customer.email);
-    setSearchKeyword(customer.fullname); // Hiển thị tên khách hàng trong input
-    setFilteredCustomers([]); // Ẩn danh sách gợi ý
-    setIsSearching(false); // Tắt loading sau khi chọn khách hàng
+    setSearchKeyword(customer.fullname);
+    setFilteredCustomers([]);
+    setIsSearching(false);
     if (activeOrderIndex !== null) {
       setOrders((prevOrders) => {
         const updatedOrders = [...prevOrders];
@@ -137,7 +132,6 @@ const [orderTimers, setOrderTimers] = useState({});
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
       filtered = filtered.filter((product) => {
-        // Tính giá bán thực tế (có khuyến mãi)
         const now = new Date();
         const startDate = product.promotion?.startDate
           ? new Date(product.promotion.startDate)
@@ -155,45 +149,40 @@ const [orderTimers, setOrderTimers] = useState({});
             ? product.salePrice * (1 - discountPercent / 100)
             : product.salePrice;
 
-        // Các trường từ ProductDetail để tìm kiếm
         const fields = [
-          product.id?.toString() || "", // ID
-          product.product?.productName?.toLowerCase() || "", // Tên sản phẩm
-          product.size?.name?.toLowerCase() || "", // Kích thước
-          product.color?.name?.toLowerCase() || "", // Màu sắc
-          product.promotion?.promotionPercent?.toString() || "", // Phần trăm giảm giá
-          product.collar?.name?.toLowerCase() || "", // Cổ áo (nếu có)
-          product.sleeve?.name?.toLowerCase() || "", // Tay áo (nếu có)
-          product.photo?.toLowerCase() || "", // Ảnh (chuỗi đường dẫn)
-          product.productDetailCode?.toLowerCase() || "", // Mã chi tiết sản phẩm
-          product.importPrice?.toString() || "", // Giá nhập
-          product.salePrice?.toString() || "", // Giá bán gốc
-          effectivePrice?.toString() || "", // Giá bán thực tế
-          product.quantity?.toString() || "", // Số lượng
-          product.description?.toLowerCase() || "", // Mô tả
-          product.status?.toString() || "", // Trạng thái (true/false)
+          product.id?.toString() || "",
+          product.product?.productName?.toLowerCase() || "",
+          product.size?.name?.toLowerCase() || "",
+          product.color?.name?.toLowerCase() || "",
+          product.promotion?.promotionPercent?.toString() || "",
+          product.collar?.name?.toLowerCase() || "",
+          product.sleeve?.name?.toLowerCase() || "",
+          product.photo?.toLowerCase() || "",
+          product.productDetailCode?.toLowerCase() || "",
+          product.importPrice?.toString() || "",
+          product.salePrice?.toString() || "",
+          effectivePrice?.toString() || "",
+          product.quantity?.toString() || "",
+          product.description?.toLowerCase() || "",
+          product.status?.toString() || "",
         ];
 
-        // Kiểm tra xem bất kỳ trường nào chứa searchTerm không
         return fields.some((field) => field.includes(searchLower));
       });
     }
 
-    // Lọc theo màu sắc (nếu có filter.color)
     if (filter.color) {
       filtered = filtered.filter((product) =>
         product.color?.name?.toLowerCase().includes(filter.color.toLowerCase())
       );
     }
 
-    // Lọc theo kích thước (nếu có filter.size)
     if (filter.size) {
       filtered = filtered.filter((product) =>
         product.size?.name?.toLowerCase().includes(filter.size.toLowerCase())
       );
     }
 
-    // Lọc theo khoảng giá (nếu có filter.minPrice/maxPrice)
     const minPrice = Number(filter.minPrice) || 0;
     const maxPrice = Number(filter.maxPrice) || Infinity;
     filtered = filtered.filter((product) => {
@@ -218,10 +207,10 @@ const [orderTimers, setOrderTimers] = useState({});
     });
 
     setFilteredProducts(filtered);
-    setCurrentPage(1); // Reset về trang đầu tiên khi áp dụng bộ lọc
+    setCurrentPage(1);
   }, [searchTerm, allProducts, filter]);
 
-  // Tìm voucher tối ưu mỗi khi totalAmount thay đổi
+  // Cập nhật logic áp dụng voucher tự động
   useEffect(() => {
     if (currentOrder?.totalAmount > 0) {
       const validVouchers = vouchers.filter((v) => {
@@ -236,26 +225,23 @@ const [orderTimers, setOrderTimers] = useState({});
         );
       });
 
-      // Tính giá trị giảm giá cho từng voucher và tìm voucher tối ưu
       const vouchersWithDiscount = validVouchers.map((voucher) => ({
         ...voucher,
         discountValue: calculateDiscount(voucher, currentOrder.totalAmount),
       }));
 
-      // Sắp xếp theo giá trị giảm giá giảm dần
       const sortedVouchers = vouchersWithDiscount.sort(
         (a, b) => b.discountValue - a.discountValue
       );
 
-      // Lấy voucher tối ưu (giảm giá nhiều nhất)
       const bestVoucher = sortedVouchers[0];
       setOptimalVoucher(bestVoucher || null);
 
-      // Chỉ tự động áp dụng nếu chưa có voucher được chọn thủ công
-      if (bestVoucher && !selectedVoucher) {
+      // Chỉ tự động áp dụng nếu người dùng chưa chọn voucher thủ công
+      if (bestVoucher && !hasSelectedVoucher) {
         handleVoucherChange(bestVoucher.voucherCode);
       } else if (!bestVoucher) {
-        setSelectedVoucher(""); // Reset nếu không có voucher hợp lệ
+        setSelectedVoucher("");
         setCalculatedDiscount(0);
       }
     } else {
@@ -263,7 +249,7 @@ const [orderTimers, setOrderTimers] = useState({});
       setSelectedVoucher("");
       setCalculatedDiscount(0);
     }
-  }, [currentOrder.totalAmount, vouchers, selectedVoucher]);
+  }, [currentOrder.totalAmount, vouchers, hasSelectedVoucher]); // Thêm hasSelectedVoucher vào dependencies
 
   useEffect(() => {
     if (activeOrderIndex !== null && selectedVoucher) {
@@ -282,7 +268,6 @@ const [orderTimers, setOrderTimers] = useState({});
     }
   }, [currentOrder.totalAmount, selectedVoucher, vouchers, activeOrderIndex]);
 
-  // Hàm lấy danh sách sản phẩm chi tiết
   const fetchProductDetails = async () => {
     try {
       const response = await SalePOS.getProductDetails({});
@@ -293,7 +278,6 @@ const [orderTimers, setOrderTimers] = useState({});
     }
   };
 
-  // Hàm lấy danh sách khách hàng
   const fetchCustomers = async () => {
     try {
       const response = await SalePOS.getCustomers();
@@ -303,7 +287,6 @@ const [orderTimers, setOrderTimers] = useState({});
     }
   };
 
-  // Hàm lấy danh sách voucher
   const fetchVouchers = async () => {
     try {
       const response = await SalePOS.getVouchers();
@@ -313,21 +296,19 @@ const [orderTimers, setOrderTimers] = useState({});
     }
   };
 
-  // Hàm lấy danh sách màu sắc
   const fetchColors = async () => {
     try {
       const response = await ColorService.getAllColors();
-      setColors(response.content || []); // Giả sử API trả về { content: [...] }
+      setColors(response.content || []);
     } catch (error) {
       console.error("Lỗi khi lấy danh sách màu sắc:", error);
     }
   };
 
-  // Hàm lấy danh sách kích thước
   const fetchSizes = async () => {
     try {
       const response = await SizeService.getAllSizes();
-      setSizes(response.content || []); // Giả sử API trả về { content: [...] }
+      setSizes(response.content || []);
     } catch (error) {
       console.error("Lỗi khi lấy danh sách kích thước:", error);
     }
@@ -339,20 +320,17 @@ const [orderTimers, setOrderTimers] = useState({});
 
     if (!keyword) {
       setFilteredCustomers([]);
-      setIsSearching(false); // Tắt loading khi không có từ khóa
+      setIsSearching(false);
       return;
     }
 
-    setIsSearching(true); // Bật loading khi bắt đầu tìm kiếm
+    setIsSearching(true);
 
-    // Chuẩn hóa và tìm kiếm trong danh sách khách hàng
     const results = customers.filter((customer) => {
-      // Chuẩn hóa các trường của khách hàng
       const fullname = (customer.fullname || "").trim().toLowerCase();
       const phone = (customer.phone || "").trim().toLowerCase();
       const email = (customer.email || "").trim().toLowerCase();
 
-      // Kiểm tra từ khóa có trong các trường không
       return (
         fullname.includes(keyword) ||
         phone.includes(keyword) ||
@@ -360,19 +338,20 @@ const [orderTimers, setOrderTimers] = useState({});
       );
     });
 
-    // Ghi log để debug
     console.log("Từ khóa tìm kiếm:", keyword);
     console.log("Danh sách khách hàng:", customers);
     console.log("Kết quả tìm kiếm:", results);
 
     setFilteredCustomers(results);
-    setIsSearching(false); // Tắt loading khi tìm kiếm hoàn tất
+    setIsSearching(false);
   };
 
+  // Cập nhật hàm handleVoucherChange
   const handleVoucherChange = (voucherCode) => {
     console.log("📌 Voucher được chọn:", voucherCode);
 
     setSelectedVoucher(voucherCode);
+    setHasSelectedVoucher(true); // Đánh dấu rằng người dùng đã chọn voucher
 
     const voucher = vouchers.find((v) => v.voucherCode === voucherCode);
 
@@ -409,7 +388,6 @@ const [orderTimers, setOrderTimers] = useState({});
     }
   };
 
-  // Hàm tính giá trị giảm giá thực tế cho một voucher
   const calculateDiscount = (voucher, totalAmount) => {
     if (!voucher || totalAmount < voucher.minCondition) return 0;
     return Math.min(
@@ -439,10 +417,8 @@ const [orderTimers, setOrderTimers] = useState({});
     }));
   };
 
-  // Hiển thị thông báo
   const handleUseWalkInCustomer = () => {
-    // Sử dụng khách vãng lai (không có thông tin cụ thể)
-    setSelectedCustomer("walk-in"); // Giá trị đặc biệt cho khách vãng lai
+    setSelectedCustomer("walk-in");
     setCustomerName("Khách vãng lai");
     setPhone("");
     setEmail("");
@@ -453,7 +429,6 @@ const [orderTimers, setOrderTimers] = useState({});
     });
   };
 
-  // Hàm reset thông tin khách hàng
   const resetNewCustomer = () => {
     console.log("🔄 Resetting newCustomer...");
     setNewCustomer({
@@ -476,17 +451,14 @@ const [orderTimers, setOrderTimers] = useState({});
     setFormErrors({});
 
     try {
-      // Loại bỏ khoảng trắng đầu/cuối khi nhập thông tin
       const trimmedCustomer = {
         fullname: newCustomer.fullname.trim(),
         phone: newCustomer.phone.trim(),
         email: newCustomer.email.trim(),
       };
 
-      // Gọi API để lưu khách hàng mới
       const response = await CustomerService.add(trimmedCustomer);
 
-      // 🟢 Kiểm tra response và cập nhật UI
       if (response?.data?.id) {
         setCustomers((prev) => [...prev, response.data]);
 
@@ -497,7 +469,7 @@ const [orderTimers, setOrderTimers] = useState({});
           message: "Thêm mới khách hàng thành công !",
         });
 
-        resetNewCustomer(); // Reset form
+        resetNewCustomer();
       } else {
         setNotification({
           type: "error",
@@ -515,128 +487,125 @@ const [orderTimers, setOrderTimers] = useState({});
   };
 
   const handleCreateOrder = async () => {
-  try {
-    const orderData = {
-      customerId:
-        selectedCustomer && selectedCustomer !== "walk-in"
-          ? selectedCustomer
-          : -1,
-      employeeId: 1, // ID nhân viên
-      voucherId: selectedVoucher
-        ? vouchers.find((v) => v.voucherCode === selectedVoucher)?.id
-        : null,
-      paymentMethod: "cash",
-    };
+    try {
+      const orderData = {
+        customerId:
+          selectedCustomer && selectedCustomer !== "walk-in"
+            ? selectedCustomer
+            : -1,
+        employeeId: 1,
+        voucherId: selectedVoucher
+          ? vouchers.find((v) => v.voucherCode === selectedVoucher)?.id
+          : null,
+        paymentMethod: "cash",
+      };
 
-    const newOrder = await SalePOS.createOrder(orderData);
+      const newOrder = await SalePOS.createOrder(orderData);
 
-    setOrders((prevOrders) => [
-      ...prevOrders,
-      {
-        id: newOrder.id,
-        items: [],
-        totalAmount: 0,
-        discount: 0,
-        customerId: orderData.customerId,
-        voucherId: orderData.voucherId,
-        paymentMethod: orderData.paymentMethod,
-        createdAt: new Date(), // Thời gian tạo hóa đơn
-      },
-    ]);
+      setOrders((prevOrders) => [
+        ...prevOrders,
+        {
+          id: newOrder.id,
+          items: [],
+          totalAmount: 0,
+          discount: 0,
+          customerId: orderData.customerId,
+          voucherId: orderData.voucherId,
+          paymentMethod: orderData.paymentMethod,
+          createdAt: new Date(),
+        },
+      ]);
 
-    setActiveOrderIndex(orders.length);
-    console.log("✅ Đơn hàng mới đã được tạo:", newOrder);
-  } catch (error) {
-    console.error("❌ Lỗi khi tạo đơn hàng:", error);
-  }
-};
-useEffect(() => {
-  const savedOrders = localStorage.getItem('orders');
-  if (savedOrders) {
-    const parsedOrders = JSON.parse(savedOrders).map((order) => ({
-      ...order,
-      createdAt: order.createdAt ? new Date(order.createdAt) : new Date(),
-    }));
-    setOrders(parsedOrders);
+      setActiveOrderIndex(orders.length);
+      setHasSelectedVoucher(false); // Reset để áp dụng bestVoucher cho hóa đơn mới
+      console.log("✅ Đơn hàng mới đã được tạo:", newOrder);
+    } catch (error) {
+      console.error("❌ Lỗi khi tạo đơn hàng:", error);
+    }
+  };
 
-    // Khởi tạo orderTimers dựa trên createdAt
-    const initialTimers = {};
-    parsedOrders.forEach((order, index) => {
-      if (order.createdAt) {
-        const elapsed = Math.floor(
-          (new Date() - new Date(order.createdAt)) / 1000
-        );
-        const maxTime = 30 * 60; // 30 phút = 1800 giây
-        initialTimers[index] = Math.max(maxTime - elapsed, 0);
-      }
-    });
-    setOrderTimers(initialTimers);
-  }
-}, []);
+  useEffect(() => {
+    const savedOrders = localStorage.getItem('orders');
+    if (savedOrders) {
+      const parsedOrders = JSON.parse(savedOrders).map((order) => ({
+        ...order,
+        createdAt: order.createdAt ? new Date(order.createdAt) : new Date(),
+      }));
+      setOrders(parsedOrders);
 
-useEffect(() => {
-  localStorage.setItem('orders', JSON.stringify(orders));
-}, [orders]);
-useEffect(() => {
-  localStorage.setItem('orders', JSON.stringify(orders));
-}, [orders]);
-
-useEffect(() => {
-  const interval = setInterval(() => {
-    setOrderTimers((prevTimers) => {
-      const newTimers = {};
-      const updatedOrders = [...orders];
-
-      orders.forEach((order, index) => {
+      const initialTimers = {};
+      parsedOrders.forEach((order, index) => {
         if (order.createdAt) {
           const elapsed = Math.floor(
             (new Date() - new Date(order.createdAt)) / 1000
           );
-          const maxTime = 30 * 60; // 30 phút
-          const remainingTime = Math.max(maxTime - elapsed, 0);
-          newTimers[index] = remainingTime;
-
-          if (remainingTime <= 0 && updatedOrders[index]) {
-            updatedOrders.splice(index, 1);
-            if (activeOrderIndex === index) {
-              setActiveOrderIndex(null);
-            } else if (activeOrderIndex > index) {
-              setActiveOrderIndex(activeOrderIndex - 1);
-            }
-            setNotification({
-              type: "warning",
-              message: `Hóa đơn #${index + 1} đã hết thời gian chờ và bị xóa.`,
-            });
-          }
+          const maxTime = 30 * 60;
+          initialTimers[index] = Math.max(maxTime - elapsed, 0);
         }
       });
+      setOrderTimers(initialTimers);
+    }
+  }, []);
 
-      if (updatedOrders.length !== orders.length) {
-        setOrders(updatedOrders);
-      }
+  useEffect(() => {
+    localStorage.setItem('orders', JSON.stringify(orders));
+  }, [orders]);
 
-      return newTimers;
-    });
-  }, 1000);
-  return () => clearInterval(interval);
-}, [orders, activeOrderIndex]);
-  // Trong phần useEffect xử lý barcode
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setOrderTimers((prevTimers) => {
+        const newTimers = {};
+        const updatedOrders = [...orders];
+
+        orders.forEach((order, index) => {
+          if (order.createdAt) {
+            const elapsed = Math.floor(
+              (new Date() - new Date(order.createdAt)) / 1000
+            );
+            const maxTime = 30 * 60;
+            const remainingTime = Math.max(maxTime - elapsed, 0);
+            newTimers[index] = remainingTime;
+
+            if (remainingTime <= 0 && updatedOrders[index]) {
+              updatedOrders.splice(index, 1);
+              if (activeOrderIndex === index) {
+                setActiveOrderIndex(null);
+              } else if (activeOrderIndex > index) {
+                setActiveOrderIndex(activeOrderIndex - 1);
+              }
+              setNotification({
+                type: "warning",
+                message: `Hóa đơn #${index + 1} đã hết thời gian chờ và bị xóa.`,
+              });
+            }
+          }
+        });
+
+        if (updatedOrders.length !== orders.length) {
+          setOrders(updatedOrders);
+        }
+
+        return newTimers;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [orders, activeOrderIndex]);
+
   useEffect(() => {
     let barcode = "";
     let timer = null;
 
     const handleKeyDown = (event) => {
-      // Không chặn sự kiện mặc định để ô tìm kiếm vẫn hoạt động khi cần
       const currentTime = Date.now();
 
       if (event.key === "Enter" && barcode.trim() !== "") {
         handleBarcodeScan(barcode);
-        barcode = ""; // Xóa sau khi xử lý
+        barcode = "";
       } else if (event.key.length === 1) {
         barcode += event.key;
         clearTimeout(timer);
         timer = setTimeout(() => {
-          barcode = ""; // Reset nếu không nhận thêm ký tự trong 500ms
+          barcode = "";
         }, 500);
       }
     };
@@ -646,7 +615,7 @@ useEffect(() => {
       document.removeEventListener("keydown", handleKeyDown);
       clearTimeout(timer);
     };
-  }, [activeOrderIndex, allProducts]); // Thêm dependencies để cập nhật khi danh sách sản phẩm hoặc hóa đơn thay đổi
+  }, [activeOrderIndex, allProducts]);
 
   const handleBarcodeScan = (scannedBarcode) => {
     if (!scannedBarcode) return;
@@ -659,10 +628,9 @@ useEffect(() => {
       orders.length
     );
 
-    // Kiểm tra xem có hóa đơn nào được chọn không
     if (activeOrderIndex === null || activeOrderIndex >= orders.length) {
       alert("⚠ Bạn cần chọn hóa đơn trước khi quét mã vạch!");
-      return; // Ngừng quét nếu không có hóa đơn
+      return;
     }
 
     const product = allProducts.find(
@@ -684,7 +652,6 @@ useEffect(() => {
     }
   };
 
-  // thêm sản phẩm vào giỏ hàng
   const handleAddToCart = (product) => {
     console.log("🛒 [ADD TO CART] Bắt đầu thêm sản phẩm vào giỏ hàng...");
     if (activeOrderIndex === null || activeOrderIndex >= orders.length) {
@@ -695,7 +662,6 @@ useEffect(() => {
       return;
     }
 
-    // Kiểm tra số lượng tồn kho trước khi thêm sản phẩm
     if (product.quantity <= 0) {
       alert(`Sản phẩm ${product.product?.productName} đã hết hàng !`);
       return;
@@ -707,14 +673,12 @@ useEffect(() => {
 
       console.log("📌 [ORDER] Đơn hàng hiện tại:", currentOrder);
 
-      // Kiểm tra sản phẩm đã tồn tại trong giỏ hàng chưa
       const existingItemIndex = currentOrder.items.findIndex(
         (item) => item.id === product.id
       );
       if (existingItemIndex !== -1) {
         const existingItem = currentOrder.items[existingItemIndex];
 
-        // Kiểm tra nếu số lượng vượt quá tồn kho
         if (existingItem.quantity >= product.quantity) {
           alert(
             `Sản phẩm "${product.product?.productName}" chỉ còn ${product.quantity} sản phẩm trong kho.`
@@ -731,7 +695,7 @@ useEffect(() => {
         currentOrder.items.push({
           ...product,
           quantity: 1,
-          quantityAvailable: product.quantity, // Lưu số lượng tồn kho
+          quantityAvailable: product.quantity,
         });
       }
 
@@ -750,7 +714,6 @@ useEffect(() => {
     });
   };
 
-  // quá trình xóa sản phẩm khỏi giỏ hàng.
   const handleRemoveFromCart = (productId) => {
     console.log("🗑 [REMOVE FROM CART] Bắt đầu xóa sản phẩm khỏi giỏ hàng...");
     if (activeOrderIndex === null) {
@@ -767,7 +730,6 @@ useEffect(() => {
         currentOrder.items
       );
 
-      // Lọc ra danh sách sản phẩm mới (loại bỏ sản phẩm đã xóa)
       currentOrder.items = currentOrder.items.filter(
         (item) => item.id !== productId
       );
@@ -788,7 +750,6 @@ useEffect(() => {
     });
   };
 
-  // quá trình thay đổi số lượng sản phẩm trong giỏ hàng.
   const handleQuantityChange = (productId, newQuantity) => {
     if (activeOrderIndex === null) {
       console.warn("⚠ Không có đơn hàng nào được chọn.");
@@ -822,7 +783,6 @@ useEffect(() => {
         return updatedOrders;
       }
 
-      // Cập nhật tổng tiền
       currentOrder.totalAmount = currentOrder.items.reduce((sum, item) => {
         const salePrice = Number(item.salePrice) || 0;
         const discountPercent = Number(item.promotion?.promotionPercent) || 0;
@@ -848,7 +808,6 @@ useEffect(() => {
       setDiscount(order.discount);
       setPaymentMethod(order.paymentMethod);
 
-      // Cập nhật thông tin khách hàng
       if (order.customerId === "walk-in") {
         setCustomerName("Khách vãng lai");
         setPhone("");
@@ -894,16 +853,15 @@ useEffect(() => {
     if (activeOrderIndex !== null && orders[activeOrderIndex]) {
       const totalAmount = orders[activeOrderIndex].totalAmount;
       const finalAmount = totalAmount - calculatedDiscount;
-      setChangeAmount(Math.max(customerPaid - finalAmount, 0)); // Đảm bảo không âm
+      setChangeAmount(Math.max(customerPaid - finalAmount, 0));
     }
   }, [customerPaid, activeOrderIndex, orders, calculatedDiscount]);
 
-  // Hàm xử lý thanh toán VNPay
   const handleVNPayPayment = async (orderId) => {
     try {
       const paymentUrl = await SalePOS.createVNPayPaymentUrl(orderId);
 
-      localStorage.setItem("pendingOrderId", orderId); // Lưu orderId để xử lý callback
+      localStorage.setItem("pendingOrderId", orderId);
       localStorage.setItem("pendingCustomerId", selectedCustomer || -1);
       localStorage.setItem(
         "pendingVoucherId",
@@ -912,14 +870,13 @@ useEffect(() => {
           : null
       );
 
-      window.location.href = paymentUrl; // Chuyển hướng đến VNPay
+      window.location.href = paymentUrl;
     } catch (error) {
       console.error("❌ Lỗi khi tạo URL thanh toán VNPay:", error);
       alert("Lỗi khi tạo URL thanh toán: " + error.message);
     }
   };
 
-  // Hàm xử lý thanh toán chính
   const handlePayment = async () => {
     if (activeOrderIndex === null) {
       console.log("⚠ Không có hóa đơn nào được chọn.");
@@ -940,10 +897,8 @@ useEffect(() => {
       return;
     }
 
-    // Tính số tiền khách phải trả
     const amountToPay = currentOrder.totalAmount - calculatedDiscount;
 
-    // Kiểm tra số tiền khách thanh toán nếu là tiền mặt
     if (paymentMethod === "cash") {
       if (customerPaid < amountToPay) {
         console.log("⚠ Số tiền khách thanh toán không đủ.");
@@ -954,13 +909,12 @@ useEffect(() => {
       }
     }
 
-    // Thêm xác nhận trước khi thanh toán
     const confirmMessage = `Bạn có chắc chắn muốn thanh toán?\n\nTổng tiền: ${currentOrder.totalAmount.toLocaleString()} VND\nGiảm giá: ${calculatedDiscount.toLocaleString()} VND\nKhách phải trả: ${amountToPay.toLocaleString()} VND\nPhương thức: ${paymentMethod === "cash" ? "Tiền mặt" : "VNPay"}${paymentMethod === "cash" ? `\nKhách thanh toán: ${customerPaid.toLocaleString()} VND\nTiền thừa: ${changeAmount.toLocaleString()} VND` : ""}`;
     const isConfirmed = window.confirm(confirmMessage);
 
     if (!isConfirmed) {
       console.log("❌ Người dùng đã hủy thanh toán.");
-      return; // Dừng lại nếu người dùng hủy
+      return;
     }
 
     const customerId = selectedCustomer === "walk-in" ? -1 : selectedCustomer;
@@ -984,13 +938,11 @@ useEffect(() => {
 
       if (paymentMethod === "vnpay") {
         if (orderId) {
-          // Gọi API để lấy URL thanh toán VNPay
           const qrData = await SalePOS.createVNPayPaymentUrl(orderId);
           console.log("QR Data:", qrData);
           setPaymentUrl(qrData);
           setShowQRCode(true);
 
-          // Lưu thông tin vào localStorage để xử lý callback
           localStorage.setItem("pendingOrderId", orderId);
           localStorage.setItem("pendingCustomerId", selectedCustomer || -1);
           localStorage.setItem(
@@ -1018,39 +970,33 @@ useEffect(() => {
     }
   };
 
-  // Hàm reset sau khi thanh toán thành công
+  // Cập nhật hàm resetAfterPayment
   const resetAfterPayment = () => {
-    // Reset các state liên quan đến khách hàng
     setSelectedCustomer("");
     setCustomerName("");
     setPhone("");
     setEmail("");
-    setSearchKeyword(""); // Reset ô tìm kiếm khách hàng
-    setFilteredCustomers([]); // Ẩn danh sách gợi ý khách hàng
-
-    // Reset các state liên quan đến thanh toán
+    setSearchKeyword("");
+    setFilteredCustomers([]);
     setTotalAmount(0);
     setCustomerPaid(0);
     setChangeAmount(0);
     setSelectedVoucher("");
     setCalculatedDiscount(0);
-
-    // Reset các state liên quan đến form thêm khách hàng (nếu cần)
     setShowAddCustomerForm(false);
     setNewCustomer({
       fullname: "",
       phone: "",
       email: "",
     });
-
-    setPaymentUrl(null); // Reset URL thanh toán
-    setShowQRCode(false); // Ẩn mã QR
+    setPaymentUrl(null);
+    setShowQRCode(false);
+    setHasSelectedVoucher(false); // Reset để áp dụng bestVoucher cho lần tiếp theo
   };
 
   return (
     <div className="p-4 bg-gray-100 min-h-screen relative">
-      
-      {/* Form thêm khách hàng mới */}
+     
       {showAddCustomerForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
           <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
@@ -1197,52 +1143,52 @@ useEffect(() => {
         </button>
       </div>
 
-      {/* Danh sách các hóa đơn đang tạo */}
-    {orders.length > 0 && (
-  <div className="flex overflow-x-auto my-2 bg-white p-2 rounded shadow">
-    {orders.map((order, index) => {
-      const remainingTime = orderTimers[index] !== undefined
-        ? orderTimers[index]
-        : order.createdAt
-          ? Math.max(
-              30 * 60 - Math.floor((new Date() - new Date(order.createdAt)) / 1000),
-              0
-            )
-          : 30 * 60; // Mặc định 30 phút nếu không có createdAt
+      {orders.length > 0 && (
+        <div className="flex overflow-x-auto my-2 bg-white p-2 rounded shadow">
+          {orders.map((order, index) => {
+            const remainingTime = orderTimers[index] !== undefined
+              ? orderTimers[index]
+              : order.createdAt
+              ? Math.max(
+                  30 * 60 - Math.floor((new Date() - new Date(order.createdAt)) / 1000),
+                  0
+                )
+              : 30 * 60;
 
-      return (
-        <div
-          key={order.id}
-          className={`min-w-[150px] cursor-pointer p-2 mr-2 rounded ${index === activeOrderIndex ? "bg-blue-100 border border-blue-500" : "bg-gray-100"}`}
-          onClick={() => handleSwitchOrder(index)}
-        >
-          <div className="flex justify-between items-center">
-            <span>Hóa đơn #{index + 1}</span>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleRemoveOrder(index);
-              }}
-              className="text-blue-500 hover:text-blue-700"
-            >
-              <FaTrash size={12} />
-            </button>
-          </div>
-          <div className="text-sm">{order.items.length} sản phẩm</div>
-          <div className="font-bold">
-            {order.totalAmount.toLocaleString()} VND
-          </div>
-          <div className="text-sm text-gray-500">
-            Thời gian còn lại: {`${Math.floor(remainingTime / 60)}:${(remainingTime % 60).toString().padStart(2, '0')} phút`}
-          </div>
+            return (
+              <div
+                key={order.id}
+                className={`min-w-[150px] cursor-pointer p-2 mr-2 rounded ${
+                  index === activeOrderIndex ? "bg-blue-100 border border-blue-500" : "bg-gray-100"
+                }`}
+                onClick={() => handleSwitchOrder(index)}
+              >
+                <div className="flex justify-between items-center">
+                  <span>Hóa đơn #{index + 1}</span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveOrder(index);
+                    }}
+                    className="text-blue-500 hover:text-blue-700"
+                  >
+                    <FaTrash size={12} />
+                  </button>
+                </div>
+                <div className="text-sm">{order.items.length} sản phẩm</div>
+                <div className="font-bold">
+                  {order.totalAmount.toLocaleString()} VND
+                </div>
+                <div className="text-sm text-gray-500">
+                  Thời gian còn lại: {`${Math.floor(remainingTime / 60)}:${(remainingTime % 60).toString().padStart(2, '0')} phút`}
+                </div>
+              </div>
+            );
+          })}
         </div>
-      );
-    })}
-  </div>
-)}
+      )}
 
       <div className="grid grid-cols-3 gap-4 mt-4">
-        {/* Giỏ hàng hiện tại */}
         <div className="col-span-2 bg-white p-4 rounded shadow">
           <h3 className="text-lg font-semibold mb-2">
             Giỏ hàng{" "}
@@ -1318,7 +1264,7 @@ useEffect(() => {
                         <input
                           type="number"
                           min="1"
-                          max={item.quantityAvailable || 1} // giới hạn số lượng tối đa theo tồn kho
+                          max={item.quantityAvailable || 1}
                           value={
                             isNaN(item.quantity) || item.quantity < 1
                               ? 1
@@ -1355,11 +1301,9 @@ useEffect(() => {
             </table>
           )}
 
-          {/*Danh sách chi tiết sản phẩm*/}
           <div className="mt-6">
             <h3 className="text-lg font-semibold mb-2">Danh sách sản phẩm</h3>
 
-            {/* Form Bộ Lọc */}
             <div className="mb-4 flex gap-4">
               <div className="flex-1">
                 <label className="block text-sm font-medium text-gray-700">
@@ -1431,7 +1375,6 @@ useEffect(() => {
               </div>
             </div>
 
-            {/* Bảng Danh Sách Sản Phẩm */}
             <table className="min-w-full bg-white border border-gray-200 rounded-lg shadow-sm">
               <thead>
                 <tr className="bg-gray-100">
@@ -1527,7 +1470,9 @@ useEffect(() => {
                   <button
                     key={index + 1}
                     onClick={() => paginate(index + 1)}
-                    className={`mx-1 px-3 py-1 rounded ${currentPage === index + 1 ? "bg-blue-500 text-white" : "bg-gray-200"}`}
+                    className={`mx-1 px-3 py-1 rounded ${
+                      currentPage === index + 1 ? "bg-blue-500 text-white" : "bg-gray-200"
+                    }`}
                   >
                     {index + 1}
                   </button>
@@ -1537,9 +1482,7 @@ useEffect(() => {
           </div>
         </div>
 
-        {/* Thông tin thanh toán */}
         <div className="bg-white p-4 rounded shadow">
-          {/* Ô tìm kiếm khách hàng */}
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Tìm kiếm khách hàng
           </label>
@@ -1552,7 +1495,6 @@ useEffect(() => {
                 placeholder="Nhập tên, số điện thoại hoặc email..."
                 className="border p-2 w-full rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
-              {/* Trạng thái loading khi tìm kiếm */}
               {isSearching && (
                 <div className="absolute right-2 top-2">
                   <svg
@@ -1578,7 +1520,6 @@ useEffect(() => {
                 </div>
               )}
 
-              {/* Danh sách gợi ý khách hàng */}
               {filteredCustomers.length > 0 && (
                 <ul className="absolute z-10 bg-white border rounded-md w-full mt-1 shadow-lg max-h-60 overflow-y-auto">
                   {filteredCustomers.map((customer) => (
@@ -1613,7 +1554,6 @@ useEffect(() => {
                   ))}
                 </ul>
               )}
-              {/* Thông báo khi không tìm thấy khách hàng */}
               {!isSearching &&
                 searchKeyword &&
                 filteredCustomers.length === 0 && (
@@ -1658,7 +1598,6 @@ useEffect(() => {
           <h3 className="text-lg font-semibold mt-4">Thanh toán</h3>
           <p>Tổng tiền: {currentOrder.totalAmount.toLocaleString()} VND</p>
 
-          {/* Chọn voucher */}
           <div className="mt-2">
             <label className="block text-sm font-medium text-gray-700">
               Chọn voucher
@@ -1668,7 +1607,9 @@ useEffect(() => {
               onChange={(e) => handleVoucherChange(e.target.value)}
               className="border p-2 w-full mt-1 rounded-md"
             >
-              {/* <option value="">Sử dụng voucher</option> */}
+              <option value="" disabled>
+                Chọn voucher
+              </option>
               {vouchers
                 .filter((v) => {
                   const now = new Date();
@@ -1690,7 +1631,7 @@ useEffect(() => {
                     b,
                     currentOrder.totalAmount
                   );
-                  return discountB - discountA; // Voucher tối ưu lên đầu
+                  return discountB - discountA;
                 })
                 .map((v) => (
                   <option key={v.id} value={v.voucherCode}>
@@ -1703,6 +1644,7 @@ useEffect(() => {
                     VND)
                   </option>
                 ))}
+              <option value="">Không sử dụng voucher</option> {/* Thêm tùy chọn không sử dụng voucher */}
             </select>
           </div>
 
@@ -1718,13 +1660,13 @@ useEffect(() => {
               value={paymentMethod}
               onChange={(e) => {
                 setPaymentMethod(e.target.value);
-                setShowQRCode(false); // Ẩn mã QR khi thay đổi phương thức thanh toán
-                setPaymentUrl(null); // Reset URL thanh toán
+                setShowQRCode(false);
+                setPaymentUrl(null);
               }}
               className="border p-2 w-full mt-1"
             >
               <option value="cash">Tiền mặt</option>
-              <option value="vnpay">VNPay</option> {/* Thêm tùy chọn VNPay */}
+              <option value="vnpay">VNPay</option>
             </select>
           </div>
 
@@ -1752,7 +1694,6 @@ useEffect(() => {
             {paymentMethod === "vnpay" ? "Chuyển đến VNPay" : "Thanh toán"}
           </button>
 
-          {/* Hiển thị mã QR nếu có paymentUrl và showQRCode là true */}
           {paymentMethod === "vnpay" && showQRCode && paymentUrl && (
             <div style={{ textAlign: "center", marginTop: "20px" }}>
               <p>Quét mã QR để thanh toán qua VNPay:</p>
