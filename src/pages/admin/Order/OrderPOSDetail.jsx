@@ -351,6 +351,8 @@ const OrderPOSDetail = () => {
                     <th className="py-3 px-4 text-center">Số lượng</th>
                     <th className="py-3 px-4 text-center">Màu sắc</th>
                     <th className="py-3 px-4 text-center">Size</th>
+                    <th className="py-3 px-4 text-center">Cổ áo</th>
+                    <th className="py-3 px-4 text-center">Tay áo</th>
                     <th className="py-3 px-4 text-right">Đơn giá</th>
                     <th className="py-3 px-4 text-right">Giảm giá sản phẩm</th>
                     <th className="py-3 px-4 text-right">Thành tiền</th>
@@ -367,6 +369,11 @@ const OrderPOSDetail = () => {
                       const sizeName =
                         detail.productDetail?.size?.name ??
                         "Không có kích thước";
+                      const collarName =
+                        detail.productDetail?.collar?.name ?? "Không có cổ áo";
+                      const sleeveName =
+                        detail.productDetail?.sleeve?.sleeveName ??
+                        "Không có tay áo";
                       const salePrice =
                         detail.productDetail?.salePrice ??
                         product?.salePrice ??
@@ -418,6 +425,12 @@ const OrderPOSDetail = () => {
                           <td className="py-3 px-4 text-center font-medium">
                             {sizeName}
                           </td>
+                          <td className="py-3 px-4 text-center font-medium">
+                            {collarName}
+                          </td>
+                          <td className="py-3 px-4 text-center font-medium">
+                            {sleeveName}
+                          </td>
                           <td className="py-3 px-4 text-right font-medium text-green-600">
                             {formatCurrency(salePrice)}
                           </td>
@@ -445,11 +458,11 @@ const OrderPOSDetail = () => {
                 </tbody>
                 <tfoot className="bg-gray-100 text-gray-800 font-bold border-t">
                   <tr>
-                    <td colSpan="5" className="py-4 px-4 text-right">
+                    <td colSpan="6" className="py-4 px-4 text-right">
                       Tổng tiền trước khi áp voucher:
                     </td>
                     <td
-                      colSpan="2"
+                      colSpan="3"
                       className="py-4 px-4 text-right text-xl text-gray-700"
                     >
                       {formatCurrency(
@@ -458,11 +471,11 @@ const OrderPOSDetail = () => {
                     </td>
                   </tr>
                   <tr>
-                    <td colSpan="5" className="py-4 px-4 text-right">
+                    <td colSpan="6" className="py-4 px-4 text-right">
                       Số tiền giảm giá (voucher):
                     </td>
                     <td
-                      colSpan="2"
+                      colSpan="3"
                       className="py-4 px-4 text-right text-xl text-green-600"
                     >
                       -
@@ -479,11 +492,11 @@ const OrderPOSDetail = () => {
                     </td>
                   </tr>
                   <tr>
-                    <td colSpan="5" className="py-4 px-4 text-right">
+                    <td colSpan="6" className="py-4 px-4 text-right">
                       Tổng tiền sau khi áp voucher:
                     </td>
                     <td
-                      colSpan="2"
+                      colSpan="3"
                       className="py-4 px-4 text-right text-xl text-red-600"
                     >
                       {formatCurrency(
