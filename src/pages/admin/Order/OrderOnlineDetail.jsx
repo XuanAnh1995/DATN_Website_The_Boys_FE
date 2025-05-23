@@ -734,6 +734,8 @@ const OrderDetail = () => {
                     <th className="py-3 px-4 text-center">Số lượng</th>
                     <th className="py-3 px-4 text-center">Màu Sắc</th>
                     <th className="py-3 px-4 text-center">Size</th>
+                    <th className="py-3 px-4 text-center">Cổ áo</th>
+                    <th className="py-3 px-4 text-center">Tay áo</th>
                     <th className="py-3 px-4 text-right">Đơn giá</th>
                     <th className="py-3 px-4 text-right">Giảm giá sản phẩm</th>
                     <th className="py-3 px-4 text-right">Thành tiền</th>
@@ -760,6 +762,11 @@ const OrderDetail = () => {
                       const sizeName =
                         detail.productDetail?.size?.name ??
                         "Không có kích thước";
+                        const collarName =
+                        detail.productDetail?.collar?.name ?? "Không có cổ áo";
+                      const sleeveName =
+                        detail.productDetail?.sleeve?.sleeveName ??
+                        "Không có tay áo";
                       const salePrice =
                         detail.productDetail?.salePrice ??
                         product?.salePrice ??
@@ -810,6 +817,12 @@ const OrderDetail = () => {
                           </td>
                           <td className="py-3 px-4 text-center font-medium">
                             {sizeName}
+                          </td>
+                          <td className="py-3 px-4 text-center font-medium">
+                            {collarName}
+                          </td>
+                          <td className="py-3 px-4 text-center font-medium">
+                            {sleeveName}
                           </td>
                           <td className="py-3 px-4 text-right font-medium text-green-600">
                             {formatCurrency(salePrice)}
