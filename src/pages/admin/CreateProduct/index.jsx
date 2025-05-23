@@ -197,6 +197,7 @@ export default function CreateProduct() {
                 <label className="block text-xs font-medium text-black mb-1">Cổ áo</label>
                 <CreatableSelect
                   name="collar"
+                  placeholder="Chọn cổ áo"
                   options={collars.map(collar => ({ value: collar.id, label: collar.name }))}
                   value={collars
                     .filter(collar => generateData.collarId.includes(collar.id))
@@ -212,6 +213,7 @@ export default function CreateProduct() {
                 <label className="block text-xs font-medium text-black mb-1">Tay áo</label>
                 <CreatableSelect
                   name="sleeve"
+                  placeholder="Chọn tay áo"
                   options={sleeves.map(sleeve => ({ value: sleeve.id, label: sleeve.sleeveName }))}
                   value={sleeves
                     .filter(sleeve => generateData.sleeveId.includes(sleeve.id))
@@ -227,6 +229,7 @@ export default function CreateProduct() {
                 <label className="block text-xs font-medium text-black mb-1">Màu sắc</label>
                 <CreatableSelect
                   name="color"
+                  placeholder="Chọn màu sắc"
                   options={colors.map(color => ({ value: color.id, label: color.name }))}
                   value={colors
                     .filter(color => generateData.colorId.includes(color.id))
@@ -242,6 +245,7 @@ export default function CreateProduct() {
                 <label className="block text-xs font-medium text-black mb-1">Kích thước</label>
                 <CreatableSelect
                   name="size"
+                  placeholder="Chọn kích thước"
                   options={sizes.map(size => ({ value: size.id, label: size.name }))}
                   value={sizes
                     .filter(size => generateData.sizeId.includes(size.id))
@@ -257,6 +261,7 @@ export default function CreateProduct() {
                 <label className="block text-xs font-medium text-black mb-1">Khuyến mãi</label>
                 <Select
                   name="promotion"
+                  placeholder="Chọn khuyến mãi"
                   options={promotions.map(promotion => ({
                     value: promotion.id,
                     label: `${promotion.promotionName} - ${promotion.promotionPercent}% (${new Date(promotion.startDate).toLocaleDateString("vi-VN")} - ${new Date(promotion.endDate).toLocaleDateString("vi-VN")})`
@@ -330,20 +335,25 @@ export default function CreateProduct() {
         </div>
 
         {/* Biến thể sản phẩm */}
-        {Object.values(generateData).every(
-          (value) => (typeof value === "number" && value >= 0) || value && (!Array.isArray(value) || value.length > 0)
-        ) ? (
-          <div className="col-span-3 mt-6 bg-white p-6 border rounded-lg shadow-lg">
-            <ProductVariants generateData={generateData} />
-          </div>
-        ) : (
-          <div className="col-span-3 mt-6 p-6 border rounded-lg bg-white shadow-lg flex flex-col items-center justify-center text-center">
-            <div className="w-24 h-24 flex items-center justify-center">
-              <FaInfoCircle className="text-5xl text-blue-500" />
-            </div>
-            <p className="text-gray-600 mt-4">Chọn các thuộc tính để hiển thị sản phẩm chi tiết.</p>
-          </div>
-        )}
+        {
+          Object.entries(generateData).every(
+            ([key, value]) =>
+              key === "description" || // bỏ qua description
+              (typeof value === "number" && value >= 0) ||
+              (value && (!Array.isArray(value) || value.length > 0))
+          )
+            ? (
+              <div className="col-span-3 mt-6 bg-white p-6 border rounded-lg shadow-lg">
+                <ProductVariants generateData={generateData} />
+              </div>
+            ) : (
+              <div className="col-span-3 mt-6 p-6 border rounded-lg bg-white shadow-lg flex flex-col items-center justify-center text-center">
+                <div className="w-24 h-24 flex items-center justify-center">
+                  <FaInfoCircle className="text-5xl text-blue-500" />
+                </div>
+                <p className="text-gray-600 mt-4">Chọn các thuộc tính để hiển thị sản phẩm chi tiết.</p>
+              </div>
+            )}
       </div>
     </div>
   );

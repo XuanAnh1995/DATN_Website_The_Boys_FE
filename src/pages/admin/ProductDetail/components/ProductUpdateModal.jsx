@@ -300,12 +300,12 @@ export default function ProductUpdateModal({
             </div>
 
             {/* Mã vạch sản phẩm */}
-            <div className="mt-6 flex flex-col items-center justify-center  ">
-              <h3 className="text-lg font-semibold text-gray-700 mb-2 ">
+            <div className="mt-6 flex flex-col items-center justify-center ">
+              <h3 className="text-lg font-semibold text-gray-700 mb-2">
                 Mã vạch sản phẩm
               </h3>
               {currentProduct?.productDetailCode && (
-                <Barcode value={currentProduct.productDetailCode} />
+                <Barcode value={currentProduct.productDetailCode} className="w-10/12"/>
               )}
             </div>
           </div>
