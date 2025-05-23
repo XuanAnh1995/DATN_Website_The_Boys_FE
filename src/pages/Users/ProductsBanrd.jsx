@@ -92,9 +92,7 @@ const Products = () => {
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
-                <p className="text-white text-lg font-bold">
-                  Ưu đãi thời trang nữ
-                </p>
+                <p className="text-white text-lg font-bold"></p>
               </div>
             </div>
           </div>
@@ -229,9 +227,7 @@ const Products = () => {
         <h1 className="text-2xl font-bold text-center text-sky-900 mb-4">
           Sản phẩm nổi bật
         </h1>
-        <p className="text-center text-gray-600 mb-8">
-          Khám phá các sản phẩm được yêu thích nhất trong tuần!
-        </p>
+        <p className="text-center text-gray-600 mb-8"></p>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
           {/* Banner Section */}
@@ -466,139 +462,6 @@ const Products = () => {
                 Xem thêm sản phẩm
               </button>
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* New Section: Recommended Products or Additional View */}
-      <div className="max-w-7xl mx-auto mt-12">
-        <h1 className="text-2xl font-bold text-center text-sky-900 mb-4">
-          Gợi ý cho bạn
-        </h1>
-        <p className="text-center text-gray-600 mb-8">
-          Những sản phẩm được chọn lọc dựa trên sở thích của bạn!
-        </p>
-
-        <div className="grid grid-cols-1 gap-4">
-          {/* Promotional Banner */}
-          <div className="relative bg-gradient-to-r from-sky-900 to-sky-700 rounded-lg overflow-hidden h-64">
-            <img
-              src="/src/assets/recommended-banner.jpg" // Replace with your actual banner image
-              alt="Recommended Banner"
-              className="w-full h-full object-cover opacity-70"
-            />
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
-              <h2 className="text-3xl font-bold mb-2">Khuyến mãi cuối mùa</h2>
-              <p className="text-lg mb-4">
-                Giảm giá lên đến 70% cho các sản phẩm chọn lọc!
-              </p>
-              <button
-                onClick={() => navigate("/products")}
-                className="bg-white text-sky-900 px-6 py-2 rounded-md font-semibold hover:bg-gray-200 transition"
-              >
-                Mua ngay
-              </button>
-            </div>
-          </div>
-
-          {/* Recommended Products Grid */}
-          <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {recommendedProducts.length > 0 ? (
-              recommendedProducts.map((product) => (
-                <div
-                  key={product.id}
-                  className="bg-white rounded-lg shadow-md border border-gray-200 transform transition-all duration-300 hover:shadow-xl hover:scale-105 relative min-h-[350px]"
-                >
-                  <div className="relative">
-                    <img
-                      src={
-                        product.photo || "https://via.placeholder.com/200x250"
-                      }
-                      alt={product.productName || product.nameProduct}
-                      className="w-full h-48 object-contain rounded-t-lg"
-                    />
-                    {product.importPrice &&
-                      product.importPrice > product.salePrice && (
-                        <div className="absolute top-2 left-2 bg-sky-900 text-white text-xs font-bold py-1 px-2 rounded-full">
-                          Giảm{" "}
-                          {Math.round(
-                            ((product.importPrice - product.salePrice) /
-                              product.importPrice) *
-                              100
-                          )}
-                          %
-                        </div>
-                      )}
-                    {product.isNew && (
-                      <div className="absolute top-2 left-12 bg-red-500 text-white text-xs font-bold py-1 px-2 rounded-full">
-                        Mới
-                      </div>
-                    )}
-                    <div className="absolute top-2 right-2 text-sky-900 hover:text-sky-700">
-                      ♥
-                    </div>
-                  </div>
-                  <div className="p-3 text-center">
-                    <h3 className="text-sm font-semibold text-gray-800 truncate">
-                      {product.productName ||
-                        product.nameProduct ||
-                        "Tên sản phẩm"}
-                    </h3>
-                    <p className="text-gray-500 text-xs mb-1">
-                      {product.brand || "Thương hiệu"}
-                    </p>
-                    <div className="flex justify-center gap-2 mt-1">
-                      <span className="text-sky-900 font-bold text-md">
-                        {formatCurrency(product.salePrice || 0)}
-                      </span>
-                      {product.importPrice &&
-                        product.importPrice > product.salePrice && (
-                          <span className="text-gray-500 line-through text-xs">
-                            {formatCurrency(product.importPrice)}
-                          </span>
-                        )}
-                    </div>
-                    <div className="mt-2 w-full h-2 bg-gray-200 rounded relative">
-                      <div
-                        className="h-full bg-sky-900 rounded"
-                        style={{
-                          width: `${Math.min(
-                            (product.quantitySaled / product.quantity) * 100 ||
-                              0,
-                            100
-                          )}%`,
-                        }}
-                      />
-                    </div>
-                    <p className="text-gray-500 text-xs mt-1">
-                      Đã bán: {product.quantitySaled || 0}
-                    </p>
-                    <button
-                      onClick={() => handleViewProduct(product.id)}
-                      className="mt-2 w-full bg-sky-900 text-white text-sm font-semibold py-2 rounded-md opacity-70 transition-opacity duration-300 hover:opacity-100"
-                    >
-                      Xem chi tiết
-                    </button>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 col-span-full">
-                {[...Array(4)].map((_, index) => (
-                  <div
-                    key={index}
-                    className="bg-white rounded-lg shadow-md border border-gray-200 p-3"
-                  >
-                    <div className="w-full h-48 bg-gray-200 animate-pulse rounded-t-lg"></div>
-                    <div className="p-3 text-center">
-                      <div className="h-4 bg-gray-200 animate-pulse mb-2"></div>
-                      <div className="h-3 bg-gray-200 animate-pulse mb-1"></div>
-                      <div className="h-3 bg-gray-200 animate-pulse"></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         </div>
       </div>

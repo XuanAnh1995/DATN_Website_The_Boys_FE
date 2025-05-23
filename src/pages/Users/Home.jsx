@@ -1290,7 +1290,7 @@ const Layout = () => {
           <div className="w-full md:w-1/2">
             <div className="relative w-full h-[400px] rounded-lg overflow-hidden shadow-lg border border-gray-200">
               <img
-                src="https://via.placeholder.com/600x400?text=Bộ+Sưu+Tập+Mới+Nhất"
+                src="/src/assets/Blue and White T-shirt Products Sale Instagram Post (1).png"
                 alt="Latest Collection Banner"
                 className="w-full h-full object-cover"
               />
@@ -1299,14 +1299,11 @@ const Layout = () => {
                   Bộ Sưu Tập Mới Nhất
                 </h2>
               </div>
-              <button className="absolute bottom-4 right-4 bg-[#1E3A8A] text-white px-4 py-2 rounded-md hover:bg-[#163172] transition">
-                Xem ngay
-              </button>
             </div>
           </div>
           <div className="w-full md:w-1/2">
             <h2 className="text-3xl font-bold text-[#1E3A8A] mb-4 text-center md:text-left">
-              Sản Phẩm Mới Nhất
+              Bộ Sưu Tập Đẹp Nhất
             </h2>
             <p className="text-gray-600 mb-6 text-center md:text-left">
               Khám phá bộ sưu tập thời trang mới nhất từ The Boys, phong cách
@@ -1373,7 +1370,7 @@ const Layout = () => {
             </div>
             <div className="mt-6 text-center md:text-right">
               <a
-                href="#"
+                href="/products"
                 className="text-[#1E3A8A] font-semibold hover:text-[#163172] transition-colors duration-200"
               >
                 Xem tất cả
@@ -1416,8 +1413,6 @@ const Layout = () => {
                     <th className="p-3 border">Giá Bán</th>
                     <th className="p-3 border">Đã Bán</th>
                     <th className="p-3 border">Mô Tả</th>
-                    <th className="p-3 border">Thương Hiệu</th>
-                    <th className="p-3 border">Đánh Giá ⭐</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1444,14 +1439,6 @@ const Layout = () => {
                       </td>
                       <td className="p-3 border text-gray-500">
                         {product.description || "Không có mô tả"}
-                      </td>
-                      <td className="p-3 border text-[#1E90FF]">
-                        {product.brand?.brandName ||
-                          product.brand ||
-                          "Không rõ"}
-                      </td>
-                      <td className="p-3 border text-yellow-500 font-semibold">
-                        {product.rating || "Chưa có"}
                       </td>
                     </tr>
                   ))}
@@ -1482,10 +1469,8 @@ const Layout = () => {
                     className="w-12 h-12 rounded-full"
                   />
                   <div>
-                    <h3 className="font-bold">Hoàng Dung</h3>
-                    <p className="text-sm text-gray-200">
-                      Khách hàng thân thiết
-                    </p>
+                    <h3 className="font-bold">TheBoys</h3>
+                    <p className="text-sm text-gray-200"></p>
                   </div>
                 </div>
                 <div className="flex gap-1">
