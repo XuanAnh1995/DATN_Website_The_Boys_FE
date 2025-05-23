@@ -798,25 +798,47 @@ const SalePOSPage = () => {
     }
   };
 
-  const handleRemoveOrder = (index) => {
-    console.log(`🗑 [XÓA HÓA ĐƠN] Bắt đầu xóa hóa đơn #${index + 1}...`);
+  const handleRemoveOrder = async (index) => {
+  console.log(`🗑 [XÓA HÓA ĐƠN] Bắt đầu hủy hóa đơn #${index + 1}...`);
+  try {
+    const orderId = orders[index].id;
+    // Gọi API để cập nhật trạng thái hóa đơn thành đã hủy (-1)
+    await SalePOS.cancelOrder(orderId);
+    console.log(`✅ [SUCCESS] Hóa đơn #${index + 1} đã được hủy trên server`);
+
+    // Xóa hóa đơn khỏi trạng thái cục bộ
     setOrders((prevOrders) => {
       const updatedOrders = [...prevOrders];
       updatedOrders.splice(index, 1);
       setNotification({
         type: "success",
-        message: `Đã xóa hóa đơn #${index + 1} thành công!`,
+        message: `Hóa đơn #${index + 1} đã được hủy thành công!`,
       });
       setTimeout(() => {
         setNotification(null);
       }, 3000);
-      console.log("✅ [SUCCESS] Hóa đơn đã được xóa thành công!");
+      console.log("✅ [SUCCESS] Hóa đơn đã được xóa khỏi danh sách!");
       return updatedOrders;
     });
+
+    // Cập nhật chỉ số hóa đơn đang hoạt động
     if (activeOrderIndex === index) {
       setActiveOrderIndex(null);
     } else if (activeOrderIndex > index) {
       setActiveOrderIndex(activeOrderIndex - 1);
+    }
+    } catch (error) {
+      console.error(
+        "❌ Lỗi khi hủy hóa đơn:",
+        error.response?.data || error.message
+      );
+      setNotification({
+        type: "error",
+        message: `Lỗi khi hủy hóa đơn #${index + 1}. Vui lòng thử lại!`,
+      });
+      setTimeout(() => {
+        setNotification(null);
+      }, 3000);
     }
   };
 
