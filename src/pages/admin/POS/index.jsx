@@ -4,9 +4,7 @@ import ColorService from "../../../services/ColorService";
 import SizeService from "../../../services/SizeService";
 import CustomerService from "../../../services/CustomerService";
 import { FaShoppingCart, FaTrash, FaPlus, FaTimes } from "react-icons/fa";
-import QRCode from "react-qr-code";
 import { debounce } from "lodash";
-import { data } from "autoprefixer";
 
 const SalePOSPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -56,20 +54,13 @@ const SalePOSPage = () => {
 
   const [colors, setColors] = useState([]);
   const [sizes, setSizes] = useState([]);
-
   const [selectedVoucher, setSelectedVoucher] = useState("");
   const [calculatedDiscount, setCalculatedDiscount] = useState(0);
   const [vouchers, setVouchers] = useState([]);
-
-  // Thêm state để lưu voucher tối ưu
   const [optimalVoucher, setOptimalVoucher] = useState(null);
-
-  // Thêm state hasSelectedVoucher
   const [hasSelectedVoucher, setHasSelectedVoucher] = useState(false);
-
   const [searchKeyword, setSearchKeyword] = useState("");
   const [filteredCustomers, setFilteredCustomers] = useState([]);
-
   const [currentPage, setCurrentPage] = useState(1);
   const productsPerPage = 8;
 
@@ -99,9 +90,7 @@ const SalePOSPage = () => {
   });
 
   const [currentEmployee] = useState({ id: 1, name: "Nhân viên mặc định" });
-
-  const [paymentUrl, setPaymentUrl] = useState(null);
-  const [showQRCode, setShowQRCode] = useState(false);
+  const [showOwnerQR, setShowOwnerQR] = useState(false);
 
   useEffect(() => {
     fetchProductDetails();
@@ -212,7 +201,6 @@ const SalePOSPage = () => {
     setCurrentPage(1);
   }, [searchTerm, allProducts, filter]);
 
-  // Cập nhật logic áp dụng voucher tự động
   useEffect(() => {
     if (currentOrder?.totalAmount > 0) {
       const validVouchers = vouchers.filter((v) => {
@@ -239,7 +227,6 @@ const SalePOSPage = () => {
       const bestVoucher = sortedVouchers[0];
       setOptimalVoucher(bestVoucher || null);
 
-      // Chỉ tự động áp dụng nếu người dùng chưa chọn voucher thủ công
       if (bestVoucher && !hasSelectedVoucher) {
         handleVoucherChange(bestVoucher.voucherCode);
       } else if (!bestVoucher) {
@@ -251,7 +238,7 @@ const SalePOSPage = () => {
       setSelectedVoucher("");
       setCalculatedDiscount(0);
     }
-  }, [currentOrder.totalAmount, vouchers, hasSelectedVoucher]); // Thêm hasSelectedVoucher vào dependencies
+  }, [currentOrder.totalAmount, vouchers, hasSelectedVoucher]);
 
   useEffect(() => {
     if (activeOrderIndex !== null && selectedVoucher) {
@@ -348,15 +335,12 @@ const SalePOSPage = () => {
     setIsSearching(false);
   };
 
-  // Cập nhật hàm handleVoucherChange
   const handleVoucherChange = (voucherCode) => {
     console.log("📌 Voucher được chọn:", voucherCode);
-
     setSelectedVoucher(voucherCode);
-    setHasSelectedVoucher(true); // Đánh dấu rằng người dùng đã chọn voucher
+    setHasSelectedVoucher(true);
 
     const voucher = vouchers.find((v) => v.voucherCode === voucherCode);
-
     console.log("📌 Voucher tìm thấy:", voucher);
 
     if (voucher && currentOrder.totalAmount >= voucher.minCondition) {
@@ -364,9 +348,7 @@ const SalePOSPage = () => {
         voucher,
         currentOrder.totalAmount
       );
-
       console.log("✅ Giảm giá áp dụng:", discountAmount);
-
       setCalculatedDiscount(discountAmount);
       if (activeOrderIndex !== null) {
         setOrders((prevOrders) => {
@@ -377,9 +359,7 @@ const SalePOSPage = () => {
       }
     } else {
       console.log("❌ Không đủ điều kiện để áp dụng voucher.");
-
       setCalculatedDiscount(0);
-
       if (activeOrderIndex != null) {
         setOrders((prevOrders) => {
           const updatedOrders = [...prevOrders];
@@ -443,34 +423,26 @@ const SalePOSPage = () => {
 
   const handleSaveNewCustomer = async () => {
     const errors = validateForm();
-
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
       return;
     }
-
     setIsLoading(true);
     setFormErrors({});
-
     try {
       const trimmedCustomer = {
         fullname: newCustomer.fullname.trim(),
         phone: newCustomer.phone.trim(),
         email: newCustomer.email.trim(),
       };
-
       const response = await CustomerService.add(trimmedCustomer);
-
       if (response?.data?.id) {
         setCustomers((prev) => [...prev, response.data]);
-
         handleSelectCustomer(response.data);
-
         setNotification({
           type: "success",
           message: "Thêm mới khách hàng thành công !",
         });
-
         resetNewCustomer();
       } else {
         setNotification({
@@ -502,9 +474,7 @@ const SalePOSPage = () => {
           : null,
         paymentMethod: "cash",
       };
-
       const newOrder = await SalePOS.createOrder(orderData);
-
       setOrders((prevOrders) => {
         const updatedOrders = [
           ...prevOrders,
@@ -519,24 +489,18 @@ const SalePOSPage = () => {
             createdAt: new Date(),
           },
         ];
-
-        // Thêm thông báo khi tạo hóa đơn thành công
         setNotification({
           type: "success",
           message: `Đã tạo hóa đơn #${updatedOrders.length} thành công!`,
         });
-
-        // Tự động xóa thông báo sau 3 giây
         setTimeout(() => {
           setNotification(null);
         }, 3000);
-
         console.log("✅ [SUCCESS] Đơn hàng mới đã được tạo:", newOrder);
         return updatedOrders;
       });
-
       setActiveOrderIndex(orders.length);
-      setHasSelectedVoucher(false); // Reset để áp dụng bestVoucher cho hóa đơn mới
+      setHasSelectedVoucher(false);
     } catch (error) {
       console.error("❌ Lỗi khi tạo đơn hàng:", error);
       setNotification({
@@ -557,7 +521,6 @@ const SalePOSPage = () => {
         createdAt: order.createdAt ? new Date(order.createdAt) : new Date(),
       }));
       setOrders(parsedOrders);
-
       const initialTimers = {};
       parsedOrders.forEach((order, index) => {
         if (order.createdAt) {
@@ -581,7 +544,6 @@ const SalePOSPage = () => {
       setOrderTimers((prevTimers) => {
         const newTimers = {};
         const updatedOrders = [...orders];
-
         orders.forEach((order, index) => {
           if (order.createdAt) {
             const elapsed = Math.floor(
@@ -590,7 +552,6 @@ const SalePOSPage = () => {
             const maxTime = 30 * 60;
             const remainingTime = Math.max(maxTime - elapsed, 0);
             newTimers[index] = remainingTime;
-
             if (remainingTime <= 0 && updatedOrders[index]) {
               updatedOrders.splice(index, 1);
               if (activeOrderIndex === index) {
@@ -605,11 +566,9 @@ const SalePOSPage = () => {
             }
           }
         });
-
         if (updatedOrders.length !== orders.length) {
           setOrders(updatedOrders);
         }
-
         return newTimers;
       });
     }, 1000);
@@ -619,10 +578,8 @@ const SalePOSPage = () => {
   useEffect(() => {
     let barcode = "";
     let timer = null;
-
     const handleKeyDown = (event) => {
       const currentTime = Date.now();
-
       if (event.key === "Enter" && barcode.trim() !== "") {
         handleBarcodeScan(barcode);
         barcode = "";
@@ -634,7 +591,6 @@ const SalePOSPage = () => {
         }, 500);
       }
     };
-
     document.addEventListener("keydown", handleKeyDown);
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
@@ -644,7 +600,6 @@ const SalePOSPage = () => {
 
   const handleBarcodeScan = (scannedBarcode) => {
     if (!scannedBarcode) return;
-
     console.log("📌 Nhận mã vạch:", scannedBarcode);
     console.log(
       "📌 [CHECK] activeOrderIndex:",
@@ -652,16 +607,13 @@ const SalePOSPage = () => {
       "orders.length:",
       orders.length
     );
-
     if (activeOrderIndex === null || activeOrderIndex >= orders.length) {
       alert("⚠ Bạn cần chọn hóa đơn trước khi quét mã vạch!");
       return;
     }
-
     const product = allProducts.find(
       (p) => p.productDetailCode === scannedBarcode
     );
-
     if (product) {
       if (product.quantity <= 0) {
         alert(`Sản phẩm "${product.product?.productName}" đã hết hàng!`);
@@ -684,31 +636,25 @@ const SalePOSPage = () => {
       console.warn("⚠ Không có đơn hàng nào được chọn. Hãy tạo đơn hàng trước!");
       return;
     }
-
     if (product.quantity <= 0) {
       alert(`Sản phẩm ${product.product?.productName} đã hết hàng !`);
       return;
     }
-
     setOrders((prevOrders) => {
       const updatedOrders = [...prevOrders];
       const currentOrder = updatedOrders[activeOrderIndex];
-
       console.log("📌 [ĐƠN HÀNG] Đơn hàng hiện tại:", currentOrder);
-
       const existingItemIndex = currentOrder.items.findIndex(
         (item) => item.id === product.id
       );
       if (existingItemIndex !== -1) {
         const existingItem = currentOrder.items[existingItemIndex];
-
         if (existingItem.quantity >= product.quantity) {
           alert(
             `Sản phẩm "${product.product?.productName}" chỉ còn ${product.quantity} sản phẩm trong kho.`
           );
           return updatedOrders;
         }
-
         console.log(
           `🔄 [CẬP NHẬT] Sản phẩm ${product.id} đã có trong giỏ hàng, tăng số lượng lên.`
         );
@@ -721,33 +667,27 @@ const SalePOSPage = () => {
           quantityAvailable: product.quantity,
         });
       }
-
       currentOrder.totalAmount = currentOrder.items.reduce((sum, item) => {
         const salePrice = Number(item.salePrice) || 0;
         const discountPercent = Number(item.promotion?.promotionPercent) || 0;
         const discountedPrice = salePrice * (1 - discountPercent / 100);
         return sum + discountedPrice * item.quantity;
       }, 0);
-
       console.log(
         "💰 [TỔNG] Tổng tiền đơn hàng sau khi thêm sản phẩm:",
         currentOrder.totalAmount
       );
-
-      // Thêm thông báo khi thêm sản phẩm thành công
       setNotification({
         type: "success",
         message: `Đã thêm sản phẩm "${product.product?.productName}" vào giỏ hàng!`,
       });
-
-      // Tùy chọn: Xóa thông báo sau vài giây
       setTimeout(() => {
         setNotification(null);
       }, 3000);
-
       return updatedOrders;
     });
   };
+
   const handleRemoveFromCart = (productId) => {
     console.log("🗑 [XÓA KHỎI GIỎ HÀNG] Bắt đầu xóa sản phẩm khỏi giỏ hàng...");
     if (activeOrderIndex === null) {
@@ -755,52 +695,39 @@ const SalePOSPage = () => {
       alert("Vui lòng chọn hoặc tạo hóa đơn!");
       return;
     }
-
     setOrders((prevOrders) => {
       const updatedOrders = [...prevOrders];
       const currentOrder = updatedOrders[activeOrderIndex];
-
       console.log(
         "📌 [ORDER] Trước khi xóa, danh sách sản phẩm:",
         currentOrder.items
       );
-
-      // Lấy thông tin sản phẩm trước khi xóa để hiển thị trong thông báo
       const productToRemove = currentOrder.items.find(
         (item) => item.id === productId
       );
-
-      // Xóa sản phẩm
       currentOrder.items = currentOrder.items.filter(
         (item) => item.id !== productId
       );
-
       currentOrder.totalAmount = currentOrder.items.reduce((sum, item) => {
         const salePrice = Number(item.salePrice) || 0;
         const discountPercent = Number(item.promotion?.promotionPercent) || 0;
         const discountedPrice = salePrice * (1 - discountPercent / 100);
         return sum + discountedPrice * item.quantity;
       }, 0);
-
       console.log(
         "💰 [TỔNG] Tổng tiền sau khi xóa sản phẩm:",
         currentOrder.totalAmount
       );
       console.log("✅ [SUCCESS] Sản phẩm đã được xóa thành công!");
-
-      // Thêm thông báo khi xóa sản phẩm thành công
       if (productToRemove) {
         setNotification({
           type: "success",
           message: `Đã xóa sản phẩm "${productToRemove.product?.productName}" khỏi giỏ hàng!`,
         });
-
-        // Tự động xóa thông báo sau 3 giây
         setTimeout(() => {
           setNotification(null);
         }, 3000);
       }
-
       return updatedOrders;
     });
   };
@@ -810,22 +737,18 @@ const SalePOSPage = () => {
       console.warn("⚠ Không có đơn hàng nào được chọn.");
       return;
     }
-
     if (newQuantity <= 0) {
       console.warn(
         `⚠ Số lượng sản phẩm ID ${productId} không hợp lệ (${newQuantity}).`
       );
       return;
     }
-
     setOrders((prevOrders) => {
       const updatedOrders = [...prevOrders];
       const currentOrder = updatedOrders[activeOrderIndex];
-
       const itemIndex = currentOrder.items.findIndex(
         (item) => item.id === productId
       );
-
       if (itemIndex !== -1) {
         console.log(
           `🔄 [UPDATE] Cập nhật số lượng sản phẩm ID ${productId} từ ${currentOrder.items[itemIndex].quantity} → ${newQuantity}`
@@ -837,14 +760,12 @@ const SalePOSPage = () => {
         );
         return updatedOrders;
       }
-
       currentOrder.totalAmount = currentOrder.items.reduce((sum, item) => {
         const salePrice = Number(item.salePrice) || 0;
         const discountPercent = Number(item.promotion?.promotionPercent) || 0;
         const discountedPrice = salePrice * (1 - discountPercent / 100);
         return sum + discountedPrice * item.quantity;
       }, 0);
-
       console.log(
         "💰 [TOTAL] Tổng tiền đơn hàng sau khi cập nhật số lượng:",
         currentOrder.totalAmount
@@ -856,13 +777,12 @@ const SalePOSPage = () => {
 
   const handleSwitchOrder = (index) => {
     setActiveOrderIndex(index);
-
     if (orders[index]) {
       const order = orders[index];
       setSelectedCustomer(order.customerId);
       setDiscount(order.discount);
-      setPaymentMethod(order.paymentMethod);
-
+      setPaymentMethod(order.paymentMethod === 0 ? "cash" : "bank_transfer");
+      setShowOwnerQR(order.paymentMethod === 1);
       if (order.customerId === "walk-in") {
         setCustomerName("Khách vãng lai");
         setPhone("");
@@ -883,22 +803,16 @@ const SalePOSPage = () => {
     setOrders((prevOrders) => {
       const updatedOrders = [...prevOrders];
       updatedOrders.splice(index, 1);
-
-      // Thêm thông báo khi xóa hóa đơn thành công
       setNotification({
         type: "success",
         message: `Đã xóa hóa đơn #${index + 1} thành công!`,
       });
-
-      // Tự động xóa thông báo sau 3 giây
       setTimeout(() => {
         setNotification(null);
       }, 3000);
-
       console.log("✅ [SUCCESS] Hóa đơn đã được xóa thành công!");
       return updatedOrders;
     });
-
     if (activeOrderIndex === index) {
       setActiveOrderIndex(null);
     } else if (activeOrderIndex > index) {
@@ -908,7 +822,6 @@ const SalePOSPage = () => {
 
   const handleDiscountChange = (value) => {
     setDiscount(value);
-
     if (activeOrderIndex !== null) {
       setOrders((prevOrders) => {
         const updatedOrders = [...prevOrders];
@@ -926,66 +839,37 @@ const SalePOSPage = () => {
     }
   }, [customerPaid, activeOrderIndex, orders, calculatedDiscount]);
 
-  const handleVNPayPayment = async (orderId) => {
-    try {
-      const paymentUrl = await SalePOS.createVNPayPaymentUrl(orderId);
-
-      localStorage.setItem("pendingOrderId", orderId);
-      localStorage.setItem("pendingCustomerId", selectedCustomer || -1);
-      localStorage.setItem(
-        "pendingVoucherId",
-        selectedVoucher
-          ? vouchers.find((v) => v.voucherCode === selectedVoucher)?.id
-          : null
-      );
-
-      window.location.href = paymentUrl;
-    } catch (error) {
-      console.error("❌ Lỗi khi tạo URL thanh toán VNPay:", error);
-      alert("Lỗi khi tạo URL thanh toán: " + error.message);
-    }
-  };
-
   const handlePayment = async () => {
     if (activeOrderIndex === null) {
       console.log("⚠ Không có hóa đơn nào được chọn.");
       alert("Vui lòng chọn hoặc tạo hóa đơn!");
       return;
     }
-
     const currentOrder = orders[activeOrderIndex];
     if (currentOrder.items.length === 0) {
       console.log("⚠ Giỏ hàng trống!");
       alert("Giỏ hàng trống, vui lòng thêm sản phẩm!");
       return;
     }
-
     if (!selectedCustomer) {
       console.log("⚠ Không có khách hàng nào được chọn.");
       alert("Vui lòng chọn khách hàng!");
       return;
     }
-
     const amountToPay = currentOrder.totalAmount - calculatedDiscount;
-
-    if (paymentMethod === "cash") {
-      if (customerPaid < amountToPay) {
-        console.log("⚠ Số tiền khách thanh toán không đủ.");
-        alert(
-          `Số tiền khách thanh toán (${customerPaid.toLocaleString()} VND) không đủ. Khách cần trả ít nhất ${amountToPay.toLocaleString()} VND.`
-        );
-        return;
-      }
+    if (paymentMethod === "cash" && customerPaid < amountToPay) {
+      console.log("⚠ Số tiền khách thanh toán không đủ.");
+      alert(
+        `Số tiền khách thanh toán (${customerPaid.toLocaleString()} VND) không đủ. Khách cần trả ít nhất ${amountToPay.toLocaleString()} VND.`
+      );
+      return;
     }
-
-    const confirmMessage = `Bạn có chắc chắn muốn thanh toán?\n\nTổng tiền: ${currentOrder.totalAmount.toLocaleString()} VND\nGiảm giá: ${calculatedDiscount.toLocaleString()} VND\nKhách phải trả: ${amountToPay.toLocaleString()} VND\nPhương thức: ${paymentMethod === "cash" ? "Tiền mặt" : "VNPay"}${paymentMethod === "cash" ? `\nKhách thanh toán: ${customerPaid.toLocaleString()} VND\nTiền thừa: ${changeAmount.toLocaleString()} VND` : ""}`;
+    const confirmMessage = `Bạn có chắc chắn muốn thanh toán?\n\nTổng tiền: ${currentOrder.totalAmount.toLocaleString()} VND\nGiảm giá: ${calculatedDiscount.toLocaleString()} VND\nKhách phải trả: ${amountToPay.toLocaleString()} VND\nPhương thức: ${paymentMethod === "cash" ? "Tiền mặt" : "Chuyển khoản"}${paymentMethod === "cash" ? `\nKhách thanh toán: ${customerPaid.toLocaleString()} VND\nTiền thừa: ${changeAmount.toLocaleString()} VND` : ""}`;
     const isConfirmed = window.confirm(confirmMessage);
-
     if (!isConfirmed) {
       console.log("❌ Người dùng đã hủy thanh toán.");
       return;
     }
-
     const customerId = selectedCustomer === "walk-in" ? -1 : selectedCustomer;
     const orderRequest = {
       orderId: currentOrder.id ?? null,
@@ -994,44 +878,26 @@ const SalePOSPage = () => {
       voucherId: selectedVoucher
         ? vouchers.find((v) => v.voucherCode === selectedVoucher)?.id
         : null,
-      paymentMethod: paymentMethod,
+      paymentMethod: paymentMethod === "cash" ? 0 : 1,
       orderDetails: currentOrder.items.map((item) => ({
         productDetailId: item.id,
         quantity: item.quantity,
       })),
     };
-
     try {
+      // Cập nhật phương thức thanh toán trước khi thanh toán
+      await SalePOS.updatePaymentMethod(currentOrder.id, paymentMethod);
+      console.log("✅ Đã cập nhật phương thức thanh toán:", paymentMethod);
+
       const response = await SalePOS.checkout(orderRequest);
       const { orderId, paymentResponse } = response;
-
-      if (paymentMethod === "vnpay") {
-        if (orderId) {
-          const qrData = await SalePOS.createVNPayPaymentUrl(orderId);
-          console.log("QR Data:", qrData);
-          setPaymentUrl(qrData);
-          setShowQRCode(true);
-
-          localStorage.setItem("pendingOrderId", orderId);
-          localStorage.setItem("pendingCustomerId", selectedCustomer || -1);
-          localStorage.setItem(
-            "pendingVoucherId",
-            selectedVoucher
-              ? vouchers.find((v) => v.voucherCode === selectedVoucher)?.id
-              : null
-          );
-        } else {
-          throw new Error("Không thể lấy orderId cho thanh toán VNPay.");
-        }
+      if (paymentResponse && paymentResponse.status === "success") {
+        console.log("✅ Thanh toán thành công!");
+        handleRemoveOrder(activeOrderIndex);
+        resetAfterPayment();
+        await fetchProductDetails();
       } else {
-        if (paymentResponse && paymentResponse.status === "success") {
-          console.log("✅ Thanh toán thành công!");
-          handleRemoveOrder(activeOrderIndex);
-          resetAfterPayment();
-          await fetchProductDetails();
-        } else {
-          throw new Error("Thanh toán thất bại!");
-        }
+        throw new Error("Thanh toán thất bại!");
       }
     } catch (error) {
       console.error("❌ Lỗi khi thanh toán:", error);
@@ -1039,7 +905,6 @@ const SalePOSPage = () => {
     }
   };
 
-  // Cập nhật hàm resetAfterPayment
   const resetAfterPayment = () => {
     setSelectedCustomer("");
     setCustomerName("");
@@ -1058,16 +923,21 @@ const SalePOSPage = () => {
       phone: "",
       email: "",
     });
+    setShowOwnerQR(false);
+    setHasSelectedVoucher(false);
+  };
 
-    setPaymentUrl(null); // Reset URL thanh toán
-    setShowQRCode(false); // Ẩn mã QR
-    setHasSelectedVoucher(false); // Reset để áp dụng bestVoucher cho lần tiếp theo
+  const handlePaymentMethodChange = (newMethod) => {
+    setPaymentMethod(newMethod);
+    setShowOwnerQR(newMethod === "bank_transfer");
+    if (newMethod === "cash") {
+      setCustomerPaid(0);
+      setChangeAmount(0);
+    }
   };
 
   return (
     <div className="p-4 bg-gray-100 min-h-screen relative">
-
-      {/* Hiển thị thông báo */}
       {notification && (
         <div
           className={`fixed top-4 right-4 p-4 rounded shadow-lg text-white ${notification.type === "success"
@@ -1081,9 +951,6 @@ const SalePOSPage = () => {
         </div>
       )}
 
-
-
-
       {showAddCustomerForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
           <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
@@ -1096,7 +963,6 @@ const SalePOSPage = () => {
                 <FaTimes size={20} />
               </button>
             </div>
-
             <div className="space-y-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700">
@@ -1117,7 +983,6 @@ const SalePOSPage = () => {
                   </p>
                 )}
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700">
                   Số điện thoại <span className="text-red-500">*</span>
@@ -1137,7 +1002,6 @@ const SalePOSPage = () => {
                   </p>
                 )}
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700">
                   Email
@@ -1158,7 +1022,6 @@ const SalePOSPage = () => {
                 )}
               </div>
             </div>
-
             <div className="mt-6 flex justify-between">
               <button
                 onClick={handleUseWalkInCustomer}
@@ -1237,7 +1100,6 @@ const SalePOSPage = () => {
                   0
                 )
                 : 30 * 60;
-
             return (
               <div
                 key={order.id}
@@ -1278,7 +1140,6 @@ const SalePOSPage = () => {
               ? `(Hóa đơn #${activeOrderIndex + 1})`
               : ""}
           </h3>
-
           {!activeOrderIndex && activeOrderIndex !== 0 ? (
             <div className="text-center text-gray-500 p-4">
               <img
@@ -1319,7 +1180,6 @@ const SalePOSPage = () => {
                     discountPercent > 0
                       ? item.salePrice * (1 - discountPercent / 100)
                       : item.salePrice;
-
                   return (
                     <tr key={item.id} className="text-center border">
                       <td className="p-2">
@@ -1338,10 +1198,8 @@ const SalePOSPage = () => {
                         {item.salePrice?.toLocaleString()} VND
                       </td>
                       <td className="p-2 text-blue-600 font-bold">
-                        {(item.salePrice - discountedPrice).toLocaleString()}{" "}
-                        VND
+                        {(item.salePrice - discountedPrice).toLocaleString()} VND
                       </td>
-
                       <td className="p-2">
                         <input
                           type="number"
@@ -1382,10 +1240,8 @@ const SalePOSPage = () => {
               </tbody>
             </table>
           )}
-
           <div className="mt-6">
             <h3 className="text-lg font-semibold mb-2">Danh sách sản phẩm</h3>
-
             <div className="mb-4 flex gap-4">
               <div className="flex-1">
                 <label className="block text-sm font-medium text-gray-700">
@@ -1456,7 +1312,6 @@ const SalePOSPage = () => {
                 </select>
               </div>
             </div>
-
             <table className="min-w-full bg-white border border-gray-200 rounded-lg shadow-sm">
               <thead>
                 <tr className="bg-gray-100">
@@ -1480,7 +1335,6 @@ const SalePOSPage = () => {
                     const endDate = product.promotion?.endDate
                       ? new Date(product.promotion.endDate)
                       : null;
-
                     const isPromotionActive =
                       startDate &&
                       endDate &&
@@ -1491,35 +1345,29 @@ const SalePOSPage = () => {
                       : 0;
                     const discount =
                       discountPercent > 0 ? `${discountPercent}%` : "___";
-
                     const discountedPrice =
                       discountPercent > 0
                         ? product.salePrice * (1 - discountPercent / 100)
                         : product.salePrice;
-
                     return (
                       <tr key={product.id} className="hover:bg-gray-50">
                         <td className="py-2 px-4 border-b">
-                          {product.productDetailCode || "Không có mã"}
+                          {product.productDetailCode}
                         </td>
                         <td className="py-2 px-4 border-b">
-                          {product.product?.productName || "Không có tên"}
+                          {product.product?.productName}
                         </td>
                         <td className="py-2 px-4 border-b">
-                          {product.color?.name || "Không xác định"}
+                          {product.color?.name}
                         </td>
                         <td className="py-2 px-4 border-b">
-                          {product.size?.name || "Không xác định"}
+                          {product.size?.name}
                         </td>
-                        <td className="py-2 px-4 border-b text-center">
-                          {product.quantity || 0}
+                        <td className="py-2 px-4 border-b">{product.quantity}</td>
+                        <td className="py-2 px-4 border-b">
+                          {product.salePrice.toLocaleString()} VND
                         </td>
-                        <td className="py-2 px-4 border-b text-blue-600 font-bold">
-                          {product.salePrice?.toLocaleString()} VND
-                        </td>
-                        <td className="py-2 px-4 border-b text-blue-600 font-bold">
-                          {discount}
-                        </td>
+                        <td className="py-2 px-4 border-b">{discount}</td>
                         <td className="py-2 px-4 border-b text-center">
                           <button
                             onClick={() => handleAddToCart(product)}
@@ -1533,11 +1381,8 @@ const SalePOSPage = () => {
                   })
                 ) : (
                   <tr>
-                    <td
-                      colSpan="7"
-                      className="py-2 px-4 text-center text-gray-500"
-                    >
-                      Không có sản phẩm nào
+                    <td colSpan={8} className="py-4 text-center text-gray-500">
+                      Không tìm thấy sản phẩm nào
                     </td>
                   </tr>
                 )}
@@ -1562,10 +1407,6 @@ const SalePOSPage = () => {
             </div>
           </div>
         </div>
-
-
-
-
 
         <div className="bg-white p-4 rounded shadow">
           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1604,7 +1445,6 @@ const SalePOSPage = () => {
                   </svg>
                 </div>
               )}
-
               {filteredCustomers.length > 0 && (
                 <ul className="absolute z-10 bg-white border rounded-md w-full mt-1 shadow-lg max-h-60 overflow-y-auto">
                   {filteredCustomers.map((customer) => (
@@ -1639,7 +1479,6 @@ const SalePOSPage = () => {
                   ))}
                 </ul>
               )}
-
               {!isSearching &&
                 searchKeyword &&
                 filteredCustomers.length === 0 &&
@@ -1728,7 +1567,7 @@ const SalePOSPage = () => {
                     VND)
                   </option>
                 ))}
-              <option value="">Không sử dụng voucher</option> {/* Thêm tùy chọn không sử dụng voucher */}
+              <option value="">Không sử dụng voucher</option>
             </select>
           </div>
 
@@ -1742,19 +1581,15 @@ const SalePOSPage = () => {
             <label>Phương thức thanh toán:</label>
             <select
               value={paymentMethod}
-              onChange={(e) => {
-                setPaymentMethod(e.target.value);
-                setShowQRCode(false);
-                setPaymentUrl(null);
-              }}
-              className="border p-2 w-full mt-1"
+              onChange={(e) => handlePaymentMethodChange(e.target.value)}
+              className="border p-2 w-full mt-1 rounded-md"
             >
               <option value="cash">Tiền mặt</option>
-              <option value="vnpay">VNPay</option>
+              <option value="bank_transfer">Chuyển khoản</option>
             </select>
           </div>
 
-          {paymentMethod !== "vnpay" && (
+          {paymentMethod === "cash" && (
             <div className="mt-2">
               <label>Khách thanh toán:</label>
               <input
@@ -1762,11 +1597,25 @@ const SalePOSPage = () => {
                 min="0"
                 value={customerPaid || ""}
                 onChange={(e) => setCustomerPaid(Number(e.target.value) || 0)}
-                className="border p-2 w-full mt-1"
+                className="border p-2 w-full mt-1 rounded-md"
               />
               <p className="mt-2">
                 Tiền thừa trả khách: {changeAmount.toLocaleString()} VND
               </p>
+            </div>
+          )}
+
+          {paymentMethod === "bank_transfer" && showOwnerQR && (
+            <div className="mt-4 text-center">
+              <p className="text-lg font-semibold mb-2">Thanh toán chuyển khoản</p>
+              <p className="text-sm mb-4">Vui lòng quét mã QR để thanh toán.</p>
+              <div className="bg-gray-100 p-4 rounded inline-block">
+                <img
+                  src="https://example.com/owner-qr.png"
+                  alt="Owner QR Code"
+                  className="w-48 h-48"
+                />
+              </div>
             </div>
           )}
 
@@ -1775,43 +1624,8 @@ const SalePOSPage = () => {
             className="bg-blue-600 text-white w-full py-2 mt-4 rounded"
             disabled={!activeOrderIndex && activeOrderIndex !== 0}
           >
-            {paymentMethod === "vnpay" ? "Chuyển đến VNPay" : "Thanh toán"}
+            Thanh toán
           </button>
-
-          {paymentMethod === "vnpay" && showQRCode && paymentUrl && (
-            <div style={{ textAlign: "center", marginTop: "20px" }}>
-              <p className="text-lg font-semibold mb-2">Thanh toán chuyển khoản</p>
-              <p className="text-sm mb-4">Vui lòng quét mã QR để thanh toán.</p>
-              <div style={{ backgroundColor: "#f5f5f5", padding: "20px", borderRadius: "8px", display: "inline-block" }}>
-                <div style={{ display: "flex", justifyContent: "center", alignItems: "center", marginBottom: "10px" }}>
-                  <img src="/path/to/vietqr-logo.png" alt="VietQR" style={{ height: "30px", marginRight: "10px" }} />
-                  <img src="/path/to/vietcombank-logo.png" alt="Vietcombank" style={{ height: "30px" }} />
-                </div>
-                <QRCode
-                  value={paymentUrl}
-                  size={200}
-                  level="H"
-                  includeMargin={true}
-                />
-                <div style={{ marginTop: "10px" }}>
-                  <a href={paymentUrl} target="_blank" rel="noopener noreferrer">
-                    <button
-                      style={{
-                        padding: "10px 20px",
-                        backgroundColor: "#007bff",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "5px",
-                        cursor: "pointer",
-                      }}
-                    >
-                      Mở URL thanh toán trực tiếp
-                    </button>
-                  </a>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>
