@@ -214,10 +214,12 @@ export default function ProductUpdateModal({
               <Select
                 value={promotion}
                 onChange={(option) => setPromotion(option)}
-                options={promotions.map((item) => ({
-                  value: item.id,
-                  label: item.promotionName,
-                }))}
+                options={promotions
+                  .filter((item) => item.status === true)
+                  .map((item) => ({
+                    value: item.id,
+                    label: item.promotionName,
+                  }))}
                 className="w-full"
               />
             </div>

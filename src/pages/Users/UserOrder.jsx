@@ -1809,7 +1809,7 @@ const UserOrder = () => {
                     <p className="text-gray-800">
                       {selectedOrder.paymentMethod === 1
                         ? "Thanh toán khi nhận hàng"
-                        : selectedOrder.paymentMethod === 0
+                        : selectedOrder.paymentMethod === 2
                           ? "Thanh toán online"
                           : "N/A"}
                     </p>
