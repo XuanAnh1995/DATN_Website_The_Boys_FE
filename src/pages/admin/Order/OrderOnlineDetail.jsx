@@ -762,7 +762,7 @@ const OrderDetail = () => {
                       const sizeName =
                         detail.productDetail?.size?.name ??
                         "Không có kích thước";
-                        const collarName =
+                      const collarName =
                         detail.productDetail?.collar?.name ?? "Không có cổ áo";
                       const sleeveName =
                         detail.productDetail?.sleeve?.sleeveName ??
@@ -851,33 +851,33 @@ const OrderDetail = () => {
                 </tbody>
                 <tfoot className="bg-gray-100 text-gray-800 font-bold border-t">
                   <tr>
-                    <td colSpan="5" className="py-4 px-4 text-right">
+                    <td colSpan="6" className="py-4 px-4 text-right">
                       Tổng tiền trước khi áp voucher:
                     </td>
                     <td
-                      colSpan="2"
+                      colSpan="3"
                       className="py-4 px-4 text-right text-xl text-gray-700"
                     >
                       {formatCurrency(orderDetails.totalAmount ?? 0)}
                     </td>
                   </tr>
                   <tr>
-                    <td colSpan="5" className="py-4 px-4 text-right">
+                    <td colSpan="6" className="py-4 px-4 text-right">
                       Phí giao hàng:
                     </td>
                     <td
-                      colSpan="2"
+                      colSpan="3"
                       className="py-4 px-4 text-right text-xl text-blue-600"
                     >
                       {formatCurrency(orderDetails.shipfee ?? 0)}
                     </td>
                   </tr>
                   <tr>
-                    <td colSpan="5" className="py-4 px-4 text-right">
+                    <td colSpan="6" className="py-4 px-4 text-right">
                       Số tiền giảm giá:
                     </td>
                     <td
-                      colSpan="2"
+                      colSpan="3"
                       className="py-4 px-4 text-right text-xl text-green-600"
                     >
                       -
@@ -889,11 +889,11 @@ const OrderDetail = () => {
                     </td>
                   </tr>
                   <tr>
-                    <td colSpan="5" className="py-4 px-4 text-right">
+                    <td colSpan="6" className="py-4 px-4 text-right">
                       Tổng tiền sau khi áp voucher:
                     </td>
                     <td
-                      colSpan="2"
+                      colSpan="3"
                       className="py-4 px-4 text-right text-xl text-red-600"
                     >
                       {formatCurrency(orderDetails.totalBill ?? 0)}
