@@ -1669,7 +1669,7 @@ const SalePOSPage = () => {
               <p className="text-sm mb-4">Vui lòng quét mã QR để thanh toán.</p>
               <div className="bg-gray-100 p-4 rounded inline-block">
                 <img
-                  src="https://example.com/owner-qr.png"
+                  src="/public/Tung-QR.png"
                   alt="Owner QR Code"
                   className="w-48 h-48"
                 />

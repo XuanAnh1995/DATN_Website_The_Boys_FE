@@ -327,54 +327,47 @@
 //     }
 //   }, [customer, isLoggedIn, role, search]);
 
-//   // Polling for order status updates
+//   // Polling for any order status updates
 //   useEffect(() => {
 //     if (!customer?.phone || !isLoggedIn || role !== "CUSTOMER") return;
 
-//     const hasPendingOrder = allOrders.some(
-//       (order) => Number(order.statusOrder) === 0
-//     );
+//     const intervalId = setInterval(async () => {
+//       console.log("Polling for order status updates...");
+//       try {
+//         const response = await OrderService.getOnlineOrders(
+//           search,
+//           0,
+//           1000,
+//           "id",
+//           "desc"
+//         );
+//         const filteredOrders = (response.content || []).filter(
+//           (order) => order.customer?.phone === customer.phone
+//         );
 
-//     if (hasPendingOrder) {
-//       const intervalId = setInterval(async () => {
-//         console.log("Polling for order status updates...");
-//         try {
-//           const response = await OrderService.getOnlineOrders(
-//             search,
-//             0,
-//             1000,
-//             "id",
-//             "desc"
-//           );
-//           const filteredOrders = (response.content || []).filter(
-//             (order) => order.customer?.phone === customer.phone
-//           );
+//         // Check for orders with any status change
+//         const updatedOrders = filteredOrders.filter((newOrder) =>
+//           allOrders.some(
+//             (oldOrder) =>
+//               oldOrder.id === newOrder.id &&
+//               oldOrder.statusOrder !== newOrder.statusOrder
+//           )
+//         );
 
-//           // Check for orders that changed from status 0 to another status
-//           const updatedOrders = filteredOrders.filter(
-//             (newOrder) =>
-//               newOrder.statusOrder !== 0 &&
-//               allOrders.some(
-//                 (oldOrder) =>
-//                   oldOrder.id === newOrder.id && oldOrder.statusOrder === 0
-//               )
-//           );
-
-//           if (updatedOrders.length > 0) {
-//             updatedOrders.forEach((order) => {
-//               toast.info(
-//                 `Đơn hàng #${order.orderCode} đã được cập nhật thành ${orderStatusMap[order.statusOrder]}!`
-//               );
-//             });
-//             setAllOrders(filteredOrders);
-//           }
-//         } catch (error) {
-//           console.error("Error polling orders:", error);
+//         if (updatedOrders.length > 0) {
+//           updatedOrders.forEach((order) => {
+//             toast.info(
+//               `Đơn hàng #${order.orderCode} đã được cập nhật thành ${orderStatusMap[order.statusOrder]}!`
+//             );
+//           });
+//           setAllOrders(filteredOrders);
 //         }
-//       }, 10000); // Poll every 10 seconds
+//       } catch (error) {
+//         console.error("Error polling orders:", error);
+//       }
+//     }, 10000); // Poll every 10 seconds
 
-//       return () => clearInterval(intervalId); // Cleanup interval
-//     }
+//     return () => clearInterval(intervalId); // Cleanup interval
 //   }, [allOrders, customer, isLoggedIn, role, search]);
 
 //   useEffect(() => {
@@ -810,6 +803,8 @@
 //                         <th className="py-3 px-4 text-center w-20">Số lượng</th>
 //                         <th className="py-3 px-4 text-center w-20">Màu sắc</th>
 //                         <th className="py-3 px-4 text-center w-20">Size</th>
+//                         <th className="py-3 px-4 text-center">Cổ áo</th>
+//                         <th className="py-3 px-4 text-center">Tay áo</th>
 //                         <th className="py-3 px-4 text-right w-24">Đơn giá</th>
 //                         <th className="py-3 px-4 text-right w-24">Giảm giá</th>
 //                         <th className="py-3 px-4 text-right w-24">
@@ -825,6 +820,12 @@
 //                           const productDetail = detail.productDetail || {};
 //                           const quantity = detail.quantity || 0;
 //                           const colorName = productDetail.color?.name || "N/A";
+//                           const collarName =
+//                             detail.productDetail?.collar?.name ??
+//                             "Không có cổ áo";
+//                           const sleeveName =
+//                             detail.productDetail?.sleeve?.sleeveName ??
+//                             "Không có tay áo";
 //                           const sizeName = productDetail.size?.name || "N/A";
 //                           const salePrice =
 //                             productDetail.salePrice || product.salePrice || 0;
@@ -876,6 +877,12 @@
 //                               </td>
 //                               <td className="py-3 px-4 text-center">
 //                                 {sizeName}
+//                               </td>
+//                               <td className="py-3 px-4 text-center font-medium">
+//                                 {collarName}
+//                               </td>
+//                               <td className="py-3 px-4 text-center font-medium">
+//                                 {sleeveName}
 //                               </td>
 //                               <td className="py-3 px-4 text-right text-green-600">
 //                                 {formatCurrency(salePrice)}
@@ -1329,14 +1336,12 @@ const UserOrder = () => {
     }
   };
 
-  // Fetch orders initially when customer is loaded
   useEffect(() => {
     if (customer?.phone && isLoggedIn && role === "CUSTOMER") {
       fetchOrders();
     }
   }, [customer, isLoggedIn, role, search]);
 
-  // Polling for any order status updates
   useEffect(() => {
     if (!customer?.phone || !isLoggedIn || role !== "CUSTOMER") return;
 
@@ -1354,7 +1359,6 @@ const UserOrder = () => {
           (order) => order.customer?.phone === customer.phone
         );
 
-        // Check for orders with any status change
         const updatedOrders = filteredOrders.filter((newOrder) =>
           allOrders.some(
             (oldOrder) =>
@@ -1374,9 +1378,9 @@ const UserOrder = () => {
       } catch (error) {
         console.error("Error polling orders:", error);
       }
-    }, 10000); // Poll every 10 seconds
+    }, 10000);
 
-    return () => clearInterval(intervalId); // Cleanup interval
+    return () => clearInterval(intervalId);
   }, [allOrders, customer, isLoggedIn, role, search]);
 
   useEffect(() => {
@@ -1524,7 +1528,7 @@ const UserOrder = () => {
     <div className="p-6 bg-gray-100 min-h-screen">
       <ToastContainer position="top-right" autoClose={3000} />
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-2xl font-bold text-gray-800 mb-6">
+        <h1 className="text-3xl font-bold text-gray-800 mb-6">
           Lịch sử mua hàng
         </h1>
 
@@ -1533,10 +1537,10 @@ const UserOrder = () => {
           {tabs.map((tab) => (
             <button
               key={tab.key}
-              className={`px-4 py-2 text-sm font-medium ${
+              className={`px-4 py-2 text-sm font-medium rounded-t-md transition-colors duration-200 ${
                 activeTab === tab.key
-                  ? "border-b-2 border-blue-500 text-blue-600"
-                  : "text-gray-600 hover:text-blue-600"
+                  ? "bg-blue-500 text-white border-blue-500"
+                  : "text-gray-600 hover:bg-gray-100"
               }`}
               onClick={() => handleTabChange(tab.key)}
             >
@@ -1727,64 +1731,96 @@ const UserOrder = () => {
 
         {/* Order Details Modal */}
         {isModalOpen && selectedOrder && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg max-w-2xl w-full p-6 overflow-y-auto max-h-[90vh]">
-              <div className="bg-gray-800 text-white p-4 rounded-t-lg flex justify-between items-center">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl max-w-4xl w-full p-6 overflow-y-auto max-h-[90vh] shadow-2xl">
+              {/* Modal Header */}
+              <div className="bg-blue-600 text-white p-4 rounded-t-xl flex justify-between items-center">
                 <h2 className="text-xl font-bold">
                   Chi tiết đơn hàng #{selectedOrder.orderCode || "N/A"}
                 </h2>
-                <span className={getStatusClass(selectedOrder.statusOrder)}>
-                  {orderStatusMap[selectedOrder.statusOrder?.toString()] ||
-                    "N/A"}
-                </span>
+                <div className="flex items-center gap-4">
+                  <span className={getStatusClass(selectedOrder.statusOrder)}>
+                    {orderStatusMap[selectedOrder.statusOrder?.toString()] ||
+                      "N/A"}
+                  </span>
+                  <button
+                    className="text-white hover:text-gray-200 focus:outline-none"
+                    onClick={() => setIsModalOpen(false)}
+                  >
+                    <svg
+                      className="w-6 h-6"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
               </div>
 
-              <div className="p-4 border-b">
-                <h3 className="text-lg font-semibold text-gray-700 mb-4">
+              {/* Customer Information */}
+              <div className="p-6 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">
                   Thông tin khách hàng
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-gray-500">Họ và tên</p>
-                    <p className="font-medium">
+                    <p className="text-sm text-gray-500 font-medium">
+                      Họ và tên
+                    </p>
+                    <p className="text-gray-800">
                       {selectedOrder.customer?.fullname || "N/A"}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Số điện thoại</p>
-                    <p className="font-medium">
+                    <p className="text-sm text-gray-500 font-medium">
+                      Số điện thoại
+                    </p>
+                    <p className="text-gray-800">
                       {selectedOrder.phone || "N/A"}
                     </p>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Địa chỉ giao hàng</p>
-                    <p className="font-medium">
+                  <div className="sm:col-span-2">
+                    <p className="text-sm text-gray-500 font-medium">
+                      Địa chỉ giao hàng
+                    </p>
+                    <p className="text-gray-800">
                       {selectedOrder.address || "N/A"}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Ngày đặt hàng</p>
-                    <p className="font-medium">
+                    <p className="text-sm text-gray-500 font-medium">
+                      Ngày đặt hàng
+                    </p>
+                    <p className="text-gray-800">
                       {formatDate(selectedOrder.createDate)}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-500 font-medium">
                       Phương thức thanh toán
                     </p>
-                    <p className="font-medium">
+                    <p className="text-gray-800">
                       {selectedOrder.paymentMethod === 1
                         ? "Thanh toán khi nhận hàng"
-                        : selectedOrder.paymentMethod === 0
+                        : selectedOrder.paymentMethod === 2
                           ? "Thanh toán online"
                           : "N/A"}
                     </p>
                   </div>
                   {selectedOrder.note &&
                     parseInt(selectedOrder.statusOrder) === -1 && (
-                      <div className="col-span-2">
-                        <p className="text-sm text-gray-500">Lý do hủy</p>
-                        <p className="font-medium text-red-600">
+                      <div className="sm:col-span-2">
+                        <p className="text-sm text-gray-500 font-medium">
+                          Lý do hủy
+                        </p>
+                        <p className="text-red-600 font-medium">
                           {selectedOrder.note}
                         </p>
                       </div>
@@ -1792,26 +1828,30 @@ const UserOrder = () => {
                 </div>
               </div>
 
-              <div className="p-4 border-b">
+              {/* Order Timeline */}
+              <div className="p-6 border-b border-gray-200">
                 <OrderTimeline
                   currentStatus={selectedOrder.statusOrder?.toString() || "0"}
                   onCancelOrder={handleCancelOrder}
                 />
               </div>
 
-              <div className="p-4">
-                <h3 className="text-lg font-semibold text-gray-700 mb-4">
-                  Các sản phẩm
+              {/* Products Table */}
+              <div className="p-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                  Chi tiết sản phẩm
                 </h3>
-                <div className="overflow-x-auto border rounded-lg">
+                <div className="overflow-x-auto border rounded-lg shadow-sm">
                   <table className="w-full text-sm">
-                    <thead className="bg-gray-200">
+                    <thead className="bg-gray-100 text-gray-600 uppercase">
                       <tr>
                         <th className="py-3 px-4 text-center w-16">Ảnh</th>
                         <th className="py-3 px-4 text-left">Sản phẩm</th>
                         <th className="py-3 px-4 text-center w-20">Số lượng</th>
                         <th className="py-3 px-4 text-center w-20">Màu sắc</th>
                         <th className="py-3 px-4 text-center w-20">Size</th>
+                        <th className="py-3 px-4 text-center">Cổ áo</th>
+                        <th className="py-3 px-4 text-center">Tay áo</th>
                         <th className="py-3 px-4 text-right w-24">Đơn giá</th>
                         <th className="py-3 px-4 text-right w-24">Giảm giá</th>
                         <th className="py-3 px-4 text-right w-24">
@@ -1827,6 +1867,12 @@ const UserOrder = () => {
                           const productDetail = detail.productDetail || {};
                           const quantity = detail.quantity || 0;
                           const colorName = productDetail.color?.name || "N/A";
+                          const collarName =
+                            detail.productDetail?.collar?.name ??
+                            "Không có cổ áo";
+                          const sleeveName =
+                            detail.productDetail?.sleeve?.sleeveName ??
+                            "Không có tay áo";
                           const sizeName = productDetail.size?.name || "N/A";
                           const salePrice =
                             productDetail.salePrice || product.salePrice || 0;
@@ -1855,7 +1901,7 @@ const UserOrder = () => {
                                 <img
                                   src={photo}
                                   alt={product.productName || "Sản phẩm"}
-                                  className="w-10 h-10 object-cover rounded-md mx-auto"
+                                  className="w-12 h-12 object-cover rounded-md mx-auto"
                                   onError={(e) =>
                                     (e.target.src =
                                       "https://via.placeholder.com/40")
@@ -1863,7 +1909,7 @@ const UserOrder = () => {
                                 />
                               </td>
                               <td className="py-3 px-4">
-                                <p className="font-medium">
+                                <p className="font-medium text-gray-800">
                                   {product.productName || "N/A"}
                                 </p>
                                 <p className="text-xs text-gray-500">
@@ -1879,6 +1925,12 @@ const UserOrder = () => {
                               <td className="py-3 px-4 text-center">
                                 {sizeName}
                               </td>
+                              <td className="py-3 px-4 text-center">
+                                {collarName}
+                              </td>
+                              <td className="py-3 px-4 text-center">
+                                {sleeveName}
+                              </td>
                               <td className="py-3 px-4 text-right text-green-600">
                                 {formatCurrency(salePrice)}
                               </td>
@@ -1887,7 +1939,7 @@ const UserOrder = () => {
                                   ? formatCurrency(discountAmount)
                                   : "-"}
                               </td>
-                              <td className="py-3 px-4 text-right font-semibold">
+                              <td className="py-3 px-4 text-right font-semibold text-gray-800">
                                 {formatCurrency(totalPrice)}
                               </td>
                             </tr>
@@ -1896,43 +1948,40 @@ const UserOrder = () => {
                       ) : (
                         <tr>
                           <td
-                            colSpan="8"
-                            className="py-3 px-4 text-center text-gray-500"
+                            colSpan="10"
+                            className="py-4 px-4 text-center text-gray-500"
                           >
                             Không có sản phẩm
                           </td>
                         </tr>
                       )}
                     </tbody>
-                    <tfoot className="bg-gray-100 font-bold">
+                    <tfoot className="bg-gray-50 font-semibold text-gray-800">
                       <tr>
-                        <td colSpan="6" className="py-4 px-4 text-right">
+                        <td colSpan="7" className="py-4 px-4 text-right">
                           Tổng tiền hàng:
                         </td>
-                        <td
-                          colSpan="2"
-                          className="py-4 px-4 text-right text-gray-700"
-                        >
+                        <td colSpan="3" className="py-4 px-4 text-right">
                           {formatCurrency(selectedOrder.totalAmount || 0)}
                         </td>
                       </tr>
                       <tr>
-                        <td colSpan="6" className="py-4 px-4 text-right">
+                        <td colSpan="7" className="py-4 px-4 text-right">
                           Phí giao hàng:
                         </td>
                         <td
-                          colSpan="2"
+                          colSpan="3"
                           className="py-4 px-4 text-right text-blue-600"
                         >
                           {formatCurrency(selectedOrder.shipfee || 0)}
                         </td>
                       </tr>
                       <tr>
-                        <td colSpan="6" className="py-4 px-4 text-right">
+                        <td colSpan="7" className="py-4 px-4 text-right">
                           Giảm giá hóa đơn:
                         </td>
                         <td
-                          colSpan="2"
+                          colSpan="3"
                           className="py-4 px-4 text-right text-green-600"
                         >
                           -
@@ -1944,12 +1993,12 @@ const UserOrder = () => {
                         </td>
                       </tr>
                       <tr>
-                        <td colSpan="6" className="py-4 px-4 text-right">
+                        <td colSpan="7" className="py-4 px-4 text-right">
                           Tổng thanh toán:
                         </td>
                         <td
-                          colSpan="2"
-                          className="py-4 px-4 text-right text-red-600"
+                          colSpan="3"
+                          className="py-4 px-4 text-right text-red-600 font-bold"
                         >
                           {formatCurrency(selectedOrder.totalBill || 0)}
                         </td>
@@ -1959,31 +2008,28 @@ const UserOrder = () => {
                 </div>
               </div>
 
+              {/* Voucher Section */}
               {selectedOrder.voucher && (
-                <div className="p-4">
-                  <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded">
-                    <div className="flex">
-                      <div className="flex-shrink-0">
-                        <svg
-                          className="h-5 w-5 text-green-500"
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      </div>
-                      <div className="ml-3">
-                        <h3 className="text-sm font-medium text-green-800">
-                          Mã giảm giá
-                        </h3>
-                        <p className="font-medium">
+                <div className="p-6 border-t border-gray-200">
+                  <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-lg">
+                    <div className="flex items-center">
+                      <svg
+                        className="h-6 w-6 text-green-500 mr-3"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      <div>
+                        <h3 className="text-sm font-semibold text-green-800">
+                          Mã giảm giá:{" "}
                           {selectedOrder.voucher?.voucherName || "N/A"}
-                        </p>
-                        <p className="text-sm">
+                        </h3>
+                        <p className="text-sm text-gray-600">
                           {selectedOrder.voucher?.description || "N/A"}
                         </p>
                       </div>
@@ -1992,9 +2038,10 @@ const UserOrder = () => {
                 </div>
               )}
 
-              <div className="p-4 flex justify-end">
+              {/* Modal Footer */}
+              <div className="p-6 flex justify-end">
                 <button
-                  className="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-800"
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200"
                   onClick={() => setIsModalOpen(false)}
                 >
                   Đóng
