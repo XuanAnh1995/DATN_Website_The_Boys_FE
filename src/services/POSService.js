@@ -1,4 +1,4 @@
-import api from "../ultils/api"; // Import instance Axios đã cấu hình
+import api from "../ultils/api";
 
 const API_URL_CHECKOUT = "/api/sale-pos";
 const API_URL_PRODUCT_DETAIL = "/api/product-details";
@@ -7,12 +7,11 @@ const API_URL_VOUCHERS = "/api/vouchers";
 const API_Barcode = "/api/barcode/barcode";
 
 const paymentMethodMapping = {
-  cash: 0, // Tiền mặt
-  vnpay: 1, // VNPay
+  cash: 0,
+  bank_transfer: 1,
 };
 
 const SalePOS = {
-  /** 🛒 Lấy danh sách sản phẩm theo bộ lọc */
   getProductDetails: async (filters) => {
     console.log("📌 Lấy danh sách sản phẩm với bộ lọc:", filters);
     try {
@@ -30,7 +29,6 @@ const SalePOS = {
     }
   },
 
-  /** 🧑‍💼 Lấy danh sách khách hàng */
   getCustomers: async (filters) => {
     console.log("📌 Lấy danh sách khách hàng với bộ lọc:", filters);
     try {
@@ -46,27 +44,21 @@ const SalePOS = {
     }
   },
 
-  /** 📦 **Tạo đơn hàng rỗng** */
   createOrder: async (orderData) => {
     console.log("📌 Tạo đơn hàng:", orderData);
     try {
-      // ✅ Chuyển paymentMethod từ String -> Integer
       orderData.paymentMethod =
-        paymentMethodMapping[orderData.paymentMethod] ?? 0; // Mặc định là 0 (Tiền mặt)
-
+        paymentMethodMapping[orderData.paymentMethod] ?? 0;
       console.log(
         "🔍 Dữ liệu thực sự gửi đi:",
         JSON.stringify(orderData, null, 2)
       );
-
       const response = await api.post(`${API_URL_CHECKOUT}/orders`, orderData);
       console.log("✅ Đơn hàng tạo thành công:", response.data);
-
       if (!response.data || !response.data.data || !response.data.data.id) {
         throw new Error("Không thể tạo đơn hàng!");
       }
-
-      return response.data.data; // Trả về orderId
+      return response.data.data;
     } catch (error) {
       console.error(
         "❌ Lỗi khi tạo đơn hàng:",
@@ -76,7 +68,6 @@ const SalePOS = {
     }
   },
 
-  /** 🛍️ **Thêm sản phẩm vào đơn hàng** */
   addProductToCart: async (orderId, productData) => {
     console.log(`📌 Thêm sản phẩm vào đơn hàng ${orderId}: `, productData);
     try {
@@ -95,7 +86,6 @@ const SalePOS = {
     }
   },
 
-  /** 💳 **Thanh toán đơn hàng** */
   completePayment: async (orderId, paymentData) => {
     console.log(`📌 Hoàn tất thanh toán cho đơn hàng #${orderId}`);
     try {
@@ -114,44 +104,6 @@ const SalePOS = {
     }
   },
 
-  /** 💳 Tạo URL thanh toán VNPay */
-  async createVNPayPaymentUrl(orderId) {
-    console.log(`📌 Tạo URL thanh toán VNPay cho đơn hàng #${orderId}`);
-    try {
-      const response = await api.post(
-        `/payment/create-payment-url-pos/${orderId}`,
-        {},
-        {
-          params: { isPOS: true }, // Chỉ định đơn hàng POS
-        }
-      );
-      console.log("✅ URL thanh toán:", response.data);
-      return response.data;
-    } catch (error) {
-      console.error(
-        "❌ Lỗi khi tạo URL thanh toán:",
-        error.response?.data || error.message
-      );
-      throw error;
-    }
-  },
-
-  async createVietQRPaymentUrl(orderId) {
-        console.log(`📌 Tạo URL VietQR cho đơn hàng #${orderId}`);
-        try {
-            const response = await api.post(`/api/sale-pos/payment/create-vietqr-url/${orderId}`);
-            console.log("✅ URL VietQR:", response.data);
-            return response.data; // Trả về URL VietQR
-        } catch (error) {
-            console.error(
-                "❌ Lỗi khi tạo URL VietQR:",
-                error.response?.data || error.message
-            );
-            throw error;
-        }
-    },
-
-  /** 🎟️ Lấy danh sách voucher */
   getVouchers: async () => {
     console.log("📌 Lấy danh sách voucher hợp lệ");
     try {
@@ -167,7 +119,6 @@ const SalePOS = {
     }
   },
 
-  // để gọi API /api/sale-pos/checkout
   updateOrderInfo: async (orderId, updateData) => {
     console.log(`📌 Cập nhật thông tin đơn hàng #${orderId}:`, updateData);
     try {
@@ -187,12 +138,10 @@ const SalePOS = {
     }
   },
 
-  /** ✅ **Checkout - Luồng chuẩn** */
-async checkout(orderData) {
+  checkout: async (orderData) => {
     console.log("📌 Bắt đầu luồng thanh toán với đơn hàng:", orderData);
     try {
       let orderId = orderData.orderId ?? null;
-
       if (!orderId) {
         console.log("📌 Không có orderId, tiến hành tạo đơn hàng mới.");
         const orderResponse = await SalePOS.createOrder(orderData);
@@ -200,7 +149,6 @@ async checkout(orderData) {
       } else {
         console.log("✅ Sử dụng orderId đã có:", orderId);
       }
-
       const existingOrder = await SalePOS.getOrderDetails(orderId);
       const existingProducts = existingOrder.orderDetails || [];
       const productsToAdd = [];
@@ -214,30 +162,22 @@ async checkout(orderData) {
           }
         }
       }
-
       if (productsToAdd.length > 0) {
         for (let item of productsToAdd) {
           await SalePOS.addProductToCart(orderId, item);
         }
         console.log("✅ Đã thêm các sản phẩm mới vào đơn hàng:", productsToAdd);
       }
-
       const paymentData = {
         customerId: orderData.customerId,
         voucherId: orderData.voucherId,
       };
       await SalePOS.updateOrderInfo(orderId, paymentData);
       console.log("✅ Đã cập nhật customerId và voucherId");
-
-      if (orderData.paymentMethod !== "vnpay") {
-        console.log("🔍 Xử lý thanh toán tiền mặt cho đơn hàng:", orderId);
-        const paymentResponse = await SalePOS.completePayment(orderId, paymentData);
-        console.log("✅ Thanh toán thành công:", paymentResponse);
-        return { orderId, paymentResponse };
-      }
-
-      console.log("✅ Đơn hàng sẵn sàng cho VietQR:", orderId);
-      return { orderId };
+      console.log("🔍 Xử lý thanh toán cho đơn hàng:", orderId);
+      const paymentResponse = await SalePOS.completePayment(orderId, paymentData);
+      console.log("✅ Thanh toán thành công:", paymentResponse);
+      return { orderId, paymentResponse };
     } catch (error) {
       console.error(
         "❌ Lỗi khi checkout:",
@@ -246,15 +186,13 @@ async checkout(orderData) {
       throw error;
     }
   },
-  
 
-  /** 🖨️ Lấy sản phẩm theo mã vạch */
   getProductByBarcode: async (barcode) => {
     console.log("📌 Lấy sản phẩm theo mã vạch:", barcode);
     try {
       const response = await api.get(API_Barcode);
       console.log("✅ Sản phẩm từ mã vạch:", response.data);
-      return response.data; // Giả sử backend trả về dữ liệu sản phẩm
+      return response.data;
     } catch (error) {
       console.error(
         "❌ Lỗi khi lấy sản phẩm theo mã vạch:",
@@ -264,7 +202,6 @@ async checkout(orderData) {
     }
   },
 
-  /** 📋 Lấy chi tiết đơn hàng */
   getOrderDetails: async (orderId) => {
     console.log(`📌 Lấy chi tiết đơn hàng #${orderId}`);
     try {
@@ -274,6 +211,39 @@ async checkout(orderData) {
     } catch (error) {
       console.error(
         "❌ Lỗi khi lấy chi tiết đơn hàng:",
+        error.response?.data || error.message
+      );
+      throw error;
+    }
+  },
+
+  cancelOrder: async (orderId) => {
+    console.log(`📌 Hủy đơn hàng #${orderId}`);
+    try {
+      const response = await api.put(`${API_URL_CHECKOUT}/orders/${orderId}/cancel`);
+      console.log("✅ Hủy đơn hàng thành công:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error(
+        "❌ Lỗi khi hủy đơn hàng:",
+        error.response?.data || error.message
+      );
+      throw error;
+    }
+  },
+
+  updatePaymentMethod: async (orderId, paymentMethod) => {
+    console.log(`📌 Cập nhật phương thức thanh toán cho đơn hàng #${orderId}:`, paymentMethod);
+    try {
+      const response = await api.put(
+        `${API_URL_CHECKOUT}/orders/${orderId}/payment-method`,
+        { paymentMethod: paymentMethodMapping[paymentMethod] ?? 0 }
+      );
+      console.log("✅ Cập nhật phương thức thanh toán thành công:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error(
+        "❌ Lỗi khi cập nhật phương thức thanh toán:",
         error.response?.data || error.message
       );
       throw error;
