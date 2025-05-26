@@ -48,7 +48,6 @@ export default function Voucher() {
   const [customerSearch, setCustomerSearch] = useState("");
 
   const updateVoucherStatus = useCallback(async (voucher) => {
-    // Skip automatic updates if the voucher is manually deactivated
     if (!voucher.status) {
       return false;
     }
@@ -79,6 +78,13 @@ export default function Voucher() {
         ? formatDateTime(new Date(dateFilter.endDate))
         : null;
 
+      const statusValue =
+        statusFilter === "active"
+          ? true
+          : statusFilter === "inactive"
+            ? false
+            : null;
+
       const response = await VoucherService.getAllVouchers(
         search,
         currentPage,
@@ -89,11 +95,7 @@ export default function Voucher() {
         endDateFormatted,
         percentFilter ? Number(percentFilter) : null,
         minConditionFilter ? Number(minConditionFilter) : null,
-        statusFilter === "active"
-          ? true
-          : statusFilter === "inactive"
-            ? false
-            : null
+        statusValue
       );
 
       let filteredVouchers = response.content.map((voucher) => ({
@@ -134,7 +136,6 @@ export default function Voucher() {
   const fetchCustomers = async () => {
     try {
       const response = await CustomerService.getAll("", 0, 1000);
-      // Normalize customer data
       const normalizedCustomers = response.content.map((customer) => ({
         ...customer,
         fullname: customer.fullname || "",
@@ -203,7 +204,6 @@ export default function Voucher() {
   };
 
   const handleToggleStatus = async (id, currentStatus) => {
-    // If trying to activate an expired voucher
     if (!currentStatus) {
       const voucher = vouchers.find((v) => v.id === id);
       const endDate = new Date(voucher.endDate);
@@ -347,30 +347,6 @@ export default function Voucher() {
               className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               value={search}
               onChange={handleSearch}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Ngày bắt đầu từ
-            </label>
-            <input
-              type="datetime-local"
-              name="startDate"
-              value={dateFilter.startDate}
-              onChange={handleDateFilter}
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Ngày kết thúc đến
-            </label>
-            <input
-              type="datetime-local"
-              name="endDate"
-              value={dateFilter.endDate}
-              onChange={handleDateFilter}
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
           <div>

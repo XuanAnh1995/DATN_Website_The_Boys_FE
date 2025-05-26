@@ -496,9 +496,7 @@ const ProductList = () => {
                       <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded">
                         new
                       </span>
-                      <span className="bg-green-100 text-green-800 text-xs font-semibold px-2 py-0.5 rounded">
-                        freeship
-                      </span>
+                      <span className="bg-green-100 text-green-800 text-xs font-semibold px-2 py-0.5 rounded"></span>
                     </div>
                     <div className="absolute bottom-4 left-0 right-0 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-4 group-hover:translate-y-0">
                       <button
