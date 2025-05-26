@@ -7,6 +7,8 @@ import SleeveService from "../../../services/SleeveService";
 import CustomerService from "../../../services/CustomerService";
 import { FaShoppingCart, FaTrash, FaPlus, FaTimes } from "react-icons/fa";
 import { debounce } from "lodash";
+import ConfirmModal from "../../../components/ui/ConfirmModal";
+import AlertModal from "../../../components/ui/AlertModal";
 
 const SalePOSPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -34,6 +36,18 @@ const SalePOSPage = () => {
   const [notification, setNotification] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
   const [orderTimers, setOrderTimers] = useState({});
+
+  // State cho các modal
+  const [alertModal, setAlertModal] = useState({
+    isOpen: false,
+    message: "",
+  });
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+  });
 
   const validateForm = () => {
     const errors = {};
@@ -640,7 +654,10 @@ const SalePOSPage = () => {
       orders.length
     );
     if (activeOrderIndex === null || activeOrderIndex >= orders.length) {
-      alert("⚠ Bạn cần chọn hóa đơn trước khi quét mã vạch!");
+      setAlertModal({
+        isOpen: true,
+        message: "Bạn cần chọn hóa đơn trước khi quét mã vạch!",
+      });
       return;
     }
     const product = allProducts.find(
@@ -648,7 +665,10 @@ const SalePOSPage = () => {
     );
     if (product) {
       if (product.quantity <= 0) {
-        alert(`Sản phẩm "${product.product?.productName}" đã hết hàng!`);
+        setAlertModal({
+          isOpen: true,
+          message: `Sản phẩm "${product.product?.productName}" đã hết hàng!`,
+        });
         console.warn(
           `⚠ Sản phẩm ${product.id} đã hết hàng (số lượng: ${product.quantity}).`
         );
@@ -657,19 +677,28 @@ const SalePOSPage = () => {
       console.log("✅ Tìm thấy sản phẩm:", product);
       handleAddToCart(product);
     } else {
-      alert("⚠ Không tìm thấy sản phẩm với mã vạch này!");
+      setAlertModal({
+        isOpen: true,
+        message: "Không tìm thấy sản phẩm với mã vạch này!",
+      });
     }
   };
 
   const handleAddToCart = (product) => {
     console.log("🛒 [THÊM VÀO GIỎ HÀNG] Bắt đầu thêm sản phẩm vào giỏ hàng...");
     if (activeOrderIndex === null || activeOrderIndex >= orders.length) {
-      alert("Vui lòng tạo hóa đơn trước!");
+      setAlertModal({
+        isOpen: true,
+        message: "Vui lòng tạo hóa đơn trước!",
+      });
       console.warn("⚠ Không có đơn hàng nào được chọn. Hãy tạo đơn hàng trước!");
       return;
     }
     if (product.quantity <= 0) {
-      alert(`Sản phẩm ${product.product?.productName} đã hết hàng !`);
+      setAlertModal({
+        isOpen: true,
+        message: `Sản phẩm ${product.product?.productName} đã hết hàng !`,
+      });
       return;
     }
     setOrders((prevOrders) => {
@@ -682,9 +711,10 @@ const SalePOSPage = () => {
       if (existingItemIndex !== -1) {
         const existingItem = currentOrder.items[existingItemIndex];
         if (existingItem.quantity >= product.quantity) {
-          alert(
-            `Sản phẩm "${product.product?.productName}" chỉ còn ${product.quantity} sản phẩm trong kho.`
-          );
+          setAlertModal({
+            isOpen: true,
+            message: `Sản phẩm "${product.product?.productName}" chỉ còn ${product.quantity} sản phẩm trong kho.`,
+          });
           return updatedOrders;
         }
         console.log(
@@ -723,8 +753,11 @@ const SalePOSPage = () => {
   const handleRemoveFromCart = (productId) => {
     console.log("🗑 [XÓA KHỎI GIỎ HÀNG] Bắt đầu xóa sản phẩm khỏi giỏ hàng...");
     if (activeOrderIndex === null) {
+      setAlertModal({
+        isOpen: true,
+        message: "Vui lòng chọn hoặc tạo hóa đơn!",
+      });
       console.warn("⚠ Không có đơn hàng nào được chọn.");
-      alert("Vui lòng chọn hoặc tạo hóa đơn!");
       return;
     }
     setOrders((prevOrders) => {
@@ -785,6 +818,13 @@ const SalePOSPage = () => {
         console.log(
           `🔄 [UPDATE] Cập nhật số lượng sản phẩm ID ${productId} từ ${currentOrder.items[itemIndex].quantity} → ${newQuantity}`
         );
+        if (newQuantity > currentOrder.items[itemIndex].quantityAvailable) {
+          setAlertModal({
+            isOpen: true,
+            message: `Sản phẩm "${currentOrder.items[itemIndex].product?.productName}" chỉ còn ${currentOrder.items[itemIndex].quantityAvailable} sản phẩm trong kho.`,
+          });
+          return updatedOrders;
+        }
         currentOrder.items[itemIndex].quantity = newQuantity;
       } else {
         console.warn(
@@ -830,27 +870,72 @@ const SalePOSPage = () => {
     }
   };
 
-  const handleRemoveOrder = (index) => {
-    console.log(`🗑 [XÓA HÓA ĐƠN] Bắt đầu xóa hóa đơn #${index + 1}...`);
-    setOrders((prevOrders) => {
-      const updatedOrders = [...prevOrders];
-      updatedOrders.splice(index, 1);
-      setNotification({
-        type: "success",
-        message: `Đã xóa hóa đơn #${index + 1} thành công!`,
-      });
-      setTimeout(() => {
-        setNotification(null);
-      }, 3000);
-      console.log("✅ [SUCCESS] Hóa đơn đã được xóa thành công!");
-      return updatedOrders;
+  const handleRemoveOrder = async (index) => {
+  console.log(`🗑 [XÓA HÓA ĐƠN] Bắt đầu xóa hóa đơn #${index + 1}...`);
+  const orderToCancel = orders[index]; // Lấy đơn hàng cần hủy
+
+  if (!orderToCancel?.id) {
+    console.error("❌ Không tìm thấy ID của hóa đơn để hủy!");
+    setNotification({
+      type: "error",
+      message: `Lỗi: Hóa đơn #${index + 1} không hợp lệ!`,
     });
-    if (activeOrderIndex === index) {
-      setActiveOrderIndex(null);
-    } else if (activeOrderIndex > index) {
-      setActiveOrderIndex(activeOrderIndex - 1);
-    }
-  };
+    setTimeout(() => setNotification(null), 3000);
+    return;
+  }
+
+  setConfirmModal({
+    isOpen: true,
+    title: "Xác nhận xóa hóa đơn",
+    message: `Bạn có chắc chắn muốn xóa hóa đơn #${index + 1}? Hóa đơn sẽ được đánh dấu là đã hủy.`,
+    onConfirm: async () => {
+      try {
+        // Gọi API để hủy đơn hàng
+        console.log(`📡 Gửi yêu cầu hủy hóa đơn ID: ${orderToCancel.id}`);
+        const response = await SalePOS.cancelOrder(orderToCancel.id);
+        
+        if (response?.status === "success") {
+          console.log(`✅ [SUCCESS] Hóa đơn ID: ${orderToCancel.id} đã được hủy trên server!`);
+          
+          // Xóa hóa đơn khỏi danh sách orders
+          setOrders((prevOrders) => {
+            const updatedOrders = [...prevOrders];
+            updatedOrders.splice(index, 1);
+            setNotification({
+              type: "success",
+              message: `Hóa đơn #${index + 1} đã được hủy và xóa khỏi danh sách!`,
+            });
+            setTimeout(() => setNotification(null), 3000);
+            return updatedOrders;
+          });
+
+          // Cập nhật activeOrderIndex
+          if (activeOrderIndex === index) {
+            setActiveOrderIndex(null);
+          } else if (activeOrderIndex > index) {
+            setActiveOrderIndex(activeOrderIndex - 1);
+          }
+
+          console.log("✅ [SUCCESS] Cập nhật giao diện hoàn tất!");
+        } else {
+          throw new Error(response?.message || "Hủy hóa đơn thất bại!");
+        }
+      } catch (error) {
+        console.error(
+          "❌ Lỗi khi hủy hóa đơn:",
+          error.response?.data?.message || error.message
+        );
+        setNotification({
+          type: "error",
+          message: `Lỗi khi hủy hóa đơn #${index + 1}: ${error.response?.data?.message || "Vui lòng thử lại!"}`,
+        });
+        setTimeout(() => setNotification(null), 3000);
+      } finally {
+        setConfirmModal({ isOpen: false, title: "", message: "", onConfirm: () => {} });
+      }
+    },
+  });
+};
 
   const handleDiscountChange = (value) => {
     setDiscount(value);
@@ -872,70 +957,97 @@ const SalePOSPage = () => {
   }, [customerPaid, activeOrderIndex, orders, calculatedDiscount]);
 
   const handlePayment = async () => {
-    if (activeOrderIndex === null) {
-      console.log("⚠ Không có hóa đơn nào được chọn.");
-      alert("Vui lòng chọn hoặc tạo hóa đơn!");
-      return;
-    }
-    const currentOrder = orders[activeOrderIndex];
-    if (currentOrder.items.length === 0) {
-      console.log("⚠ Giỏ hàng trống!");
-      alert("Giỏ hàng trống, vui lòng thêm sản phẩm!");
-      return;
-    }
-    if (!selectedCustomer) {
-      console.log("⚠ Không có khách hàng nào được chọn.");
-      alert("Vui lòng chọn khách hàng!");
-      return;
-    }
-    const amountToPay = currentOrder.totalAmount - calculatedDiscount;
-    if (paymentMethod === "cash" && customerPaid < amountToPay) {
-      console.log("⚠ Số tiền khách thanh toán không đủ.");
-      alert(
-        `Số tiền khách thanh toán (${customerPaid.toLocaleString()} VND) không đủ. Khách cần trả ít nhất ${amountToPay.toLocaleString()} VND.`
-      );
-      return;
-    }
-    const confirmMessage = `Bạn có chắc chắn muốn thanh toán?\n\nTổng tiền: ${currentOrder.totalAmount.toLocaleString()} VND\nGiảm giá: ${calculatedDiscount.toLocaleString()} VND\nKhách phải trả: ${amountToPay.toLocaleString()} VND\nPhương thức: ${paymentMethod === "cash" ? "Tiền mặt" : "Chuyển khoản"}${paymentMethod === "cash" ? `\nKhách thanh toán: ${customerPaid.toLocaleString()} VND\nTiền thừa: ${changeAmount.toLocaleString()} VND` : ""}`;
-    const isConfirmed = window.confirm(confirmMessage);
-    if (!isConfirmed) {
-      console.log("❌ Người dùng đã hủy thanh toán.");
-      return;
-    }
-    const customerId = selectedCustomer === "walk-in" ? -1 : selectedCustomer;
-    const orderRequest = {
-      orderId: currentOrder.id ?? null,
-      customerId: customerId,
-      employeeId: currentEmployee.id,
-      voucherId: selectedVoucher
-        ? vouchers.find((v) => v.voucherCode === selectedVoucher)?.id
-        : null,
-      paymentMethod: paymentMethod === "cash" ? 0 : 1,
-      orderDetails: currentOrder.items.map((item) => ({
-        productDetailId: item.id,
-        quantity: item.quantity,
-      })),
-    };
-    try {
-      // Cập nhật phương thức thanh toán trước khi thanh toán
-      await SalePOS.updatePaymentMethod(currentOrder.id, paymentMethod);
-      console.log("✅ Đã cập nhật phương thức thanh toán:", paymentMethod);
+  if (activeOrderIndex === null) {
+    setAlertModal({
+      isOpen: true,
+      message: "Vui lòng chọn hoặc tạo hóa đơn!",
+    });
+    console.log("⚠ Không có hóa đơn nào được chọn.");
+    return;
+  }
+  const currentOrder = orders[activeOrderIndex];
+  if (currentOrder.items.length === 0) {
+    setAlertModal({
+      isOpen: true,
+      message: "Giỏ hàng trống, vui lòng thêm sản phẩm!",
+    });
+    console.log("⚠ Giỏ hàng trống!");
+    return;
+  }
+  if (!selectedCustomer) {
+    setAlertModal({
+      isOpen: true,
+      message: "Vui lòng chọn khách hàng!",
+    });
+    console.log("⚠ Không có khách hàng nào được chọn.");
+    return;
+  }
+  const amountToPay = currentOrder.totalAmount - calculatedDiscount;
+  if (paymentMethod === "cash" && customerPaid < amountToPay) {
+    setAlertModal({
+      isOpen: true,
+      message: `Số tiền khách thanh toán (${customerPaid.toLocaleString()} VND) không đủ. Khách cần trả ít nhất ${amountToPay.toLocaleString()} VND.`,
+    });
+    console.log("⚠ Số tiền khách thanh toán không đủ.");
+    return;
+  }
+  const confirmMessage = `Bạn có chắc chắn muốn thanh toán?\n\nTổng tiền: ${currentOrder.totalAmount.toLocaleString()} VND\nGiảm giá: ${calculatedDiscount.toLocaleString()} VND\nKhách phải trả: ${amountToPay.toLocaleString()} VND\nPhương thức: ${paymentMethod === "cash" ? "Tiền mặt" : "Chuyển khoản"}${paymentMethod === "cash" ? `\nKhách thanh toán: ${customerPaid.toLocaleString()} VND\nTiền thừa: ${changeAmount.toLocaleString()} VND` : ""}`;
+  setConfirmModal({
+    isOpen: true,
+    title: "Xác nhận thanh toán",
+    message: confirmMessage,
+    onConfirm: async () => {
+      const customerId = selectedCustomer === "walk-in" ? -1 : selectedCustomer;
+      const orderRequest = {
+        orderId: currentOrder.id ?? null,
+        customerId: customerId,
+        employeeId: currentEmployee.id,
+        voucherId: selectedVoucher
+          ? vouchers.find((v) => v.voucherCode === selectedVoucher)?.id
+          : null,
+        paymentMethod: paymentMethod === "cash" ? 0 : 1,
+        orderDetails: currentOrder.items.map((item) => ({
+          productDetailId: item.id,
+          quantity: item.quantity,
+        })),
+      };
+      try {
+        await SalePOS.updatePaymentMethod(currentOrder.id, paymentMethod);
+        console.log("✅ Đã cập nhật phương thức thanh toán:", paymentMethod);
 
-      const response = await SalePOS.checkout(orderRequest);
-      const { orderId, paymentResponse } = response;
-      if (paymentResponse && paymentResponse.status === "success") {
-        console.log("✅ Thanh toán thành công!");
-        handleRemoveOrder(activeOrderIndex);
-        resetAfterPayment();
-        await fetchProductDetails();
-      } else {
-        throw new Error("Thanh toán thất bại!");
+        const response = await SalePOS.checkout(orderRequest);
+        const { orderId, paymentResponse } = response;
+        if (paymentResponse && paymentResponse.status === "success") {
+          console.log("✅ Thanh toán thành công!");
+          // Xóa hóa đơn trực tiếp khỏi danh sách orders
+          const updatedOrders = orders.filter((_, i) => i !== activeOrderIndex);
+          setOrders(updatedOrders);
+          // Reset activeOrderIndex nếu hóa đơn bị xóa là hóa đơn đang active
+          if (updatedOrders.length > 0) {
+            setActiveOrderIndex(0); // Chuyển về hóa đơn đầu tiên
+          } else {
+            setActiveOrderIndex(null); // Không còn hóa đơn nào
+          }
+          resetAfterPayment();
+          await fetchProductDetails();
+          setNotification({
+            type: "success",
+            message: `Thanh toán hóa đơn #${activeOrderIndex + 1} thành công!`,
+          });
+        } else {
+          throw new Error("Thanh toán thất bại!");
+        }
+      } catch (error) {
+        console.error("❌ Lỗi khi thanh toán:", error);
+        setAlertModal({
+          isOpen: true,
+          message: "Có lỗi xảy ra khi thanh toán: " + (error.response?.data?.message || error.message),
+        });
       }
-    } catch (error) {
-      console.error("❌ Lỗi khi thanh toán:", error);
-      alert("Có lỗi xảy ra khi thanh toán: " + error.message);
-    }
-  };
+      setConfirmModal({ isOpen: false, title: "", message: "", onConfirm: () => {} });
+    },
+  });
+};
 
   const resetAfterPayment = () => {
     setSelectedCustomer("");
@@ -982,6 +1094,20 @@ const SalePOSPage = () => {
           {notification.message}
         </div>
       )}
+
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal({ isOpen: false, message: "" })}
+        message={alertModal.message}
+      />
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, title: "", message: "", onConfirm: () => {} })}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+      />
 
       {showAddCustomerForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">

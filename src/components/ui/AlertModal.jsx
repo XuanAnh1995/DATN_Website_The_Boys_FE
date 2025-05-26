@@ -45,7 +45,7 @@ const AlertModal = ({ isOpen, onClose, message }) => {
         </div>
 
         {/* CSS Keyframes cho hiệu ứng zoomIn */}
-        <style jsx>{`
+        <style>{`
           @keyframes zoomIn {
             from {
               transform: scale(0.95);
