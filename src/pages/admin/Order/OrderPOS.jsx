@@ -20,9 +20,16 @@ const orderStatusMap = {
 
 const getStatusClass = (status) => {
   const baseClasses = "px-2 py-1 rounded-full text-xs font-medium";
-  return status === 1
-    ? `${baseClasses} bg-blue-100 text-blue-800`
-    : `${baseClasses} bg-green-100 text-green-800`;
+  switch (status) {
+    case 5: // Hoàn thành
+      return `${baseClasses} bg-green-100 text-green-800`;
+    case -1: // Đã hủy
+      return `${baseClasses} bg-red-100 text-red-800`;
+    case 1: // Chờ thanh toán
+      return `${baseClasses} bg-blue-100 text-blue-800`;
+    default:
+      return `${baseClasses} bg-gray-100 text-gray-800`; // Trạng thái mặc định (nếu có)
+  }
 };
 
 export default function OrderPOS() {
@@ -371,7 +378,7 @@ export default function OrderPOS() {
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         <span className={getStatusClass(item.statusOrder)}>
                           {orderStatusMap[item.statusOrder.toString()] ||
-                            "Không xác định"}
+                            "Đã hủy"}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
