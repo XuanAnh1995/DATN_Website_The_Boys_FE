@@ -20,6 +20,7 @@ const SalePOSPage = () => {
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [phone, setPhone] = useState("");
   const [customerName, setCustomerName] = useState("");
+  const [customerUserName, setCustomerUserName] = useState("");
   const [email, setEmail] = useState("");
   const [totalAmount, setTotalAmount] = useState(0);
   const [filter, setFilter] = useState({
@@ -35,10 +36,13 @@ const SalePOSPage = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [orderTimers, setOrderTimers] = useState({});
 
-  const validateForm = () => {
+  const validateForm = (newCustomer) => {
     const errors = {};
     if (!newCustomer.fullname.trim()) {
       errors.fullname = "Họ tên không được để trống";
+    }
+    if (!newCustomer.username.trim()) {
+      errors.username = "Nickname không được để trống";
     }
     if (!newCustomer.phone.trim()) {
       errors.phone = "Số điện thoại không được để trống";
@@ -90,6 +94,7 @@ const SalePOSPage = () => {
   const [showAddCustomerForm, setShowAddCustomerForm] = useState(false);
   const [newCustomer, setNewCustomer] = useState({
     fullname: "",
+    username: "",
     phone: "",
     email: "",
   });
@@ -117,6 +122,7 @@ const SalePOSPage = () => {
   const handleSelectCustomer = (customer) => {
     setSelectedCustomer(customer.id);
     setCustomerName(customer.fullname);
+    setCustomerUserName(customer.username);
     setPhone(customer.phone);
     setEmail(customer.email);
     setSearchKeyword(customer.fullname);
@@ -418,6 +424,7 @@ const SalePOSPage = () => {
     setShowAddCustomerForm(false);
     setNewCustomer({
       fullname: "",
+      username: "",
       phone: "",
       email: "",
     });
@@ -447,6 +454,7 @@ const SalePOSPage = () => {
     console.log("🔄 Resetting newCustomer...");
     setNewCustomer({
       fullname: "",
+      username: "",
       phone: "",
       email: "",
     });
@@ -454,7 +462,7 @@ const SalePOSPage = () => {
   };
 
   const handleSaveNewCustomer = async () => {
-    const errors = validateForm();
+    const errors = validateForm(newCustomer);
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
       return;
@@ -464,6 +472,7 @@ const SalePOSPage = () => {
     try {
       const trimmedCustomer = {
         fullname: newCustomer.fullname.trim(),
+        username: newCustomer.username.trim(),
         phone: newCustomer.phone.trim(),
         email: newCustomer.email.trim(),
       };
@@ -665,7 +674,9 @@ const SalePOSPage = () => {
     console.log("🛒 [THÊM VÀO GIỎ HÀNG] Bắt đầu thêm sản phẩm vào giỏ hàng...");
     if (activeOrderIndex === null || activeOrderIndex >= orders.length) {
       alert("Vui lòng tạo hóa đơn trước!");
-      console.warn("⚠ Không có đơn hàng nào được chọn. Hãy tạo đơn hàng trước!");
+      console.warn(
+        "⚠ Không có đơn hàng nào được chọn. Hãy tạo đơn hàng trước!"
+      );
       return;
     }
     if (product.quantity <= 0) {
@@ -972,12 +983,13 @@ const SalePOSPage = () => {
     <div className="p-4 bg-gray-100 min-h-screen relative">
       {notification && (
         <div
-          className={`fixed top-4 right-4 p-4 rounded shadow-lg text-white ${notification.type === "success"
-            ? "bg-green-500"
-            : notification.type === "error"
-              ? "bg-red-500"
-              : "bg-yellow-500"
-            }`}
+          className={`fixed top-4 right-4 p-4 rounded shadow-lg text-white ${
+            notification.type === "success"
+              ? "bg-green-500"
+              : notification.type === "error"
+                ? "bg-red-500"
+                : "bg-yellow-500"
+          }`}
         >
           {notification.message}
         </div>
@@ -1005,8 +1017,9 @@ const SalePOSPage = () => {
                   name="fullname"
                   value={newCustomer.fullname}
                   onChange={handleNewCustomerInputChange}
-                  className={`mt-1 block w-full border rounded-md shadow-sm p-2 ${formErrors.fullname ? "border-red-500" : "border-gray-300"
-                    }`}
+                  className={`mt-1 block w-full border rounded-md shadow-sm p-2 ${
+                    formErrors.fullname ? "border-red-500" : "border-gray-300"
+                  }`}
                   placeholder="Nhập họ tên khách hàng"
                 />
                 {formErrors.fullname && (
@@ -1015,6 +1028,28 @@ const SalePOSPage = () => {
                   </p>
                 )}
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Nickname <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="username"
+                  value={newCustomer.username}
+                  onChange={handleNewCustomerInputChange}
+                  className={`mt-1 block w-full border rounded-md shadow-sm p-2 ${
+                    formErrors.username ? "border-red-500" : "border-gray-300"
+                  }`}
+                  placeholder="Nhập Nickname khách hàng"
+                />
+                {formErrors.username && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {formErrors.username}
+                  </p>
+                )}
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700">
                   Số điện thoại <span className="text-red-500">*</span>
@@ -1024,8 +1059,9 @@ const SalePOSPage = () => {
                   name="phone"
                   value={newCustomer.phone}
                   onChange={handleNewCustomerInputChange}
-                  className={`mt-1 block w-full border rounded-md shadow-sm p-2 ${formErrors.phone ? "border-red-500" : "border-gray-300"
-                    }`}
+                  className={`mt-1 block w-full border rounded-md shadow-sm p-2 ${
+                    formErrors.phone ? "border-red-500" : "border-gray-300"
+                  }`}
                   placeholder="Nhập số điện thoại"
                 />
                 {formErrors.phone && (
@@ -1043,8 +1079,9 @@ const SalePOSPage = () => {
                   name="email"
                   value={newCustomer.email}
                   onChange={handleNewCustomerInputChange}
-                  className={`mt-1 block w-full border rounded-md shadow-sm p-2 ${formErrors.email ? "border-red-500" : "border-gray-300"
-                    }`}
+                  className={`mt-1 block w-full border rounded-md shadow-sm p-2 ${
+                    formErrors.email ? "border-red-500" : "border-gray-300"
+                  }`}
                   placeholder="Nhập email (không bắt buộc)"
                 />
                 {formErrors.email && (
@@ -1072,8 +1109,9 @@ const SalePOSPage = () => {
                 <button
                   onClick={handleSaveNewCustomer}
                   disabled={isLoading}
-                  className={`inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white ${isLoading ? "bg-blue-400" : "bg-blue-600 hover:bg-blue-700"
-                    }`}
+                  className={`inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white ${
+                    isLoading ? "bg-blue-400" : "bg-blue-600 hover:bg-blue-700"
+                  }`}
                 >
                   {isLoading ? (
                     <svg
@@ -1124,19 +1162,26 @@ const SalePOSPage = () => {
       {orders.length > 0 && (
         <div className="flex overflow-x-auto my-2 bg-white p-2 rounded shadow">
           {orders.map((order, index) => {
-            const remainingTime = orderTimers[index] !== undefined
-              ? orderTimers[index]
-              : order.createdAt
-                ? Math.max(
-                  30 * 60 - Math.floor((new Date() - new Date(order.createdAt)) / 1000),
-                  0
-                )
-                : 30 * 60;
+            const remainingTime =
+              orderTimers[index] !== undefined
+                ? orderTimers[index]
+                : order.createdAt
+                  ? Math.max(
+                      30 * 60 -
+                        Math.floor(
+                          (new Date() - new Date(order.createdAt)) / 1000
+                        ),
+                      0
+                    )
+                  : 30 * 60;
             return (
               <div
                 key={order.id}
-                className={`min-w-[150px] cursor-pointer p-2 mr-2 rounded ${index === activeOrderIndex ? "bg-blue-100 border border-blue-500" : "bg-gray-100"
-                  }`}
+                className={`min-w-[150px] cursor-pointer p-2 mr-2 rounded ${
+                  index === activeOrderIndex
+                    ? "bg-blue-100 border border-blue-500"
+                    : "bg-gray-100"
+                }`}
                 onClick={() => handleSwitchOrder(index)}
               >
                 <div className="flex justify-between items-center">
@@ -1239,7 +1284,8 @@ const SalePOSPage = () => {
                         {item.salePrice?.toLocaleString()} VND
                       </td>
                       <td className="p-2 text-blue-600 font-bold">
-                        {(item.salePrice - discountedPrice).toLocaleString()} VND
+                        {(item.salePrice - discountedPrice).toLocaleString()}{" "}
+                        VND
                       </td>
                       <td className="p-2">
                         <input
@@ -1454,8 +1500,11 @@ const SalePOSPage = () => {
                   <button
                     key={index + 1}
                     onClick={() => paginate(index + 1)}
-                    className={`mx-1 px-3 py-1 rounded ${currentPage === index + 1 ? "bg-blue-500 text-white" : "bg-gray-200"
-                      }`}
+                    className={`mx-1 px-3 py-1 rounded ${
+                      currentPage === index + 1
+                        ? "bg-blue-500 text-white"
+                        : "bg-gray-200"
+                    }`}
                   >
                     {index + 1}
                   </button>
@@ -1665,7 +1714,9 @@ const SalePOSPage = () => {
 
           {paymentMethod === "bank_transfer" && showOwnerQR && (
             <div className="mt-4 text-center">
-              <p className="text-lg font-semibold mb-2">Thanh toán chuyển khoản</p>
+              <p className="text-lg font-semibold mb-2">
+                Thanh toán chuyển khoản
+              </p>
               <p className="text-sm mb-4">Vui lòng quét mã QR để thanh toán.</p>
               <div className="bg-gray-100 p-4 rounded inline-block">
                 <img
