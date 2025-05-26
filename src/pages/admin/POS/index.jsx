@@ -50,17 +50,6 @@ const SalePOSPage = () => {
     onConfirm: () => {},
   });
 
-  // State cho các modal
-  const [alertModal, setAlertModal] = useState({
-    isOpen: false,
-    message: "",
-  });
-  const [confirmModal, setConfirmModal] = useState({
-    isOpen: false,
-    title: "",
-    message: "",
-    onConfirm: () => {},
-  });
 
   const validateForm = (newCustomer) => {
     const errors = {};
