@@ -1884,7 +1884,7 @@ const UserOrder = () => {
                             ? salePrice - discountPrice
                             : 0;
                           const salePrice_orderDetail = detail.price ?? 0;
-                          const totalPrice = discountPrice * quantity;
+                          const totalPrice = salePrice_orderDetail * quantity;
                           const photo =
                             productDetail.photo ||
                             product.photo ||
