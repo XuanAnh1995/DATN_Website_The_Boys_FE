@@ -1,9 +1,23 @@
 import api from "../ultils/api"; // Sử dụng api từ api.js
 
 const CustomerService = {
-  async getAll(search = '', page = 0, size = 10, sortBy = 'id', sortDir = 'desc') {
+  async getAll(
+    search = "",
+    page = 0,
+    size = 100,
+    sortBy = "id",
+    sortDir = "desc"
+  ) {
     try {
-      const validSortKeys = ["id", "customerCode", "fullname", "username", "email", "phone", "createDate"];
+      const validSortKeys = [
+        "id",
+        "customerCode",
+        "fullname",
+        "username",
+        "email",
+        "phone",
+        "createDate",
+      ];
       if (!validSortKeys.includes(sortBy)) {
         sortBy = "id";
       }
@@ -54,9 +68,12 @@ const CustomerService = {
     }
   },
 
-    async updatePassword(id, passwordUpdateRequest) {
+  async updatePassword(id, passwordUpdateRequest) {
     try {
-      const response = await api.put(`/api/customers/${id}/change-password`, passwordUpdateRequest);
+      const response = await api.put(
+        `/api/customers/${id}/change-password`,
+        passwordUpdateRequest
+      );
       return response.data;
     } catch (error) {
       console.error("Error updating password:", error);

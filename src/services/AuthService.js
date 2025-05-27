@@ -117,16 +117,21 @@ const AuthService = {
 
   async forgetPassword(usernameOrEmail) {
     try {
-      const response = await api.post("/auth/forget-password", { usernameOrEmail }, {
-        headers: { "Content-Type": "application/json" },
-      });
+      const response = await api.post(
+        "/auth/forget-password",
+        { usernameOrEmail },
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
       return response.data;
     } catch (error) {
       console.error("Lỗi khi yêu cầu quên mật khẩu:", error);
-      throw error.response?.data || { message: "Không thể yêu cầu quên mật khẩu." };
+      throw (
+        error.response?.data || { message: "Không thể yêu cầu quên mật khẩu." }
+      );
     }
   },
-
 };
 
 export default AuthService;

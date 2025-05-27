@@ -26,7 +26,6 @@ const PayService = {
     }
   },
 
-
   // ✅ Tạo URL thanh toán cho đơn hàng
   async createPaymentUrl(orderId) {
     try {
@@ -37,7 +36,6 @@ const PayService = {
       throw error;
     }
   },
-
 };
 
 export default PayService;
