@@ -736,8 +736,7 @@ const OrderDetail = () => {
                     <th className="py-3 px-4 text-center">Size</th>
                     <th className="py-3 px-4 text-center">Cổ áo</th>
                     <th className="py-3 px-4 text-center">Tay áo</th>
-                    <th className="py-3 px-4 text-right">Đơn giá</th>
-                    <th className="py-3 px-4 text-right">Giảm giá sản phẩm</th>
+                    <th className="py-3 px-4 text-right">Gía bán</th>
                     <th className="py-3 px-4 text-right">Thành tiền</th>
                   </tr>
                 </thead>
@@ -786,7 +785,8 @@ const OrderDetail = () => {
                           : promotionPercent
                             ? salePrice - discountPrice
                             : 0;
-                      const totalPrice = discountPrice * quantity;
+                      const salePrice_orderDetail = detail.price ?? 0;
+                      const totalPrice = salePrice_orderDetail * quantity;
 
                       return (
                         <tr
@@ -825,12 +825,7 @@ const OrderDetail = () => {
                             {sleeveName}
                           </td>
                           <td className="py-3 px-4 text-right font-medium text-green-600">
-                            {formatCurrency(salePrice)}
-                          </td>
-                          <td className="py-3 px-4 text-right font-medium text-red-600">
-                            {discountAmount > 0
-                              ? formatCurrency(discountAmount)
-                              : "-"}
+                            {formatCurrency(salePrice_orderDetail)}
                           </td>
                           <td className="py-3 px-4 text-right font-semibold text-gray-900">
                             {formatCurrency(totalPrice)}

@@ -99,7 +99,6 @@ const ProductDetailService = {
       throw error;
     }
   },
-
 };
 
 export default ProductDetailService;

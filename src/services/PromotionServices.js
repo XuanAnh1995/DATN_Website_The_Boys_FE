@@ -7,7 +7,7 @@ const PromotionService = {
   getAllPromotions: async (
     search = "",
     page = 0,
-    size = 10,
+    size = 100,
     sortBy = "id",
     sortDir = "asc",
     startDate = null,

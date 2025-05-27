@@ -1,9 +1,23 @@
 import api from "../ultils/api"; // Sử dụng api từ api.js
 
 const EmployeeService = {
-  async getAll(page = 0, size = 10, search = '', trangThai = null, sortKey = 'id', sortDirection = 'desc') {
+  async getAll(
+    page = 0,
+    size = 100,
+    search = "",
+    trangThai = null,
+    sortKey = "id",
+    sortDirection = "desc"
+  ) {
     try {
-      const validSortKeys = ["id", "employeeCode", "fullname", "username", "email", "phone"];
+      const validSortKeys = [
+        "id",
+        "employeeCode",
+        "fullname",
+        "username",
+        "email",
+        "phone",
+      ];
       if (!validSortKeys.includes(sortKey)) {
         sortKey = "id";
       }
@@ -50,7 +64,10 @@ const EmployeeService = {
 
   async update(id, employeeUpdateRequest) {
     try {
-      const response = await api.put(`/api/employees/${id}`, employeeUpdateRequest);
+      const response = await api.put(
+        `/api/employees/${id}`,
+        employeeUpdateRequest
+      );
       return response.data;
     } catch (error) {
       console.error("Error updating employee:", error);
@@ -60,14 +77,16 @@ const EmployeeService = {
 
   async updatePassword(id, passwordUpdateRequest) {
     try {
-      const response = await api.put(`/api/employees/${id}/change-password`, passwordUpdateRequest);
+      const response = await api.put(
+        `/api/employees/${id}/change-password`,
+        passwordUpdateRequest
+      );
       return response.data;
     } catch (error) {
       console.error("Error updating password:", error);
       throw error;
     }
   },
-
 
   async toggleStatus(id) {
     try {

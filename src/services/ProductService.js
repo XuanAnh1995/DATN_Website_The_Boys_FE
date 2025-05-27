@@ -3,7 +3,7 @@ import api from "../ultils/api"; // Sử dụng api từ api.js
 const ProductService = {
   async getAllProducts(
     page = 0,
-    size = 10,
+    size = 100,
     keyword = "",
     status = null,
     sortBy = "id",
@@ -121,7 +121,9 @@ const ProductService = {
 
   async getProductDetailsByProductCode(productCode) {
     try {
-      const response = await api.get(`/api/v1/product-details/${productCode}/variants`);
+      const response = await api.get(
+        `/api/v1/product-details/${productCode}/variants`
+      );
       console.log("Dữ liệu từ API:", response.data); // Kiểm tra dữ liệu
       return response.data;
     } catch (error) {

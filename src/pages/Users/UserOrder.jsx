@@ -1852,8 +1852,7 @@ const UserOrder = () => {
                         <th className="py-3 px-4 text-center w-20">Size</th>
                         <th className="py-3 px-4 text-center">Cổ áo</th>
                         <th className="py-3 px-4 text-center">Tay áo</th>
-                        <th className="py-3 px-4 text-right w-24">Đơn giá</th>
-                        <th className="py-3 px-4 text-right w-24">Giảm giá</th>
+                        <th className="py-3 px-4 text-right w-24">Gía bán</th>
                         <th className="py-3 px-4 text-right w-24">
                           Thành tiền
                         </th>
@@ -1884,7 +1883,8 @@ const UserOrder = () => {
                           const discountAmount = promotionPercent
                             ? salePrice - discountPrice
                             : 0;
-                          const totalPrice = discountPrice * quantity;
+                          const salePrice_orderDetail = detail.price ?? 0;
+                          const totalPrice = salePrice_orderDetail * quantity;
                           const photo =
                             productDetail.photo ||
                             product.photo ||
@@ -1932,12 +1932,7 @@ const UserOrder = () => {
                                 {sleeveName}
                               </td>
                               <td className="py-3 px-4 text-right text-green-600">
-                                {formatCurrency(salePrice)}
-                              </td>
-                              <td className="py-3 px-4 text-right text-red-600">
-                                {discountAmount > 0
-                                  ? formatCurrency(discountAmount)
-                                  : "-"}
+                                {formatCurrency(salePrice_orderDetail)}
                               </td>
                               <td className="py-3 px-4 text-right font-semibold text-gray-800">
                                 {formatCurrency(totalPrice)}
