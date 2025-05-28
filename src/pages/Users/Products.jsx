@@ -29,7 +29,7 @@ const ProductList = () => {
   });
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const pageSize = 15; // Hiển thị 15 sản phẩm trên mỗi trang
+  const pageSize = 12; // Hiển thị 15 sản phẩm trên mỗi trang
   const navigate = useNavigate();
 
   const [categories, setCategories] = useState([]);
