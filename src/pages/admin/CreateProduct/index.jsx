@@ -695,7 +695,7 @@ export default function CreateProduct() {
 
               <div>
                 <label className="block text-xs font-medium text-black mb-1">
-                  Số lượng (không bắt buộc)
+                  Số lượng (bắt buộc)
                 </label>
                 <input
                   type="number"
@@ -703,13 +703,13 @@ export default function CreateProduct() {
                   value={generateData.quantity}
                   onChange={handleInputChange}
                   className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Nhập số lượng (tùy chọn)"
+                  placeholder="Nhập số lượng (bắt buộc)"
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-medium text-black mb-1">
-                  Giá nhập (không bắt buộc)
+                  Giá nhập (bắt buộc)
                 </label>
                 <input
                   type="number"
@@ -717,14 +717,14 @@ export default function CreateProduct() {
                   value={generateData.importPrice}
                   onChange={handleInputChange}
                   className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Nhập giá nhập (tùy chọn)"
+                  placeholder="Nhập giá nhập (bắt buộc)"
                   step={10000}
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-medium text-black mb-1">
-                  Giá bán (không bắt buộc)
+                  Giá bán (bắt buộc)
                 </label>
                 <input
                   type="number"
@@ -732,7 +732,7 @@ export default function CreateProduct() {
                   value={generateData.salePrice}
                   onChange={handleInputChange}
                   className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Nhập giá bán (tùy chọn)"
+                  placeholder="Nhập giá bán (bắt buộc)"
                   step={10000}
                 />
               </div>
