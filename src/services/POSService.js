@@ -1,7 +1,8 @@
 import api from "../ultils/api";
 
 const API_URL_CHECKOUT = "/api/sale-pos";
-const API_URL_PRODUCT_DETAIL = "/api/product-details";
+const API_URL_PRODUCT_DETAIL_WITH_STATUS_TRUE =
+  "/api/product-details/statustrue";
 const API_URL_CUSTOMERS = "/api/customers";
 const API_URL_VOUCHERS = "/api/vouchers";
 const API_Barcode = "/api/barcode/barcode";
@@ -15,7 +16,7 @@ const SalePOS = {
   getProductDetails: async (filters) => {
     console.log("📌 Lấy danh sách sản phẩm với bộ lọc:", filters);
     try {
-      const response = await api.get(API_URL_PRODUCT_DETAIL, {
+      const response = await api.get(API_URL_PRODUCT_DETAIL_WITH_STATUS_TRUE, {
         params: filters,
       });
       console.log("✅ Danh sách sản phẩm:", response.data.data);
@@ -175,7 +176,10 @@ const SalePOS = {
       await SalePOS.updateOrderInfo(orderId, paymentData);
       console.log("✅ Đã cập nhật customerId và voucherId");
       console.log("🔍 Xử lý thanh toán cho đơn hàng:", orderId);
-      const paymentResponse = await SalePOS.completePayment(orderId, paymentData);
+      const paymentResponse = await SalePOS.completePayment(
+        orderId,
+        paymentData
+      );
       console.log("✅ Thanh toán thành công:", paymentResponse);
       return { orderId, paymentResponse };
     } catch (error) {
@@ -220,7 +224,9 @@ const SalePOS = {
   cancelOrder: async (orderId) => {
     console.log(`📌 Hủy đơn hàng #${orderId}`);
     try {
-      const response = await api.put(`${API_URL_CHECKOUT}/orders/${orderId}/cancel`);
+      const response = await api.put(
+        `${API_URL_CHECKOUT}/orders/${orderId}/cancel`
+      );
       console.log("✅ Hủy đơn hàng thành công:", response.data);
       return response.data;
     } catch (error) {
@@ -233,13 +239,19 @@ const SalePOS = {
   },
 
   updatePaymentMethod: async (orderId, paymentMethod) => {
-    console.log(`📌 Cập nhật phương thức thanh toán cho đơn hàng #${orderId}:`, paymentMethod);
+    console.log(
+      `📌 Cập nhật phương thức thanh toán cho đơn hàng #${orderId}:`,
+      paymentMethod
+    );
     try {
       const response = await api.put(
         `${API_URL_CHECKOUT}/orders/${orderId}/payment-method`,
         { paymentMethod: paymentMethodMapping[paymentMethod] ?? 0 }
       );
-      console.log("✅ Cập nhật phương thức thanh toán thành công:", response.data);
+      console.log(
+        "✅ Cập nhật phương thức thanh toán thành công:",
+        response.data
+      );
       return response.data;
     } catch (error) {
       console.error(
