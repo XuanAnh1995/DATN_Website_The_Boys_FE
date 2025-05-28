@@ -17,12 +17,13 @@ import ProductService from "../../services/ProductService";
 const Header = () => {
   const [search, setSearch] = useState("");
   const [suggestions, setSuggestions] = useState([]);
-  const [isMenuOpen, setIsMenuOpen] = useState(false); // State for hamburger menu
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false); // Thêm state để kiểm soát dropdown
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const menuRef = useRef(null); // Ref for detecting outside clicks
+  const menuRef = useRef(null);
+  const searchRef = useRef(null); // Ref cho khu vực tìm kiếm
 
-  // Lấy trạng thái user từ Redux
   const { isLoggedIn, name } = useSelector((state) => state.user);
   console.log("Redux user state:", { isLoggedIn, name });
 
@@ -30,6 +31,7 @@ const Header = () => {
   const fetchSuggestions = useCallback(async () => {
     if (!search.trim()) {
       setSuggestions([]);
+      setIsDropdownOpen(false); // Đóng dropdown khi search rỗng
       return;
     }
     try {
@@ -39,6 +41,7 @@ const Header = () => {
       });
       console.log("Dữ liệu gợi ý tìm kiếm:", response.content);
       setSuggestions(response.content || []);
+      setIsDropdownOpen(true); // Mở dropdown khi có gợi ý
     } catch (error) {
       console.error("Lỗi khi tìm kiếm sản phẩm:", error);
     }
@@ -54,7 +57,7 @@ const Header = () => {
   // Xử lý đăng xuất
   const handleLogout = () => {
     dispatch(logout());
-    setIsMenuOpen(false); // Close menu on logout
+    setIsMenuOpen(false);
     navigate("/login");
   };
 
@@ -66,6 +69,7 @@ const Header = () => {
       console.log("Chi tiết sản phẩm:", productDetails);
       if (productDetails && productDetails.productCode) {
         navigate(`/view-product/${productDetails.productCode}`);
+        setIsDropdownOpen(false); // Đóng dropdown khi chọn sản phẩm
       } else {
         alert("Không thể tìm thấy mã sản phẩm.");
       }
@@ -75,11 +79,14 @@ const Header = () => {
     }
   };
 
-  // Close menu when clicking outside
+  // Đóng menu hoặc dropdown khi nhấp ra ngoài
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
         setIsMenuOpen(false);
+      }
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setIsDropdownOpen(false); // Đóng dropdown khi nhấp ra ngoài
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -89,6 +96,15 @@ const Header = () => {
   // Toggle menu visibility
   const toggleMenu = () => {
     setIsMenuOpen((prev) => !prev);
+  };
+
+  // Xử lý khi input thay đổi
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearch(value);
+    if (!value.trim()) {
+      setIsDropdownOpen(false); // Đóng dropdown khi input rỗng
+    }
   };
 
   return (
@@ -188,16 +204,16 @@ const Header = () => {
 
       {/* Thanh tìm kiếm */}
       <div className="flex justify-center mt-3">
-        <div className="relative w-1/2 flex items-center border border-gray-400 rounded-full px-4 py-2 bg-white">
+        <div className="relative w-1/2 flex items-center border border-gray-400 rounded-full px-4 py-2 bg-white" ref={searchRef}>
           <input
             type="text"
             placeholder="Bạn muốn tìm gì?"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={handleSearchChange}
             className="w-full px-3 py-1 focus:outline-none"
           />
           <FaSearch className="text-gray-600 cursor-pointer" />
-          {search && suggestions.length > 0 && (
+          {isDropdownOpen && suggestions.length > 0 && (
             <div className="absolute top-full left-0 w-full bg-white shadow-lg rounded-md mt-1 max-h-60 overflow-auto z-50">
               {suggestions.map((product) => (
                 <div
