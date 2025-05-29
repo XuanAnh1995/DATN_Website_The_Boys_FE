@@ -391,12 +391,12 @@ export default function OrderPOS() {
                           >
                             <AiOutlineEye size={20} />
                           </button>
-                          <button
+                          {/* <button
                             className="text-green-500 hover:text-green-700 p-1 rounded-full hover:bg-green-100 transition-colors"
                             onClick={() => handlePrint(item.orderCode)}
                           >
                             <FaPrint size={20} />
-                          </button>
+                          </button> */}
                         </div>
                       </td>
                     </tr>
