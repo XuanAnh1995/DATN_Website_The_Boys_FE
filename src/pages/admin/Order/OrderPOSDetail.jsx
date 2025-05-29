@@ -31,22 +31,23 @@ const OrderPOSDetail = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchOrderDetails = async () => {
-      try {
-        const response = await OrderService.getPOSOrderDetails(id); // Giả định có API này
-        console.log("Order POS Response:", response);
-        if (response) {
-          setOrderDetails(response);
-        } else {
-          toast.error("Dữ liệu hóa đơn không hợp lệ");
-        }
-      } catch (error) {
-        console.error("Lỗi khi tải chi tiết hóa đơn POS:", error);
-        toast.error("Lỗi khi tải chi tiết hóa đơn POS");
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchOrderDetails = async () => {
+  try {
+    const response = await OrderService.getPOSOrderDetails(id);
+    console.log("Order POS Response:", response);
+    if (response && response.orderDetails?.length > 0) {
+      console.log("Order Details:", response.orderDetails); // Thêm log để kiểm tra
+      setOrderDetails(response);
+    } else {
+      toast.error("Dữ liệu hóa đơn không hợp lệ");
+    }
+  } catch (error) {
+    console.error("Lỗi khi tải chi tiết hóa đơn POS:", error);
+    toast.error("Lỗi khi tải chi tiết hóa đơn POS");
+  } finally {
+    setLoading(false);
+  }
+};
     fetchOrderDetails();
   }, [id]);
 
@@ -119,120 +120,109 @@ const OrderPOSDetail = () => {
   };
 
   // Fix style cho in ấn
-  useEffect(() => {
-    const style = document.createElement("style");
-    style.innerHTML = `
-      @media print {
-        body * {
-          visibility: hidden;
-        }
-        .container .bg-white.rounded-lg.shadow-lg {
-          visibility: visible;
-          position: absolute;
-          left: 0;
-          top: 0;
-          width: 100%;
-          padding: 0;
-          margin: 0;
-          box-shadow: none !important;
-          border-radius: 0 !important;
-        }
-        .container .bg-white.rounded-lg.shadow-lg * {
-          visibility: visible;
-        }
-        table {
-          width: 100% !important;
-          display: table !important;
-          page-break-inside: auto !important;
-          border-collapse: collapse !important;
-        }
-        table tbody {
-          display: table-row-group !important;
-        }
-        table tr {
-          display: table-row !important;
-          page-break-inside: avoid !important;
-          break-inside: avoid !important;
-        }
-        table td, table th {
-          display: table-cell !important;
-        }
-        table thead {
-          display: table-header-group !important;
-        }
-        table tfoot {
-          display: table-footer-group !important;
-        }
-        .no-print, .bg-gray-50, button {
-          display: none !important;
-        }
-        .bg-gray-800 {
-          background-color: #f8f9fa !important;
-          color: #333 !important;
-          border-bottom: 2px solid #4a90e2;
-          padding: 15px 20px !important;
-        }
-        .text-2xl.font-bold {
-          font-size: 24px !important;
-          color: #2c3e50 !important;
-        }
-        .bg-blue-500 {
-          background-color: #4a90e2 !important;
-          color: white !important;
-          padding: 4px 12px !important;
-          border-radius: 20px !important;
-        }
-        .border-b {
-          border-bottom: 1px solid #e0e0e0 !important;
-          padding: 15px 20px !important;
-        }
-        .text-lg.font-semibold {
-          color: #2c3e50 !important;
-          font-size: 18px !important;
-          margin-bottom: 15px !important;
-        }
-        .text-sm.text-gray-500 {
-          color: #7f8c8d !important;
-          font-size: 12px !important;
-          margin-bottom: 4px !important;
-        }
-        .font-medium {
-          color: #2c3e50 !important;
-          font-size: 14px !important;
-        }
-        .bg-white.rounded-lg.shadow-lg:before {
-          content: "CỬA HÀNG The Boys" !important;
-          display: block !important;
-          text-align: center !important;
-          font-size: 28px !important;
-          font-weight: bold !important;
-          color: #4a90e2 !important;
-          margin: 20px 0 10px !important;
-        }
-        .bg-white.rounded-lg.shadow-lg:after {
-          content: "Địa chỉ: 123 Đường ABC, Quận XYZ, TP. MNV | Hotline: 0123 456 789 | Email: info@xyz.com" !important;
-          display: block !important;
-          text-align: center !important;
-          font-size: 12px !important;
-          color: #7f8c8d !important;
-          padding: 20px 0 !important;
-          border-top: 1px solid #e0e0e0 !important;
-          margin-top: 20px !important;
-        }
-        @page {
-          margin: 0.5cm !important;
-          size: portrait !important;
-        }
-        body {
-          background-color: white !important;
-          font-family: Arial, sans-serif !important;
-          color: #333 !important;
-        }
+useEffect(() => {
+  const style = document.createElement("style");
+  style.innerHTML = `
+    @media print {
+      body {
+        visibility: visible !important;
+        background-color: white !important;
+        font-family: Arial, sans-serif !important;
+        color: #333 !important;
       }
-    `;
-    document.head.appendChild(style);
-    return () => document.head.removeChild(style);
-  }, []);
+
+      /* Ẩn các phần có class no-print */
+      .no-print, .no-print * {
+      display: none !important;
+      visibility: hidden !important;
+    }
+
+      .container .bg-white.rounded-lg.shadow-lg {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        padding: 0;
+        margin: 0;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+      }
+
+      table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        page-break-inside: auto !important;
+      }
+
+      table tr {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+
+      table td, table th {
+        border: 1px solid #ddd !important;
+        padding: 6px 8px !important;
+      }
+
+      table thead {
+        display: table-header-group !important;
+      }
+
+      table tfoot {
+        display: table-footer-group !important;
+      }
+
+      .bg-white.rounded-lg.shadow-lg:before {
+        content: "CỬA HÀNG The Boys" !important;
+        display: block;
+        text-align: center;
+        font-size: 24px;
+        font-weight: bold;
+        margin: 10px 0;
+        color: #4a90e2;
+      }
+
+      .bg-white.rounded-lg.shadow-lg:after {
+        content: "Địa chỉ: 123 Đường ABC, Quận XYZ, TP. MNV | Hotline: 0123 456 789 | Email: info@xyz.com";
+        display: block;
+        text-align: center;
+        font-size: 12px;
+        color: #7f8c8d;
+        padding: 20px 0;
+        border-top: 1px solid #ccc;
+      }
+
+      .grid {
+        display: grid !important;
+      }
+
+      .md\\:grid-cols-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      }
+
+      .gap-x-16 {
+        column-gap: 4rem !important;
+      }
+
+      .gap-y-4 {
+        row-gap: 1rem !important;
+      }
+
+      .flex {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 1rem !important;
+      }
+
+      @page {
+        margin: 1cm !important;
+        size: portrait;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+  return () => document.head.removeChild(style);
+}, []);
 
   if (loading) {
     return (
@@ -367,6 +357,7 @@ const OrderPOSDetail = () => {
                 <tbody className="text-gray-600 divide-y divide-gray-300">
                   {orderDetails?.orderDetails?.length > 0 ? (
                     orderDetails.orderDetails.map((detail, index) => {
+                      console.log(`Render sản phẩm ${index + 1}:`, detail); // Log để kiểm tra
                       const product = detail.productDetail?.product;
                       const productDetail = detail.productDetail || {};
                       const quantity = detail.quantity ?? 0;
@@ -519,7 +510,7 @@ const OrderPOSDetail = () => {
           )}
 
           {/* Actions */}
-          <div className="bg-gray-50 px-6 py-4 flex justify-between items-center no-print">
+          <div className="bg-gray-50 px-6 py-4 flex justify-between items-center no-print print:hidden">
             <button
               className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition flex items-center"
               onClick={() => {
