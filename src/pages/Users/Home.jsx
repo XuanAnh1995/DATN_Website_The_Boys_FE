@@ -1464,7 +1464,7 @@ const Layout = () => {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-4">
                   <img
-                    src="https://via.placeholder.com/50"
+                    src="/src/assets/logo.jpg"
                     alt="Ảnh đại diện khách hàng"
                     className="w-12 h-12 rounded-full"
                   />
@@ -1505,7 +1505,7 @@ const Layout = () => {
           <div className="bg-white shadow-md rounded-lg overflow-hidden">
             <div className="relative">
               <img
-                src="https://via.placeholder.com/300x200"
+                src="/src/assets/tt1.jpg"
                 alt="Tin tức 1"
                 className="w-full h-48 object-cover"
               />
@@ -1533,7 +1533,7 @@ const Layout = () => {
           <div className="bg-white shadow-md rounded-lg overflow-hidden">
             <div className="relative">
               <img
-                src="https://via.placeholder.com/300x200"
+                src="/src/assets/tt2.webp"
                 alt="Tin tức 2"
                 className="w-full h-48 object-cover"
               />
@@ -1560,7 +1560,7 @@ const Layout = () => {
           <div className="bg-white shadow-md rounded-lg overflow-hidden">
             <div className="relative">
               <img
-                src="https://via.placeholder.com/300x200"
+                src="/src/assets/tt3jpg.jpg"
                 alt="Tin tức 3"
                 className="w-full h-48 object-cover"
               />
@@ -1587,7 +1587,7 @@ const Layout = () => {
           <div className="bg-white shadow-md rounded-lg overflow-hidden">
             <div className="relative">
               <img
-                src="https://via.placeholder.com/300x200"
+                src="/src/assets/tt5.jpg"
                 alt="Tin tức 4"
                 className="w-full h-48 object-cover"
               />
