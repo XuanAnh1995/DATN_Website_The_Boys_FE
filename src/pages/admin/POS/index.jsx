@@ -1253,7 +1253,7 @@ const SalePOSPage = () => {
                   className={`mt-1 block w-full border rounded-md shadow-sm p-2 ${
                     formErrors.email ? "border-red-500" : "border-gray-300"
                   }`}
-                  placeholder="Nhập email (không bắt buộc)"
+                  placeholder="Nhập email (bắt buộc)"
                 />
                 {formErrors.email && (
                   <p className="text-red-500 text-sm mt-1">
