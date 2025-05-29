@@ -31,23 +31,23 @@ const OrderPOSDetail = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-  const fetchOrderDetails = async () => {
-  try {
-    const response = await OrderService.getPOSOrderDetails(id);
-    console.log("Order POS Response:", response);
-    if (response && response.orderDetails?.length > 0) {
-      console.log("Order Details:", response.orderDetails); // Thêm log để kiểm tra
-      setOrderDetails(response);
-    } else {
-      toast.error("Dữ liệu hóa đơn không hợp lệ");
-    }
-  } catch (error) {
-    console.error("Lỗi khi tải chi tiết hóa đơn POS:", error);
-    toast.error("Lỗi khi tải chi tiết hóa đơn POS");
-  } finally {
-    setLoading(false);
-  }
-};
+    const fetchOrderDetails = async () => {
+      try {
+        const response = await OrderService.getPOSOrderDetails(id);
+        console.log("Order POS Response:", response);
+        if (response) {
+          console.log("Order Details:", response.orderDetails || []);
+          setOrderDetails(response);
+        } else {
+          toast.error("Dữ liệu hóa đơn không hợp lệ");
+        }
+      } catch (error) {
+        console.error("Lỗi khi tải chi tiết hóa đơn POS:", error);
+        toast.error("Lỗi khi tải chi tiết hóa đơn POS");
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchOrderDetails();
   }, [id]);
 
@@ -120,109 +120,109 @@ const OrderPOSDetail = () => {
   };
 
   // Fix style cho in ấn
-useEffect(() => {
-  const style = document.createElement("style");
-  style.innerHTML = `
-    @media print {
-      body {
-        visibility: visible !important;
-        background-color: white !important;
-        font-family: Arial, sans-serif !important;
-        color: #333 !important;
-      }
+  useEffect(() => {
+    const style = document.createElement("style");
+    style.innerHTML = `
+      @media print {
+        body {
+          visibility: visible !important;
+          background-color: white !important;
+          font-family: Arial, sans-serif !important;
+          color: #333 !important;
+        }
 
-      /* Ẩn các phần có class no-print */
-      .no-print, .no-print * {
-      display: none !important;
-      visibility: hidden !important;
-    }
+        /* Ẩn các phần có class no-print */
+        .no-print, .no-print * {
+          display: none !important;
+          visibility: hidden !important;
+        }
 
-      .container .bg-white.rounded-lg.shadow-lg {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        padding: 0;
-        margin: 0;
-        box-shadow: none !important;
-        border-radius: 0 !important;
-      }
+        .container .bg-white.rounded-lg.shadow-lg {
+          position: absolute;
+          left: 0;
+          top: 0;
+          width: 100%;
+          padding: 0;
+          margin: 0;
+          box-shadow: none !important;
+          border-radius: 0 !important;
+        }
 
-      table {
-        width: 100% !important;
-        border-collapse: collapse !important;
-        page-break-inside: auto !important;
-      }
+        table {
+          width: 100% !important;
+          border-collapse: collapse !important;
+          page-break-inside: auto !important;
+        }
 
-      table tr {
-        page-break-inside: avoid !important;
-        break-inside: avoid !important;
-      }
+        table tr {
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
+        }
 
-      table td, table th {
-        border: 1px solid #ddd !important;
-        padding: 6px 8px !important;
-      }
+        table td, table th {
+          border: 1px solid #ddd !important;
+          padding: 6px 8px !important;
+        }
 
-      table thead {
-        display: table-header-group !important;
-      }
+        table thead {
+          display: table-header-group !important;
+        }
 
-      table tfoot {
-        display: table-footer-group !important;
-      }
+        table tfoot {
+          display: table-footer-group !important;
+        }
 
-      .bg-white.rounded-lg.shadow-lg:before {
-        content: "CỬA HÀNG The Boys" !important;
-        display: block;
-        text-align: center;
-        font-size: 24px;
-        font-weight: bold;
-        margin: 10px 0;
-        color: #4a90e2;
-      }
+        .bg-white.rounded-lg.shadow-lg:before {
+          content: "CỬA HÀNG The Boys" !important;
+          display: block;
+          text-align: center;
+          font-size: 24px;
+          font-weight: bold;
+          margin: 10px 0;
+          color: #4a90e2;
+        }
 
-      .bg-white.rounded-lg.shadow-lg:after {
-        content: "Địa chỉ: 123 Đường ABC, Quận XYZ, TP. MNV | Hotline: 0123 456 789 | Email: info@xyz.com";
-        display: block;
-        text-align: center;
-        font-size: 12px;
-        color: #7f8c8d;
-        padding: 20px 0;
-        border-top: 1px solid #ccc;
-      }
+        .bg-white.rounded-lg.shadow-lg:after {
+          content: "Địa chỉ: 123 Đường ABC, Quận XYZ, TP. MNV | Hotline: 0123 456 789 | Email: info@xyz.com";
+          display: block;
+          text-align: center;
+          font-size: 12px;
+          color: #7f8c8d;
+          padding: 20px 0;
+          border-top: 1px solid #ccc;
+        }
 
-      .grid {
-        display: grid !important;
-      }
+        .grid {
+          display: grid !important;
+        }
 
-      .md\\:grid-cols-2 {
-        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-      }
+        .md\\:grid-cols-2 {
+          grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        }
 
-      .gap-x-16 {
-        column-gap: 4rem !important;
-      }
+        .gap-x-16 {
+          column-gap: 4rem !important;
+        }
 
-      .gap-y-4 {
-        row-gap: 1rem !important;
-      }
+        .gap-y-4 {
+          row-gap: 1rem !important;
+        }
 
-      .flex {
-        display: flex !important;
-        flex-wrap: wrap !important;
-        gap: 1rem !important;
-      }
+        .flex {
+          display: flex !important;
+          flex-wrap: wrap !important;
+          gap: 1rem !important;
+        }
 
-      @page {
-        margin: 1cm !important;
-        size: portrait;
+        @page {
+          margin: 1cm !important;
+          size: portrait;
+        }
       }
-    }
-  `;
-  document.head.appendChild(style);
-  return () => document.head.removeChild(style);
-}, []);
+    `;
+    document.head.appendChild(style);
+    return () => document.head.removeChild(style);
+  }, []);
 
   if (loading) {
     return (
@@ -357,7 +357,7 @@ useEffect(() => {
                 <tbody className="text-gray-600 divide-y divide-gray-300">
                   {orderDetails?.orderDetails?.length > 0 ? (
                     orderDetails.orderDetails.map((detail, index) => {
-                      console.log(`Render sản phẩm ${index + 1}:`, detail); // Log để kiểm tra
+                      console.log(`Render sản phẩm ${index + 1}:`, detail);
                       const product = detail.productDetail?.product;
                       const productDetail = detail.productDetail || {};
                       const quantity = detail.quantity ?? 0;

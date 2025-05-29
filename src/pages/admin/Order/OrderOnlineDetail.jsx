@@ -470,9 +470,9 @@ const OrderDetail = () => {
     }
   };
 
-useEffect(() => {
-  const style = document.createElement("style");
-  style.innerHTML = `
+  useEffect(() => {
+    const style = document.createElement("style");
+    style.innerHTML = `
     @media print {
       body {
         visibility: visible !important;
@@ -570,11 +570,9 @@ useEffect(() => {
       }
     }
   `;
-  document.head.appendChild(style);
-  return () => document.head.removeChild(style);
-}, []);
-
-
+    document.head.appendChild(style);
+    return () => document.head.removeChild(style);
+  }, []);
 
   if (loading) {
     return (
@@ -672,6 +670,10 @@ useEffect(() => {
                 </p>
               </div>
               <div>
+                <p className="text-sm text-gray-500">Địa chỉ</p>
+                <p className="font-medium">{orderDetails.address || "N/A"}</p>
+              </div>
+              <div>
                 <p className="text-sm text-gray-500">Ngày đặt hàng</p>
                 <p className="font-medium">
                   {formatDate(orderDetails.createDate)}
@@ -704,7 +706,7 @@ useEffect(() => {
 
           {/* Timeline chỉ hiển thị cho đơn hàng online */}
           {orderDetails.kindOfOrder === false && (
-          <div className="p-6 border-b no-print">
+            <div className="p-6 border-b no-print">
               <OrderTimeline
                 currentStatus={orderDetails.statusOrder}
                 fetchOrderDetails={fetchOrderDetails}
