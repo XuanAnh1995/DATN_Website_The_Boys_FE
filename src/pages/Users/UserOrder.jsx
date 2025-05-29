@@ -1378,7 +1378,7 @@ const UserOrder = () => {
       } catch (error) {
         console.error("Error polling orders:", error);
       }
-    }, 10000);
+    }, 1000);
 
     return () => clearInterval(intervalId);
   }, [allOrders, customer, isLoggedIn, role, search]);
